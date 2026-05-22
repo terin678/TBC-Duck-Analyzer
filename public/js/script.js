@@ -443,6 +443,19 @@ function processPlayerData(fightId, fightEvents, player) {
         if (ev.type === 'combatantinfo' && ev.sourceID === player.id) {
             combatantInfos.push(ev.auras ? ev.auras.map(a => a.ability) : []);
 
+            // Initialize timeline events for buffs already active at start
+            if (ev.auras) {
+                ev.auras.forEach(aura => {
+                    const spellId = aura.ability;
+                    if (typeof TIMELINE_SPELLS !== 'undefined' && TIMELINE_SPELLS[spellId]) {
+                        if (!timelineEvents[spellId]) timelineEvents[spellId] = [];
+                        if (!timelineEvents[spellId].some(t => t.end === null)) {
+                            timelineEvents[spellId].push({ start: ev.timestamp, end: null });
+                        }
+                    }
+                });
+            }
+
             if (ev.gear && ev.gear.length > 0) {
                 if (!window.playerGearDB[fightId]) window.playerGearDB[fightId] = {};
                 window.playerGearDB[fightId][player.name] = ev.gear;
@@ -644,20 +657,35 @@ function renderPlayerView(data, player, fightInfo) {
         : allBuffHtmls.join('');
 
     // === SPELLS ===
-    let spellListHtml = Object.entries(data.spells)
+    const groupedSpells = {};
+    Object.entries(data.spells)
         .filter(([spellId]) => SPELL_DB[spellId])
-        .sort(([a], [b]) => {
-            const catA = SPELL_DB[a].category || 2;
-            const catB = SPELL_DB[b].category || 2;
-            return catA - catB;
-        })
-        .map(([spellId, sData]) => {
-            let dmgText = sData.damage > 0 ? (sData.damage >= 1000 ? (sData.damage / 1000).toFixed(1) + 'k' : sData.damage) : '';
+        .forEach(([spellId, sData]) => {
+            const sInfo = SPELL_DB[spellId];
+            const name = sInfo.name;
+            if (!groupedSpells[name]) {
+                groupedSpells[name] = {
+                    name: name,
+                    icon: sInfo.icon,
+                    category: sInfo.category || 2,
+                    count: 0,
+                    damage: 0,
+                    spellId: spellId
+                };
+            }
+            groupedSpells[name].count += sData.count;
+            groupedSpells[name].damage += sData.damage;
+        });
+
+    let spellListHtml = Object.values(groupedSpells)
+        .sort((a, b) => a.category - b.category)
+        .map(spell => {
+            let dmgText = spell.damage > 0 ? (spell.damage >= 1000 ? (spell.damage / 1000).toFixed(1) + 'k' : spell.damage) : '';
             return `<div class="spell-item">
-                <img class="spell-icon" src="/api/icon/${SPELL_DB[spellId].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
-                <span class="spell-name">${SPELL_DB[spellId].name}</span>
-                <span class="spell-count">x${Math.max(1, sData.count)}</span>
-                ${sData.damage > 0 ? `<span class="spell-damage">${dmgText}</span>` : ''}
+                <img class="spell-icon" src="/api/icon/${spell.icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+                <span class="spell-name">${spell.name}</span>
+                <span class="spell-count">x${Math.max(1, spell.count)}</span>
+                ${spell.damage > 0 ? `<span class="spell-damage">${dmgText}</span>` : ''}
             </div>`;
         }).join('');
 
@@ -873,18 +901,33 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
 
     // Compact spell/CD icons (no names)
     let spellsHtml = '';
+    const groupedSpellsAll = {};
     Object.entries(data.spells)
         .filter(([spellId]) => SPELL_DB[spellId])
-        .sort(([a], [b]) => {
-            const catA = SPELL_DB[a].category || 2;
-            const catB = SPELL_DB[b].category || 2;
-            return catA - catB;
-        })
         .forEach(([spellId, sData]) => {
-            let dmgText = sData.damage > 0 ? (sData.damage >= 1000 ? (sData.damage / 1000).toFixed(1) + 'k' : sData.damage) : '';
-            spellsHtml += `<div class="av-spell" title="${SPELL_DB[spellId].name}">
-                <img src="/api/icon/${SPELL_DB[spellId].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
-                <span class="av-count">x${Math.max(1, sData.count)}</span>
+            const sInfo = SPELL_DB[spellId];
+            const name = sInfo.name;
+            if (!groupedSpellsAll[name]) {
+                groupedSpellsAll[name] = {
+                    name: name,
+                    icon: sInfo.icon,
+                    category: sInfo.category || 2,
+                    count: 0,
+                    damage: 0,
+                    spellId: spellId
+                };
+            }
+            groupedSpellsAll[name].count += sData.count;
+            groupedSpellsAll[name].damage += sData.damage;
+        });
+
+    Object.values(groupedSpellsAll)
+        .sort((a, b) => a.category - b.category)
+        .forEach(spell => {
+            let dmgText = spell.damage > 0 ? (spell.damage >= 1000 ? (spell.damage / 1000).toFixed(1) + 'k' : spell.damage) : '';
+            spellsHtml += `<div class="av-spell" title="${spell.name}">
+                <img src="/api/icon/${spell.icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+                <span class="av-count">x${Math.max(1, spell.count)}</span>
                 ${dmgText ? `<span class="av-dmg">${dmgText}</span>` : ''}
             </div>`;
         });
