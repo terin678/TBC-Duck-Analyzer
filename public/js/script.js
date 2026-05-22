@@ -430,6 +430,60 @@ function renderMainContent() {
 
 // === PLAYER DATA PROCESSING ===
 
+const SEAL_TO_TYPE = {
+    // Seal of Righteousness
+    25742: 'Righteousness', 25740: 'Righteousness', 25739: 'Righteousness',
+    25738: 'Righteousness', 25737: 'Righteousness', 25736: 'Righteousness',
+    25735: 'Righteousness', 25713: 'Righteousness', 27156: 'Righteousness',
+    27155: 'Righteousness',
+    // Seal of the Crusader
+    20154: 'Crusader', 20305: 'Crusader', 20306: 'Crusader',
+    20307: 'Crusader', 20308: 'Crusader', 21082: 'Crusader', 27158: 'Crusader',
+    // Seal of Justice
+    20164: 'Justice',
+    // Seal of Light
+    20165: 'Light', 20347: 'Light', 20348: 'Light', 20349: 'Light', 27160: 'Light',
+    27159: 'Light',
+    // Seal of Wisdom
+    20166: 'Wisdom', 20356: 'Wisdom', 20357: 'Wisdom', 27167: 'Wisdom',
+    27166: 'Wisdom',
+    // Seal of Command
+    20375: 'Command', 20376: 'Command', 20377: 'Command',
+    20378: 'Command', 20379: 'Command', 27157: 'Command',
+    // Seal of Blood
+    31892: 'Blood',
+    // Seal of Martyr
+    34870: 'Martyr',
+    // Seal of Vengeance
+    31801: 'Vengeance'
+};
+
+const SEAL_TO_JUDGEMENT = {
+    'Righteousness': 20289,
+    'Crusader': 21183,
+    'Justice': 20184,
+    'Light': 20185,
+    'Wisdom': 20186,
+    'Command': 20424,
+    'Blood': 31898,
+    'Martyr': 31804,
+    'Vengeance': 31804
+};
+
+const JUDGEMENT_TO_SEAL_TYPE = {
+    20289: 'Righteousness',
+    21183: 'Crusader',
+    20273: 'Crusader',
+    20184: 'Justice',
+    20274: 'Justice',
+    20185: 'Light',
+    20186: 'Wisdom',
+    20272: 'Wisdom',
+    20424: 'Command',
+    31898: 'Blood',
+    31804: 'Martyr'
+};
+
 function processPlayerData(fightId, fightEvents, player) {
     let combatantInfos = [];
     let tempEnchants = [];
@@ -437,6 +491,7 @@ function processPlayerData(fightId, fightEvents, player) {
     let timelineEvents = {};
     let deaths = [];
     let rebirths = [];
+    let activeSeal = null;
 
     // Phase 1: combatantinfo + buff events
     fightEvents.forEach(ev => {
@@ -447,6 +502,9 @@ function processPlayerData(fightId, fightEvents, player) {
             if (ev.auras) {
                 ev.auras.forEach(aura => {
                     const spellId = aura.ability;
+                    if (SEAL_TO_TYPE[spellId]) {
+                        activeSeal = SEAL_TO_TYPE[spellId];
+                    }
                     if (typeof TIMELINE_SPELLS !== 'undefined' && TIMELINE_SPELLS[spellId]) {
                         if (!timelineEvents[spellId]) timelineEvents[spellId] = [];
                         if (!timelineEvents[spellId].some(t => t.end === null)) {
@@ -522,7 +580,7 @@ function processPlayerData(fightId, fightEvents, player) {
                 if ((ev.type === 'cast' || ev.type === 'resurrect' || ev.type === 'applybuff') && isRebirth && ev.targetID === player.id) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Combat Res', icon: '🌿' });
                 }
-                else if ((ev.type === 'cast' || ev.type === 'applybuff') && isAnkh && (ev.targetID === player.id || ev.sourceID === player.id)) {
+                else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isAnkh && (ev.targetID === player.id || ev.sourceID === player.id)) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
                 }
                 else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isSoulstone && ev.targetID === player.id) {
@@ -539,29 +597,54 @@ function processPlayerData(fightId, fightEvents, player) {
         if (['applybuff', 'applybuffstack', 'refreshbuff', 'removebuff'].includes(ev.type)) playerId = ev.targetID;
         if (playerId !== player.id) return;
 
-        if (ev.type === 'cast' && SPELL_DB[ev.abilityGameID] && !SPELL_DB[ev.abilityGameID].isInterrupt && !SPELL_DB[ev.abilityGameID].isMechanic && !SPELL_DB[ev.abilityGameID].isRes && SPELL_DB[ev.abilityGameID].category !== 5 && SPELL_DB[ev.abilityGameID].category !== 3) {
-            if (ev.abilityGameID === 33671) return;
-            if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
-            spells[ev.abilityGameID].count += 1;
+        let spellId = ev.abilityGameID;
+
+        // Ignorar los "casteos fantasma" de procs pasivos generados por golpes a melee (Sello de Comando/Sangre)
+        if (ev.type === 'cast' && (spellId === 20424 || spellId === 31898)) return;
+
+        // Track active seal updates from casts
+        if (ev.type === 'cast' && SEAL_TO_TYPE[spellId]) {
+            activeSeal = SEAL_TO_TYPE[spellId];
         }
-        else if (ev.type === 'interrupt' && SPELL_DB[ev.abilityGameID]) {
-            if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
-            spells[ev.abilityGameID].count += 1;
+
+        // Dynamic Judgement mapping logic
+        if (ev.type === 'cast') {
+            if (spellId === 20271) {
+                if (activeSeal && SEAL_TO_JUDGEMENT[activeSeal]) {
+                    spellId = SEAL_TO_JUDGEMENT[activeSeal];
+                }
+                activeSeal = null; // consumed
+            } else if (JUDGEMENT_TO_SEAL_TYPE[spellId]) {
+                // If it's a specific Judgement cast, only consume if it matches activeSeal
+                const expectedSeal = JUDGEMENT_TO_SEAL_TYPE[spellId];
+                if (activeSeal === expectedSeal) {
+                    activeSeal = null; // consumed matching seal
+                }
+            }
+        }
+
+        if (ev.type === 'cast' && SPELL_DB[spellId] && !SEAL_TO_TYPE[spellId] && !SPELL_DB[spellId].isInterrupt && !SPELL_DB[spellId].isMechanic && !SPELL_DB[spellId].isRes && SPELL_DB[spellId].category !== 5 && SPELL_DB[spellId].category !== 3) {
+            if (spellId === 33671) return;
+            if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
+            spells[spellId].count += 1;
+        }
+        else if (ev.type === 'interrupt' && SPELL_DB[spellId]) {
+            if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
+            spells[spellId].count += 1;
         }
         // Sappers: track cast count + accumulate damage from hits
-        else if (ev.type === 'cast' && (ev.abilityGameID === 13241 || ev.abilityGameID === 30486)) {
-            if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
-            spells[ev.abilityGameID].count += 1;
+        else if (ev.type === 'cast' && (spellId === 13241 || spellId === 30486)) {
+            if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
+            spells[spellId].count += 1;
         }
-        else if (ev.type === 'damage' && (ev.abilityGameID === 13241 || ev.abilityGameID === 30486 || ev.abilityGameID === 33671)) {
-            if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
-            spells[ev.abilityGameID].damage += (ev.amount || 0) + (ev.absorbed || 0);
-            if (ev.abilityGameID === 33671) spells[ev.abilityGameID].count += 1;
+        else if (ev.type === 'damage' && (spellId === 13241 || spellId === 30486 || spellId === 33671)) {
+            if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
+            spells[spellId].damage += (ev.amount || 0) + (ev.absorbed || 0);
+            if (spellId === 33671) spells[spellId].count += 1;
         }
 
         // Phase 3: Timeline tracking
-        if (typeof TIMELINE_SPELLS !== 'undefined' && TIMELINE_SPELLS[ev.abilityGameID]) {
-            let spellId = ev.abilityGameID;
+        if (typeof TIMELINE_SPELLS !== 'undefined' && TIMELINE_SPELLS[spellId]) {
             if (!timelineEvents[spellId]) timelineEvents[spellId] = [];
             
             if (['applybuff', 'applybuffstack', 'refreshbuff'].includes(ev.type)) {
@@ -625,7 +708,7 @@ function renderPlayerView(data, player, fightInfo) {
     let weaponBuffHtmls = [];
 
     const usedBuffs = Object.keys(BUFF_DB).filter(id =>
-        data.combatantInfos.some(auras => auras.includes(parseInt(id)))
+        BUFF_DB[id].category !== 3 && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
     );
     usedBuffs.forEach(id => {
         const count = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
@@ -866,7 +949,7 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
 
     // Compact buff icons (no names)
     const usedBuffs = Object.keys(BUFF_DB).filter(id =>
-        data.combatantInfos.some(auras => auras.includes(parseInt(id)))
+        BUFF_DB[id].category !== 3 && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
     );
     let buffsHtml = '';
     usedBuffs.forEach(id => {
