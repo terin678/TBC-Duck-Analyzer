@@ -185,12 +185,19 @@ app.post('/api/audit', async (req, res) => {
 });
 app.post('/api/dps', async (req, res) => {
     try {
-        const { logId, startTime, endTime, playerId } = req.body;
-        if (!logId || startTime == null || endTime == null || !playerId) {
-            return res.status(400).json({ error: "Missing required parameters" });
+        const { logId, startTime, endTime, fightIDs, playerId } = req.body;
+        if (!logId || !playerId) {
+            return res.status(400).json({ error: "Missing required parameters: logId, playerId" });
         }
 
-        const cacheKey = `dps_${logId}_${startTime}_${endTime}_${playerId}`;
+        let cacheKey;
+        if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
+            cacheKey = `dps_${logId}_fights_${fightIDs.join('_')}_${playerId}`;
+        } else if (startTime != null && endTime != null) {
+            cacheKey = `dps_${logId}_${startTime}_${endTime}_${playerId}`;
+        } else {
+            return res.status(400).json({ error: "Missing either fightIDs or startTime/endTime" });
+        }
 
         db.get("SELECT log_data FROM logs_cache WHERE log_id = ?", [cacheKey], async (err, row) => {
             if (row && row.log_data) {
@@ -200,17 +207,28 @@ app.post('/api/dps', async (req, res) => {
             try {
                 const responseToken = await axios.post(
                     "https://www.warcraftlogs.com/oauth/token",
-                    `grant_type=client_credentials&client_id=${process.env.WCL_CLIENT_ID}&client_secret=${process.env.WCL_CLIENT_SECRET}`,
+                    `grant_type=client_credentials&client_id=${clientId}&client_secret=${clientSecret}`,
                     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
                 );
                 const token = responseToken.data.access_token;
 
-                const query = JSON.stringify({
-                    query: `{reportData {report(code: "${logId}") {
-                        damage: table(dataType: DamageDone, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
-                        healing: table(dataType: Healing, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
-                    }}}`
-                });
+                let query;
+                if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
+                    query = JSON.stringify({
+                        query: `{reportData {report(code: "${logId}") {
+                            fights(killType: Encounters) { id startTime endTime }
+                            damage: table(dataType: DamageDone, fightIDs: [${fightIDs.join(',')}], sourceID: ${playerId})
+                            healing: table(dataType: Healing, fightIDs: [${fightIDs.join(',')}], sourceID: ${playerId})
+                        }}}`
+                    });
+                } else {
+                    query = JSON.stringify({
+                        query: `{reportData {report(code: "${logId}") {
+                            damage: table(dataType: DamageDone, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
+                            healing: table(dataType: Healing, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
+                        }}}`
+                    });
+                }
 
                 const responseData = await axios.post(
                     "https://www.warcraftlogs.com/api/v2/client",
@@ -221,10 +239,26 @@ app.post('/api/dps', async (req, res) => {
                 if (responseData.data.errors) throw new Error(responseData.data.errors[0].message);
 
                 const report = responseData.data?.data?.reportData?.report;
-                const dmgTotal = report?.damage?.data?.entries?.[0]?.total || 0;
-                const healTotal = report?.healing?.data?.entries?.[0]?.total || 0;
-                
-                const duration = (endTime - startTime) / 1000;
+                const entriesDmg = report?.damage?.data?.entries || [];
+                const entriesHeal = report?.healing?.data?.entries || [];
+
+                const dmgTotal = entriesDmg.reduce((sum, entry) => sum + (entry.total || 0), 0);
+                const healTotal = entriesHeal.reduce((sum, entry) => sum + (entry.total || 0), 0);
+
+                let duration = 0;
+                if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
+                    const fights = report?.fights || [];
+                    let totalDurationMs = 0;
+                    fights.forEach(f => {
+                        if (fightIDs.includes(f.id) || fightIDs.includes(f.id.toString())) {
+                            totalDurationMs += (f.endTime - f.startTime);
+                        }
+                    });
+                    duration = Math.max(1, totalDurationMs / 1000);
+                } else {
+                    duration = Math.max(1, (endTime - startTime) / 1000);
+                }
+
                 let result = {};
                 if (healTotal > dmgTotal * 1.5) { // If it's a healer
                     result = { dps: Math.round(healTotal / duration), total: healTotal, isHealing: true };

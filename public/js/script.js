@@ -414,14 +414,11 @@ function renderMainContent() {
 
     // Fetch DPS
     if (fightInfo) {
-        fetchDps(window.currentLogId, fightInfo.startTime, fightInfo.endTime, player.id);
+        fetchDps(window.currentLogId, [fightInfo.id], player.id);
     } else {
-        // Overall: compute total time range from all fights
         const fights = report.fights;
         if (fights && fights.length > 0) {
-            const minStart = Math.min(...fights.map(f => f.startTime));
-            const maxEnd = Math.max(...fights.map(f => f.endTime));
-            fetchDps(window.currentLogId, minStart, maxEnd, player.id);
+            fetchDps(window.currentLogId, fights.map(f => f.id), player.id);
         }
     }
 
@@ -967,12 +964,12 @@ function filterAllViewByClass(className) {
     });
 }
 
-async function fetchDps(logId, startTime, endTime, playerId) {
+async function fetchDps(logId, fightIDs, playerId) {
     try {
         const response = await fetch('/api/dps', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logId, startTime, endTime, playerId })
+            body: JSON.stringify({ logId, fightIDs, playerId })
         });
         const res = await response.json();
         const placeholders = document.querySelectorAll(`[id$="-${playerId}"]`);
