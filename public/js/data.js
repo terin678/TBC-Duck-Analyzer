@@ -311,11 +311,11 @@ const SPELL_DB = {
     25217: {name:"Power Word: Shield",icon:"spell_holy_powerwordshield",category:2},
     10901: {name:"Power Word: Shield",icon:"spell_holy_powerwordshield",category:2},
     33076: {name:"Prayer of Mending",icon:"spell_holy_prayerofmendingtga",category:2},
-    34866: {name:"Circle of Healing",icon:"spell_holy_circleofhealing",category:2},
-    34865: {name:"Circle of Healing",icon:"spell_holy_circleofhealing",category:2},
-    34864: {name:"Circle of Healing",icon:"spell_holy_circleofhealing",category:2},
-    34863: {name:"Circle of Healing",icon:"spell_holy_circleofhealing",category:2},
-    34861: {name:"Circle of Healing",icon:"spell_holy_circleofhealing",category:2},
+    34866: {name:"Circle of Healing",icon:"spell_holy_circleofrenewal",category:2},
+    34865: {name:"Circle of Healing",icon:"spell_holy_circleofrenewal",category:2},
+    34864: {name:"Circle of Healing",icon:"spell_holy_circleofrenewal",category:2},
+    34863: {name:"Circle of Healing",icon:"spell_holy_circleofrenewal",category:2},
+    34861: {name:"Circle of Healing",icon:"spell_holy_circleofrenewal",category:2},
 };
 
 const OPTIMAL_ENCHANTS = {
