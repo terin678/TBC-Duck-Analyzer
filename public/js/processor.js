@@ -220,11 +220,16 @@ export function processPlayerData(fightId, fightEvents, player) {
             const alreadyCovered = rebirths.some(r => r.timestamp > deathTs && r.timestamp < deathTs + 120000);
             if (alreadyCovered) return;
 
-            // Buscar el primer cast del jugador después de la muerte
+            // Buscar el primer cast del jugador después de la muerte,
+            // dentro de una ventana de 30 segundos máximo.
+            // Si tarda más de 30s en volver a castear, asumimos que
+            // anduvo de vuelta / lo resucitaron normalmente → NO es Ankh.
+            const ANKH_MAX_WINDOW_MS = 30000;
             const firstCastAfterDeath = fightEvents.find(ev =>
                 ev.type === 'cast' &&
                 ev.sourceID === player.id &&
-                ev.timestamp > deathTs
+                ev.timestamp > deathTs &&
+                ev.timestamp <= deathTs + ANKH_MAX_WINDOW_MS
             );
 
             if (firstCastAfterDeath) {
