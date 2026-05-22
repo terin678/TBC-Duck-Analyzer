@@ -105,8 +105,9 @@ app.post('/api/audit', async (req, res) => {
                 const token = responseToken.data.access_token;
                 if (!token) throw new Error("Invalid or expired API Keys.");
 
+                const resAbilityIds = [20608, 20707, 20748, 20749, 20750, 20758, 27239, 20484, 21849, 21850, 26993, 26994].join(',');
                 // Query y filtro
-                const filterExp = `(type = 'cast' AND ability.id IN (${castIds},${timelineIds})) OR (type = 'damage' AND ability.id IN (13241, 30486, 33671)) OR type = 'interrupt' OR type = 'combatantinfo' OR (type IN ('applybuff', 'applybuffstack', 'refreshbuff', 'removebuff', 'cast') AND ability.id IN (${buffIds},${timelineIds}))`;
+                const filterExp = `(type = 'cast' AND ability.id IN (${castIds},${timelineIds})) OR (type = 'damage' AND ability.id IN (13241, 30486, 33671)) OR type = 'interrupt' OR type = 'combatantinfo' OR type = 'resurrect' OR (type IN ('applybuff', 'applybuffstack', 'refreshbuff', 'removebuff', 'cast') AND ability.id IN (${buffIds},${timelineIds},${resAbilityIds}))`;
                 // Función para obtener todas las páginas de eventos
                 const fetchEventsPaginated = async (startEvent, startDeath) => {
                     const evStr = startEvent !== null ? `events(startTime: ${startEvent}, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp }` : '';
@@ -211,7 +212,6 @@ app.post('/api/dps', async (req, res) => {
                     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
                 );
                 const token = responseToken.data.access_token;
-
                 let query;
                 if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
                     query = JSON.stringify({
@@ -224,6 +224,7 @@ app.post('/api/dps', async (req, res) => {
                 } else {
                     query = JSON.stringify({
                         query: `{reportData {report(code: "${logId}") {
+                            fights(killType: Encounters) { id startTime endTime }
                             damage: table(dataType: DamageDone, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
                             healing: table(dataType: Healing, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
                         }}}`
@@ -246,8 +247,8 @@ app.post('/api/dps', async (req, res) => {
                 const healTotal = entriesHeal.reduce((sum, entry) => sum + (entry.total || 0), 0);
 
                 let duration = 0;
+                const fights = report?.fights || [];
                 if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
-                    const fights = report?.fights || [];
                     let totalDurationMs = 0;
                     fights.forEach(f => {
                         if (fightIDs.includes(f.id) || fightIDs.includes(f.id.toString())) {
@@ -255,8 +256,16 @@ app.post('/api/dps', async (req, res) => {
                         }
                     });
                     duration = Math.max(1, totalDurationMs / 1000);
+                } else if (startTime != null && endTime != null) {
+                    let totalDurationMs = 0;
+                    fights.forEach(f => {
+                        if (f.startTime >= startTime && f.endTime <= endTime) {
+                            totalDurationMs += (f.endTime - f.startTime);
+                        }
+                    });
+                    duration = Math.max(1, totalDurationMs / 1000);
                 } else {
-                    duration = Math.max(1, (endTime - startTime) / 1000);
+                    duration = 1;
                 }
 
                 let result = {};

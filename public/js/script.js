@@ -499,16 +499,26 @@ function processPlayerData(fightId, fightEvents, player) {
             deaths.push(ev.timestamp);
         }
         // Combat Res (Druid Rebirth)
-        if (ev.type === 'cast' && (ev.abilityGameID === 20484 || ev.abilityGameID === 26994) && ev.targetID === player.id) {
-            rebirths.push({ timestamp: ev.timestamp, type: 'Combat Res', icon: '🌿' });
-        }
-        // Shaman Reincarnation (Ankh)
-        if (ev.type === 'cast' && ev.abilityGameID === 20608 && ev.sourceID === player.id) {
-            rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
-        }
-        // Soulstone Resurrection
-        if (ev.type === 'cast' && ev.abilityGameID === 20707 && ev.targetID === player.id) {
-            rebirths.push({ timestamp: ev.timestamp, type: 'Soulstone', icon: '💎' });
+        const isRebirth = (ev.abilityGameID === 20484 || ev.abilityGameID === 21849 || ev.abilityGameID === 21850 || ev.abilityGameID === 26993 || ev.abilityGameID === 26994);
+        const isAnkh = (ev.abilityGameID === 20608);
+        const isSoulstone = (ev.abilityGameID === 20707 || ev.abilityGameID === 20748 || ev.abilityGameID === 20749 || ev.abilityGameID === 20750 || ev.abilityGameID === 20758 || ev.abilityGameID === 27239);
+
+        if (deaths.length > 0 && deaths.some(d => d < ev.timestamp)) {
+            const hasRecentRes = rebirths.some(r => Math.abs(r.timestamp - ev.timestamp) < 2000);
+            if (!hasRecentRes) {
+                if ((ev.type === 'cast' || ev.type === 'resurrect' || ev.type === 'applybuff') && isRebirth && ev.targetID === player.id) {
+                    rebirths.push({ timestamp: ev.timestamp, type: 'Combat Res', icon: '🌿' });
+                }
+                else if ((ev.type === 'cast' || ev.type === 'applybuff') && isAnkh && (ev.targetID === player.id || ev.sourceID === player.id)) {
+                    rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
+                }
+                else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isSoulstone && ev.targetID === player.id) {
+                    rebirths.push({ timestamp: ev.timestamp, type: 'Soulstone', icon: '💎' });
+                }
+                else if (ev.type === 'resurrect' && ev.targetID === player.id) {
+                    rebirths.push({ timestamp: ev.timestamp, type: 'Resurrect', icon: '✨' });
+                }
+            }
         }
 
         let playerId = ev.sourceID;
@@ -972,22 +982,22 @@ async function fetchDps(logId, fightIDs, playerId) {
             body: JSON.stringify({ logId, fightIDs, playerId })
         });
         const res = await response.json();
-        const placeholders = document.querySelectorAll(`[id$="-${playerId}"]`);
+        const fightIdKey = (fightIDs && fightIDs.length === 1) ? fightIDs[0] : 'overall';
+        const placeholders = document.querySelectorAll(`[id="dpsPlaceholder-${fightIdKey}-${playerId}"]`);
         placeholders.forEach(placeholder => {
-            if (placeholder.id.startsWith('dpsPlaceholder-')) {
-                if (res.error) {
-                    placeholder.textContent = "(DPS error)";
-                } else if (res.isHealing) {
-                    placeholder.textContent = `| ${res.dps} HPS (${(res.total / 1000).toFixed(1)}k heal)`;
-                } else {
-                    placeholder.textContent = `| ${res.dps} DPS (${(res.total / 1000).toFixed(1)}k dmg)`;
-                }
+            if (res.error) {
+                placeholder.textContent = "(DPS error)";
+            } else if (res.isHealing) {
+                placeholder.textContent = `| ${res.dps} HPS (${(res.total / 1000).toFixed(1)}k heal)`;
+            } else {
+                placeholder.textContent = `| ${res.dps} DPS (${(res.total / 1000).toFixed(1)}k dmg)`;
             }
         });
     } catch (err) {
-        const placeholders = document.querySelectorAll(`[id$="-${playerId}"]`);
+        const fightIdKey = (fightIDs && fightIDs.length === 1) ? fightIDs[0] : 'overall';
+        const placeholders = document.querySelectorAll(`[id="dpsPlaceholder-${fightIdKey}-${playerId}"]`);
         placeholders.forEach(placeholder => {
-            if (placeholder.id.startsWith('dpsPlaceholder-')) placeholder.textContent = "";
+            placeholder.textContent = "";
         });
     }
 }
