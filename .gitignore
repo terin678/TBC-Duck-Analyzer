@@ -40,6 +40,8 @@ build/
 credentials.json
 # Script de pruebas local
 test.js
+test_dps.js
+inspect_dps_cache.js
 # Implementación local
 implementation_plan.md
 # Plan de implementación

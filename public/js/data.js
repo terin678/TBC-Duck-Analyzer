@@ -230,7 +230,7 @@ const SPELL_DB = {
     19574: {name:"Bestial Wrath",icon:"ability_druid_ferociousbite",category:1},
     20216: {name:"Divine Flavor",icon:"spell_holy_heal",category:2},
     20235: {name:"Lay on Hands",icon:"spell_holy_layonhands",category:1},
-    20271: {name:"Judgement of Light",icon:"spell_holy_righteousfury"},
+    20271: {name:"Judgement",icon:"spell_holy_righteousfury"},
     20272: {name:"Judgement of Wisdom",icon:"spell_holy_righteousnessaura"},
     20273: {name:"Judgement of the Crusader",icon:"spell_holy_holysmite"},
     20274: {name:"Judgement of Justice",icon:"spell_holy_sealofwrath"},
