@@ -132,7 +132,6 @@ export function processPlayerData(fightId, fightEvents, player) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Combat Res', icon: '🌿' });
                 }
                 else if (isAnkh && (playerIsTarget || playerIsSource)) {
-                    // Ankh: puede llegar como cast, applybuff, o resurrect, con sourceID o targetID
                     if (ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') {
                         rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
                     }
@@ -141,8 +140,6 @@ export function processPlayerData(fightId, fightEvents, player) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Soulstone', icon: '💎' });
                 }
                 else if (ev.type === 'resurrect' && (playerIsTarget || playerIsSource)) {
-                    // Resurrect genérico: si el jugador es Shaman, asumimos que fue el Ankh
-                    // ya que WCL no siempre loggea el ability ID del Ankh
                     if (player.subType === 'Shaman') {
                         rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
                     } else {
@@ -198,7 +195,6 @@ export function processPlayerData(fightId, fightEvents, player) {
                     openEv.end = ev.timestamp;
                 }
             } else if (ev.type === 'cast' && window.TIMELINE_SPELLS[spellId].duration) {
-                // Track instantaneous casts like Sappers that have a defined fake duration for visual purposes
                 timelineEvents[spellId].push({ start: ev.timestamp, end: ev.timestamp + window.TIMELINE_SPELLS[spellId].duration });
             }
         }
@@ -208,12 +204,38 @@ export function processPlayerData(fightId, fightEvents, player) {
     Object.keys(timelineEvents).forEach(spellId => {
         timelineEvents[spellId].forEach(ev => {
             if (ev.end === null) {
-                // If it never removed, assume it lasted 15s or until the end of fight
-                // We will cap it in render.
                 ev.end = ev.start + 15000; 
             }
         });
     });
+
+    // ── Heurística Ankh para Shaman ─────────────────────────────────────────
+    // WCL NO registra ningún evento de resurrect/cast para el Ankh.
+    // Si el jugador es Shaman y tiene muertes sin ressurrección detectada,
+    // buscamos el primer cast que haga DESPUÉS de cada muerte: ese timestamp
+    // es cuando volvió a la vida con el Ankh.
+    if (player.subType === 'Shaman' && deaths.length > 0) {
+        deaths.forEach(deathTs => {
+            // ¿Ya tenemos una ress para esta muerte?
+            const alreadyCovered = rebirths.some(r => r.timestamp > deathTs && r.timestamp < deathTs + 120000);
+            if (alreadyCovered) return;
+
+            // Buscar el primer cast del jugador después de la muerte
+            const firstCastAfterDeath = fightEvents.find(ev =>
+                ev.type === 'cast' &&
+                ev.sourceID === player.id &&
+                ev.timestamp > deathTs
+            );
+
+            if (firstCastAfterDeath) {
+                rebirths.push({
+                    timestamp: firstCastAfterDeath.timestamp,
+                    type: 'Ankh',
+                    icon: '⚡'
+                });
+            }
+        });
+    }
 
     return {
         combatantInfos,
