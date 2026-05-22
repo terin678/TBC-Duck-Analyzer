@@ -179,6 +179,36 @@ h1::after {
     min-height: 60px;
 }
 
+.bypass-cache-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.bypass-cache-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #888;
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.bypass-cache-label:hover {
+    color: #bbb;
+}
+
+.bypass-cache-label input[type="checkbox"] {
+    accent-color: #f4b400;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+
 .landing-footer {
     position: absolute;
     bottom: 0;

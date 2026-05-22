@@ -153,10 +153,11 @@ async function auditarLog() {
     statusEl.innerHTML = "<p style='color:#f4b400; font-weight:bold; font-size:1.2rem;'>POLICE IS INVESTIGATING...</p>";
 
     try {
+        const bypassCache = document.getElementById('bypassCacheInput')?.checked || false;
         const response = await fetch('/api/audit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logId })
+            body: JSON.stringify({ logId, bypassCache })
         });
 
         const res = await response.json();

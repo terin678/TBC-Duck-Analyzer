@@ -50,6 +50,7 @@ app.use(express.json());
 app.post('/api/audit', async (req, res) => {
     try {
         const logId = req.body.logId;
+        const bypassCache = req.body.bypassCache === true;
         if (!logId) {
             return res.status(400).json({ error: "Missing logId" });
         }
@@ -59,7 +60,7 @@ app.post('/api/audit', async (req, res) => {
             if (err) {
                 console.error("Cache read error:", err);
             }
-            if (row && row.log_data) {
+            if (!bypassCache && row && row.log_data) {
                 // Encontrado en caché
                 try {
                     return res.json(JSON.parse(row.log_data));
