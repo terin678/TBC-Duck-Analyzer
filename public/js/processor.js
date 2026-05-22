@@ -113,24 +113,34 @@ export function processPlayerData(fightId, fightEvents, player) {
         if (ev.type === 'death' && (ev.targetID === player.id || (!ev.targetID && ev.sourceID === player.id))) {
             deaths.push(ev.timestamp);
         }
-        // Combat Res (Druid Rebirth)
+
+        // ── Detección de resurrecciones ────────────────────────────────────────
+        // Se hace ANTES del filtro de playerId para que no se pierdan eventos
+        // donde WCL no incluye targetID (ej: Ankh del propio Shaman)
         const isRebirth = (ev.abilityGameID === 20484 || ev.abilityGameID === 21849 || ev.abilityGameID === 21850 || ev.abilityGameID === 26993 || ev.abilityGameID === 26994);
         const isAnkh = (ev.abilityGameID === 20608);
         const isSoulstone = (ev.abilityGameID === 20707 || ev.abilityGameID === 20748 || ev.abilityGameID === 20749 || ev.abilityGameID === 20750 || ev.abilityGameID === 20758 || ev.abilityGameID === 27239);
 
+        // El jugador es el objetivo o la fuente (Ankh se castea a sí mismo)
+        const playerIsTarget = (ev.targetID === player.id);
+        const playerIsSource = (ev.sourceID === player.id);
+
         if (deaths.length > 0 && deaths.some(d => d < ev.timestamp)) {
             const hasRecentRes = rebirths.some(r => Math.abs(r.timestamp - ev.timestamp) < 2000);
             if (!hasRecentRes) {
-                if ((ev.type === 'cast' || ev.type === 'resurrect' || ev.type === 'applybuff') && isRebirth && ev.targetID === player.id) {
+                if ((ev.type === 'cast' || ev.type === 'resurrect' || ev.type === 'applybuff') && isRebirth && playerIsTarget) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Combat Res', icon: '🌿' });
                 }
-                else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isAnkh && (ev.targetID === player.id || ev.sourceID === player.id)) {
-                    rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
+                else if (isAnkh && (playerIsTarget || playerIsSource)) {
+                    // Ankh: puede llegar como cast, applybuff, o resurrect, con sourceID o targetID
+                    if (ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') {
+                        rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
+                    }
                 }
-                else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isSoulstone && ev.targetID === player.id) {
+                else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isSoulstone && playerIsTarget) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Soulstone', icon: '💎' });
                 }
-                else if (ev.type === 'resurrect' && ev.targetID === player.id) {
+                else if (ev.type === 'resurrect' && playerIsTarget) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Resurrect', icon: '✨' });
                 }
             }
@@ -142,6 +152,7 @@ export function processPlayerData(fightId, fightEvents, player) {
         if (playerId !== player.id) return;
 
         let spellId = ev.abilityGameID;
+
 
         // Ignorar los "casteos fantasma" de procs pasivos generados por golpes a melee (Sello de Comando/Sangre)
         if (ev.type === 'cast' && (spellId === 20424 || spellId === 31898)) return;
