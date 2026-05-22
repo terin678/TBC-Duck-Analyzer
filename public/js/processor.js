@@ -140,8 +140,14 @@ export function processPlayerData(fightId, fightEvents, player) {
                 else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isSoulstone && playerIsTarget) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Soulstone', icon: '💎' });
                 }
-                else if (ev.type === 'resurrect' && playerIsTarget) {
-                    rebirths.push({ timestamp: ev.timestamp, type: 'Resurrect', icon: '✨' });
+                else if (ev.type === 'resurrect' && (playerIsTarget || playerIsSource)) {
+                    // Resurrect genérico: si el jugador es Shaman, asumimos que fue el Ankh
+                    // ya que WCL no siempre loggea el ability ID del Ankh
+                    if (player.subType === 'Shaman') {
+                        rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
+                    } else {
+                        rebirths.push({ timestamp: ev.timestamp, type: 'Resurrect', icon: '✨' });
+                    }
                 }
             }
         }
