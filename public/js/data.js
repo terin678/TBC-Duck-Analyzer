@@ -340,6 +340,7 @@ const OPTIMAL_ENCHANTS = {
 const TIMELINE_SPELLS = {
     // Trinket Procs & Actives
     34774: { name: "Call of the Falcon (DST)", icon: "inv_misc_bone_elfskull_01", color: "#8a2be2" }, // Dragonspine Trophy
+    34775: { name: "Call of the Falcon (DST)", icon: "inv_misc_bone_elfskull_01", color: "#8a2be2" }, // Dragonspine Trophy Haste Buff
     33649: { name: "Hourglass", icon: "inv_misc_hourglass_02", color: "#8a2be2" }, // Hourglass of the Unraveller
     33702: { name: "Blood Fury", icon: "racial_orc_berserkerstrength", color: "#d9534f" }, // Blood Fury (SP caster version)
     33370: { name: "Quagmirran's Eye", icon: "inv_misc_eye_01", color: "#179299" }, // Fungal Frenzy
