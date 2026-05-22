@@ -90,7 +90,7 @@ export async function auditarLog() {
 
         // Render sidebars
         renderFightsSidebar(report);
-        renderPlayersSidebar(allActors);
+        renderPlayersSidebar(raidActors);
 
         // Show Discord button
         document.getElementById('btnDiscord').style.display = 'block';
