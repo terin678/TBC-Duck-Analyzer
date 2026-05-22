@@ -5,7 +5,7 @@ const SPEC_ICONS = {
     "Warrior-Arms": "ability_warrior_savageblow",
     "Warrior-Fury": "ability_warrior_innerrage",
     "Warrior-Protection": "inv_shield_06",
-    "Paladin": "spell_holy_auramasters",
+    "Paladin": "spell_holy_auramastery",
     "Paladin-Holy": "spell_holy_holybolt",
     "Paladin-Protection": "spell_holy_avengersshield",
     "Paladin-Retribution": "spell_holy_auraoflight",
@@ -41,6 +41,7 @@ const SPEC_ICONS = {
 
 const BUFF_DB = {
     5665: {name:"Bogling Root",icon:"inv_misc_herb_07"},
+    11371: {name:"Gift of Arthas",icon:"inv_potion_28"},
     11374: {name:"Gift of Arthas",icon:"inv_potion_28"},
     11406: {name:"Elixir Demonslaying",icon:"inv_potion_27"},
     13445: {name:"Greater Elixir of Defense",icon:"inv_potion_57"},
