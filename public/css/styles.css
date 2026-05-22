@@ -1221,29 +1221,6 @@ div.wowhead-tooltip .iconmedium {
     border-color: #666;
 }
 
-.discord-float-btn {
-    position: fixed;
-    bottom: 155px;
-    right: 25px;
-    padding: 12px 18px;
-    background: #5865F2;
-    color: white;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 1rem;
-    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
-    z-index: 999;
-    transition: all 0.3s;
-    font-family: 'Montserrat', sans-serif;
-}
-
-.discord-float-btn:hover {
-    background: #4752c4;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(88, 101, 242, 0.6);
-}
 
 /* Webhook Profiles */
 .webhook-profiles-section {
@@ -1460,55 +1437,102 @@ div.wowhead-tooltip .iconmedium {
 }
 
 /* =============================================
-   FIXED BUTTONS (Feedback, GitHub)
+   SIDEBAR & LANDING BUTTONS
    ============================================= */
 
-.feedback-btn {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    padding: 12px 18px;
-    background: linear-gradient(135deg, #007bff, #0056b3);
-    color: white;
-    border: none;
-    border-radius: 50px;
+.sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid #1a1a1f;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #050505;
+    margin-top: auto;
+}
+
+.sidebar-action-btn {
+    width: 100%;
+    padding: 10px 12px;
+    background: #111;
+    color: #ccc;
+    border: 1px solid #222;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: bold;
-    font-size: 1rem;
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
-    z-index: 999;
-    transition: all 0.3s;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
     font-family: 'Montserrat', sans-serif;
 }
 
-.feedback-btn:hover {
-    background: linear-gradient(135deg, #0056b3, #003d82);
-    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.6);
-    transform: translateY(-2px);
+.sidebar-action-btn:hover {
+    background: #1a1a1a;
+    border-color: #444;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.sidebar-action-row {
+    display: flex;
+    gap: 10px;
+}
+
+.discord-btn {
+    background: rgba(88, 101, 242, 0.1);
+    border-color: rgba(88, 101, 242, 0.3);
+    color: #7289da;
+}
+
+.discord-btn:hover {
+    background: rgba(88, 101, 242, 0.2);
+    border-color: rgba(88, 101, 242, 0.5);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.2);
 }
 
 .github-btn {
-    position: fixed;
-    bottom: 90px;
-    right: 25px;
-    padding: 12px 18px;
-    background: linear-gradient(135deg, #1f6feb, #0969da);
-    color: white;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 1rem;
-    box-shadow: 0 4px 12px rgba(31, 110, 251, 0.4);
-    z-index: 999;
-    transition: all 0.3s;
-    font-family: 'Montserrat', sans-serif;
+    flex: 1;
 }
 
 .github-btn:hover {
-    background: linear-gradient(135deg, #0969da, #0860ca);
-    box-shadow: 0 6px 20px rgba(31, 110, 251, 0.6);
-    transform: translateY(-2px);
+    background: rgba(31, 110, 251, 0.1);
+    border-color: rgba(31, 110, 251, 0.5);
+    color: #fff;
+}
+
+.feedback-btn {
+    flex: 1;
+}
+
+.feedback-btn:hover {
+    background: rgba(0, 123, 255, 0.1);
+    border-color: rgba(0, 123, 255, 0.5);
+    color: #fff;
+}
+
+.landing-footer-links {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+.landing-footer-link {
+    color: #888 !important;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500 !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s;
+}
+
+.landing-footer-link:hover {
+    color: #ddd !important;
 }
 
 /* =============================================
@@ -1555,13 +1579,7 @@ div.wowhead-tooltip .iconmedium {
     .player-item.active { border-bottom: 2px solid #f4b400; }
     .main-content { height: auto; min-height: 50vh; padding: 12px; }
 
-    .feedback-btn, .github-btn, .discord-float-btn {
-        padding: 8px 14px;
-        font-size: 0.7rem;
-    }
-    .feedback-btn { bottom: 15px; right: 15px; }
-    .github-btn { bottom: 55px; right: 15px; }
-    .discord-float-btn { bottom: 95px; right: 15px; }
+
 
     /* Gear Inspector Mobile */
     .settings-modal.paperdoll-card {

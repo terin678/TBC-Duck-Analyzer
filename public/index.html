@@ -45,10 +45,12 @@
             <div id="landingStatus" class="landing-status"></div>
         </div>
         <footer class="landing-footer">
-            <p>TBC Duck Analyzer v1.2 &copy; 2026 | <a
-                    href="https://github.com/patitokun03-spec/TBC-Duck-Analyzer" target="_blank">Open Source on
-                    GitHub</a></p>
+            <p>TBC Duck Analyzer v1.2 &copy; 2026</p>
             <p class="footer-sub">WoW TBC Log Analyzer | Made for the community</p>
+            <div class="landing-footer-links">
+                <a href="#" id="landingFeedbackBtn" class="landing-footer-link"><span>📝</span> Feedback</a>
+                <a href="#" id="landingGithubBtn" class="landing-footer-link"><span>⭐</span> GitHub</a>
+            </div>
         </footer>
     </div>
 
@@ -63,9 +65,24 @@
                 <a href="#" class="sidebar-back" onclick="goBackToLanding(); return false;">← Change report</a>
             </div>
             <div class="sidebar-divider"></div>
-            <div class="sidebar-section">
+            <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column;">
                 <div class="sidebar-section-title">FIGHTS</div>
-                <div id="fightsList" class="sidebar-list"></div>
+                <div id="fightsList" class="sidebar-list" style="flex: 1;"></div>
+            </div>
+
+            <!-- SIDEBAR FOOTER FOR BUTTONS -->
+            <div class="sidebar-footer">
+                <button id="btnDiscord" onclick="enviarADiscord()" class="sidebar-action-btn discord-btn" style="display:none;">
+                    <span>💬</span> Discord Webhook
+                </button>
+                <div class="sidebar-action-row">
+                    <button id="githubBtn" class="sidebar-action-btn github-btn" title="Go to GitHub repository">
+                        <span>⭐</span> GitHub
+                    </button>
+                    <button id="feedbackBtn" class="sidebar-action-btn feedback-btn" title="Report a bug or suggestion">
+                        <span>📝</span> Feedback
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -144,11 +161,7 @@
         </div>
     </div>
 
-    <!-- ==================== FIXED BUTTONS ==================== -->
-    <div id="feedbackBtn" class="feedback-btn" title="Report a bug or suggestion">📝 Feedback</div>
-    <div id="githubBtn" class="github-btn" title="Go to GitHub repository">⭐ GitHub</div>
-    <button id="btnDiscord" onclick="enviarADiscord()" class="discord-float-btn" style="display:none;">💬
-        Discord</button>
+    <!-- Buttons moved to sidebar and footer -->
 
     <!-- ==================== SCRIPTS ==================== -->
     <script src="/js/data.js"></script>
@@ -158,6 +171,14 @@
             window.open('https://github.com/patitokun03-spec/TBC-Duck-Analyzer/issues/new?labels=feedback&template=bug_report.md', '_blank');
         });
         document.getElementById('githubBtn').addEventListener('click', function () {
+            window.open('https://github.com/patitokun03-spec/TBC-Duck-Analyzer', '_blank');
+        });
+        document.getElementById('landingFeedbackBtn').addEventListener('click', function (e) {
+            e.preventDefault();
+            window.open('https://github.com/patitokun03-spec/TBC-Duck-Analyzer/issues/new?labels=feedback&template=bug_report.md', '_blank');
+        });
+        document.getElementById('landingGithubBtn').addEventListener('click', function (e) {
+            e.preventDefault();
             window.open('https://github.com/patitokun03-spec/TBC-Duck-Analyzer', '_blank');
         });
     </script>
