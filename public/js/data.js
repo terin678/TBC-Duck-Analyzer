@@ -92,8 +92,8 @@ const BUFF_DB = {
     27089: {name:"Mana Emerald",icon:"inv_misc_gem_sapphire_02",category:5},
     41031: {name:"Nethergon Energy",icon:"inv_potion_137",category:5},
     41032: {name:"Nethergon Vapor",icon:"inv_potion_131",category:5},
-    37857: {name:"Haste Potion",icon:"inv_potion_108",category:5},
-    28493: {name:"Destruction Potion",icon:"inv_potion_107",category:5},
+    28507: {name:"Haste Potion",icon:"inv_potion_108",category:5},
+    28508: {name:"Destruction Potion",icon:"inv_potion_107",category:5},
     28579: {name:"Ironshield Potion",icon:"inv_potion_133",category:5},
 };
 
@@ -266,8 +266,8 @@ const SPELL_DB = {
     28093: {name:"Lightning Speed",icon:"inv_misc_ahnqirajtrinket_04",category:3},
     28495: {name:"Super Healing Potion",icon:"inv_potion_131",category:5},
     28499: {name:"Mana Pot/Injector",icon:"inv_potion_137",category:5},
-    37857: {name:"Haste Potion",icon:"inv_potion_108",category:5},
-    28493: {name:"Destruction Potion",icon:"inv_potion_107",category:5},
+    28507: {name:"Haste Potion",icon:"inv_potion_108",category:5},
+    28508: {name:"Destruction Potion",icon:"inv_potion_107",category:5},
     28579: {name:"Ironshield Potion",icon:"inv_potion_133",category:5},
     28730: {name:"Arcane Torrent",icon:"spell_shadow_teleport",category:4},
     29166: {name:"Innervate",icon:"spell_nature_lightning",category:1},
@@ -362,8 +362,8 @@ const TIMELINE_SPELLS = {
     34477: { name: "Misdirection", icon: "ability_hunter_misdirection", color: "#ABD473", duration: 1000 },
 
     // Potions & Consumables
-    37857: { name: "Haste Potion", icon: "inv_potion_108", color: "#e83e8c" },
-    28493: { name: "Destruction Potion", icon: "inv_potion_107", color: "#e83e8c" },
+    28507: { name: "Haste Potion", icon: "inv_potion_108", color: "#e83e8c" },
+    28508: { name: "Destruction Potion", icon: "inv_potion_107", color: "#e83e8c" },
     28579: { name: "Ironshield Potion", icon: "inv_potion_133", color: "#5cb85c" },
     35476: { name: "Drums of Battle", icon: "inv_misc_drum_02", color: "#e83e8c" },
     28499: { name: "Mana Potion", icon: "inv_potion_137", color: "#5bc0de", duration: 1000 },
