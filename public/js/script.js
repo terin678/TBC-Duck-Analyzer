@@ -709,7 +709,7 @@ function renderPlayerView(data, player, fightInfo) {
     }
 
     // === BOSS ICON ===
-    let bossSlug = fightTitle.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase();
+    let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
     let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 24px; vertical-align: middle; margin-right: 8px; border-radius: 4px;" onerror="this.style.display='none'">`;
 
     return `
@@ -758,7 +758,7 @@ function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo) {
         const duration = fightInfo.endTime - fightInfo.startTime;
         fightTitle = `${fightInfo.name} — ${formatDuration(duration)}`;
     }
-    let bossSlug = fightTitle.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase();
+    let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
     let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 20px; vertical-align: middle; margin-right: 6px; border-radius: 4px;" onerror="this.style.display='none'">`;
 
     // Group players by class
@@ -884,18 +884,11 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
 
     // Deaths & Ress (compact)
     let eventsHtml = '';
-    if (data.deaths && data.deaths.length > 0) {
-        if (isOverall) {
+    if (isOverall) {
+        if (data.deaths && data.deaths.length > 0) {
             eventsHtml += `<span class="av-event av-death">✕${data.deaths.length}</span>`;
-        } else {
-            data.deaths.forEach(d => {
-                let relTime = fightInfo ? d - fightInfo.startTime : 0;
-                eventsHtml += `<span class="av-event av-death">✕${formatDuration(Math.max(0, relTime))}</span>`;
-            });
         }
-    }
-    if (data.rebirths && data.rebirths.length > 0) {
-        if (isOverall) {
+        if (data.rebirths && data.rebirths.length > 0) {
             const resByType = {};
             data.rebirths.forEach(r => {
                 if (!resByType[r.type]) resByType[r.type] = { count: 0, icon: r.icon };
@@ -904,12 +897,29 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
             Object.entries(resByType).forEach(([type, info]) => {
                 eventsHtml += `<span class="av-event av-ress">${info.icon}${info.count}</span>`;
             });
-        } else {
-            data.rebirths.forEach(r => {
-                let relTime = fightInfo ? r.timestamp - fightInfo.startTime : 0;
-                eventsHtml += `<span class="av-event av-ress">${r.icon}${formatDuration(Math.max(0, relTime))}</span>`;
+        }
+    } else {
+        // Merge deaths and rebirths chronologically
+        let allEvents = [];
+        if (data.deaths) {
+            data.deaths.forEach(d => {
+                allEvents.push({ timestamp: d, type: 'death' });
             });
         }
+        if (data.rebirths) {
+            data.rebirths.forEach(r => {
+                allEvents.push({ timestamp: r.timestamp, type: 'res', resType: r.type, icon: r.icon });
+            });
+        }
+        allEvents.sort((a, b) => a.timestamp - b.timestamp);
+        allEvents.forEach(ev => {
+            let relTime = fightInfo ? ev.timestamp - fightInfo.startTime : 0;
+            if (ev.type === 'death') {
+                eventsHtml += `<span class="av-event av-death">✕${formatDuration(Math.max(0, relTime))}</span>`;
+            } else {
+                eventsHtml += `<span class="av-event av-ress">${ev.icon}${formatDuration(Math.max(0, relTime))}</span>`;
+            }
+        });
     }
 
     let noBuffsHtml = (!buffsHtml) ? '<span class="av-no-data">No buffs</span>' : '';
