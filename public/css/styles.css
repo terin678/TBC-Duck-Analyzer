@@ -1045,7 +1045,7 @@ div.wowhead-tooltip .iconmedium {
 /* Gear Table Rows */
 .gear-table-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     padding: 2px;
     background: transparent;
     margin-bottom: 4px;
@@ -1089,9 +1089,10 @@ div.wowhead-tooltip .iconmedium {
     display: flex;
     flex-direction: column;
     flex: 1;
-    justify-content: center;
+    justify-content: flex-start;
     height: 100%;
     overflow: hidden;
+    padding-top: 1px;
 }
 
 .gear-table-details a.gear-table-name {
