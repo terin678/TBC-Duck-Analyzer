@@ -491,7 +491,7 @@ function processPlayerData(fightId, fightEvents, player) {
     let timelineEvents = {};
     let deaths = [];
     let rebirths = [];
-    let activeSeal = null;
+    let activeSealsAuras = new Set();
 
     // Phase 1: combatantinfo + buff events
     fightEvents.forEach(ev => {
@@ -602,24 +602,32 @@ function processPlayerData(fightId, fightEvents, player) {
         // Ignorar los "casteos fantasma" de procs pasivos generados por golpes a melee (Sello de Comando/Sangre)
         if (ev.type === 'cast' && (spellId === 20424 || spellId === 31898)) return;
 
-        // Track active seal updates from casts
-        if (ev.type === 'cast' && SEAL_TO_TYPE[spellId]) {
-            activeSeal = SEAL_TO_TYPE[spellId];
+        // Tracking activo de Auras (Buffs) para los Sellos
+        if (ev.type === 'applybuff' && SEAL_TO_TYPE[spellId]) {
+            activeSealsAuras.add(SEAL_TO_TYPE[spellId]);
+        }
+        if (ev.type === 'removebuff' && SEAL_TO_TYPE[spellId]) {
+            activeSealsAuras.delete(SEAL_TO_TYPE[spellId]);
         }
 
         // Dynamic Judgement mapping logic
         if (ev.type === 'cast') {
             if (spellId === 20271) {
-                if (activeSeal && SEAL_TO_JUDGEMENT[activeSeal]) {
-                    spellId = SEAL_TO_JUDGEMENT[activeSeal];
+                let chosenSeal = null;
+                // Prioridad en caso de Twisting (Command -> Blood/Martyr suelen ser los que se twistean)
+                // Se intentará consumir el sello que el paladín quería juzgar. Blood o Comando suelen ser los deseados.
+                if (activeSealsAuras.has('Blood')) chosenSeal = 'Blood';
+                else if (activeSealsAuras.has('Martyr')) chosenSeal = 'Martyr';
+                else if (activeSealsAuras.has('Command')) chosenSeal = 'Command';
+                else if (activeSealsAuras.has('Crusader')) chosenSeal = 'Crusader';
+                else if (activeSealsAuras.size > 0) chosenSeal = Array.from(activeSealsAuras)[0];
+
+                if (chosenSeal && SEAL_TO_JUDGEMENT[chosenSeal]) {
+                    spellId = SEAL_TO_JUDGEMENT[chosenSeal];
                 }
-                activeSeal = null; // consumed
+                // Nota: no limpiamos manualmente activeSealsAuras porque WCL enviará eventos 'removebuff' para el sello consumido
             } else if (JUDGEMENT_TO_SEAL_TYPE[spellId]) {
-                // If it's a specific Judgement cast, only consume if it matches activeSeal
-                const expectedSeal = JUDGEMENT_TO_SEAL_TYPE[spellId];
-                if (activeSeal === expectedSeal) {
-                    activeSeal = null; // consumed matching seal
-                }
+                // If it was already logged dynamically, nothing to clear manually either.
             }
         }
 
@@ -708,8 +716,8 @@ function renderPlayerView(data, player, fightInfo) {
     let weaponBuffHtmls = [];
 
     const usedBuffs = Object.keys(BUFF_DB).filter(id =>
-        BUFF_DB[id].category !== 3 && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
-    );
+        BUFF_DB[id].category !== 3 && BUFF_DB[id].category !== 'seal' && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
+    ).sort((a, b) => BUFF_DB[a].category - BUFF_DB[b].category);
     usedBuffs.forEach(id => {
         const count = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
         let ratioDisplay = `<span class="buff-ratio">${count}${isOverall && totalFights > 1 ? `/${totalFights}` : ''}</span>`;
@@ -949,7 +957,7 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
 
     // Compact buff icons (no names)
     const usedBuffs = Object.keys(BUFF_DB).filter(id =>
-        BUFF_DB[id].category !== 3 && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
+        BUFF_DB[id].category !== 3 && BUFF_DB[id].category !== 'seal' && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
     );
     let buffsHtml = '';
     usedBuffs.forEach(id => {
