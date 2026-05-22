@@ -306,6 +306,12 @@ function renderFightsSidebar(report) {
 function renderPlayersSidebar(allActors) {
     const playersList = document.getElementById('playersList');
 
+    // "All" option at the top
+    let html = `<div class="player-item all-player-item" data-player="__ALL__" onclick="selectPlayer('__ALL__')">
+        <span class="all-player-icon">👥</span>
+        <span class="all-player-label">All</span>
+    </div>`;
+
     // Sort by class order, then by name
     const sorted = [...allActors].sort((a, b) => {
         const ci = CLASSES.indexOf(a.subType) - CLASSES.indexOf(b.subType);
@@ -313,7 +319,7 @@ function renderPlayersSidebar(allActors) {
         return a.name.localeCompare(b.name);
     });
 
-    let html = sorted.map(player => {
+    html += sorted.map(player => {
         const spec = window.detectedSpecs[player.name] || player.subType;
         const specIcon = SPEC_ICONS[spec] || SPEC_ICONS[player.subType] || 'inv_misc_questionmark';
         const className = player.subType;
@@ -384,6 +390,16 @@ function renderMainContent() {
         );
     }
 
+    // "All" view — raid summary
+    if (playerName === '__ALL__') {
+        contentArea.innerHTML = renderAllPlayersView(fightId, fightEvents, allActors, fightInfo);
+        // Refresh Wowhead tooltips
+        if (typeof $WowheadPower !== 'undefined') {
+            $WowheadPower.refreshLinks();
+        }
+        return;
+    }
+
     // Find player actor
     const player = allActors.find(a => a.name === playerName);
     if (!player) {
@@ -396,9 +412,17 @@ function renderMainContent() {
     contentArea.innerHTML = renderPlayerView(playerData, player, fightInfo);
 
     // Fetch DPS
-    let sTime = fightInfo ? fightInfo.startTime : 0;
-    let eTime = fightInfo ? fightInfo.endTime : (report.endTime - report.startTime);
-    fetchDps(window.currentLogId, sTime, eTime, player.id);
+    if (fightInfo) {
+        fetchDps(window.currentLogId, fightInfo.startTime, fightInfo.endTime, player.id);
+    } else {
+        // Overall: compute total time range from all fights
+        const fights = report.fights;
+        if (fights && fights.length > 0) {
+            const minStart = Math.min(...fights.map(f => f.startTime));
+            const maxEnd = Math.max(...fights.map(f => f.endTime));
+            fetchDps(window.currentLogId, minStart, maxEnd, player.id);
+        }
+    }
 
     // Refresh Wowhead tooltips
     if (typeof $WowheadPower !== 'undefined') {
@@ -421,15 +445,13 @@ function processPlayerData(fightId, fightEvents, player) {
         if (ev.type === 'combatantinfo' && ev.sourceID === player.id) {
             combatantInfos.push(ev.auras ? ev.auras.map(a => a.ability) : []);
 
-            if (ev.gear) {
+            if (ev.gear && ev.gear.length > 0) {
                 if (!window.playerGearDB[fightId]) window.playerGearDB[fightId] = {};
                 window.playerGearDB[fightId][player.name] = ev.gear;
-            }
 
-            // Temp enchants
-            let enchants = [];
-            let weapons = 1;
-            if (ev.gear) {
+                // Temp enchants
+                let enchants = [];
+                let weapons = 1;
                 let offHand = ev.gear[16];
                 if (['Rogue', 'Hunter', 'Warrior', 'Shaman'].includes(player.subType)) {
                     if (offHand && offHand.id !== 0 && offHand.icon) {
@@ -454,8 +476,8 @@ function processPlayerData(fightId, fightEvents, player) {
                         }
                     }
                 });
+                tempEnchants.push({ enchants, weapons });
             }
-            tempEnchants.push({ enchants, weapons });
         }
 
         // Buff tracking from applybuff/refreshbuff/cast events
@@ -478,8 +500,17 @@ function processPlayerData(fightId, fightEvents, player) {
         if (ev.type === 'death' && (ev.targetID === player.id || (!ev.targetID && ev.sourceID === player.id))) {
             deaths.push(ev.timestamp);
         }
-        if (ev.type === 'cast' && ev.abilityGameID === 20484 && ev.targetID === player.id) {
-            rebirths.push(ev.timestamp);
+        // Combat Res (Druid Rebirth)
+        if (ev.type === 'cast' && (ev.abilityGameID === 20484 || ev.abilityGameID === 26994) && ev.targetID === player.id) {
+            rebirths.push({ timestamp: ev.timestamp, type: 'Combat Res', icon: '🌿' });
+        }
+        // Shaman Reincarnation (Ankh)
+        if (ev.type === 'cast' && ev.abilityGameID === 20608 && ev.sourceID === player.id) {
+            rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
+        }
+        // Soulstone Resurrection
+        if (ev.type === 'cast' && ev.abilityGameID === 20707 && ev.targetID === player.id) {
+            rebirths.push({ timestamp: ev.timestamp, type: 'Soulstone', icon: '💎' });
         }
 
         let playerId = ev.sourceID;
@@ -487,12 +518,17 @@ function processPlayerData(fightId, fightEvents, player) {
         if (['applybuff', 'applybuffstack', 'refreshbuff', 'removebuff'].includes(ev.type)) playerId = ev.targetID;
         if (playerId !== player.id) return;
 
-        if (ev.type === 'cast' && SPELL_DB[ev.abilityGameID] && !SPELL_DB[ev.abilityGameID].isInterrupt && !SPELL_DB[ev.abilityGameID].isMechanic && SPELL_DB[ev.abilityGameID].category !== 5 && SPELL_DB[ev.abilityGameID].category !== 3) {
+        if (ev.type === 'cast' && SPELL_DB[ev.abilityGameID] && !SPELL_DB[ev.abilityGameID].isInterrupt && !SPELL_DB[ev.abilityGameID].isMechanic && !SPELL_DB[ev.abilityGameID].isRes && SPELL_DB[ev.abilityGameID].category !== 5 && SPELL_DB[ev.abilityGameID].category !== 3) {
             if (ev.abilityGameID === 33671) return;
             if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
             spells[ev.abilityGameID].count += 1;
         }
         else if (ev.type === 'interrupt' && SPELL_DB[ev.abilityGameID]) {
+            if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
+            spells[ev.abilityGameID].count += 1;
+        }
+        // Sappers: track cast count + accumulate damage from hits
+        else if (ev.type === 'cast' && (ev.abilityGameID === 13241 || ev.abilityGameID === 30486)) {
             if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
             spells[ev.abilityGameID].count += 1;
         }
@@ -631,27 +667,44 @@ function renderPlayerView(data, player, fightInfo) {
         timelineBtnHtml = `<button class="inspect-btn timeline-btn" onclick="toggleTimelineInline('${safeName}', '${fightId}')">⏱️ Timeline</button>`;
     }
 
-    // === DEATHS & RESS ===
+    // === DEATHS & RESS (chronological) ===
     let eventsHtml = '';
-    if (data.deaths && data.deaths.length > 0) {
-        if (isOverall) {
+    if (isOverall) {
+        if (data.deaths && data.deaths.length > 0) {
             eventsHtml += `<span class="event-pill event-death" style="color:#ff5252; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(255,82,82,0.1); padding: 2px 6px; border-radius: 4px;">✕ ${data.deaths.length} Deaths</span>`;
-        } else {
-            data.deaths.forEach(d => {
-                let relTime = fightInfo ? d - fightInfo.startTime : 0;
-                eventsHtml += `<span class="event-pill event-death" style="color:#ff5252; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(255,82,82,0.1); padding: 2px 6px; border-radius: 4px;">✕ Dead at ${formatDuration(Math.max(0, relTime))}</span>`;
-            });
         }
-    }
-    if (data.rebirths && data.rebirths.length > 0) {
-        if (isOverall) {
-            eventsHtml += `<span class="event-pill event-ress" style="color:#4caf50; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(76,175,80,0.1); padding: 2px 6px; border-radius: 4px;">✚ ${data.rebirths.length} Combat Res</span>`;
-        } else {
+        if (data.rebirths && data.rebirths.length > 0) {
+            const resByType = {};
             data.rebirths.forEach(r => {
-                let relTime = fightInfo ? r - fightInfo.startTime : 0;
-                eventsHtml += `<span class="event-pill event-ress" style="color:#4caf50; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(76,175,80,0.1); padding: 2px 6px; border-radius: 4px;">✚ Combat Res at ${formatDuration(Math.max(0, relTime))}</span>`;
+                if (!resByType[r.type]) resByType[r.type] = { count: 0, icon: r.icon };
+                resByType[r.type].count++;
+            });
+            Object.entries(resByType).forEach(([type, info]) => {
+                eventsHtml += `<span class="event-pill event-ress" style="color:#4caf50; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(76,175,80,0.1); padding: 2px 6px; border-radius: 4px;">${info.icon} ${info.count} ${type}</span>`;
             });
         }
+    } else {
+        // Merge deaths and rebirths chronologically
+        let allEvents = [];
+        if (data.deaths) {
+            data.deaths.forEach(d => {
+                allEvents.push({ timestamp: d, type: 'death' });
+            });
+        }
+        if (data.rebirths) {
+            data.rebirths.forEach(r => {
+                allEvents.push({ timestamp: r.timestamp, type: 'res', resType: r.type, icon: r.icon });
+            });
+        }
+        allEvents.sort((a, b) => a.timestamp - b.timestamp);
+        allEvents.forEach(ev => {
+            let relTime = fightInfo ? ev.timestamp - fightInfo.startTime : 0;
+            if (ev.type === 'death') {
+                eventsHtml += `<span class="event-pill event-death" style="color:#ff5252; font-size: 0.8rem; font-weight: bold; background: rgba(255,82,82,0.1); padding: 2px 6px; border-radius: 4px;">✕ Dead at ${formatDuration(Math.max(0, relTime))}</span>`;
+            } else {
+                eventsHtml += `<span class="event-pill event-ress" style="color:#4caf50; font-size: 0.8rem; font-weight: bold; background: rgba(76,175,80,0.1); padding: 2px 6px; border-radius: 4px;">${ev.icon} ${ev.resType} at ${formatDuration(Math.max(0, relTime))}</span>`;
+            }
+        });
     }
 
     // === BOSS ICON ===
@@ -663,7 +716,10 @@ function renderPlayerView(data, player, fightInfo) {
             <div class="player-view-header">
                 <img src="/api/icon/${specIcon}.jpg" class="player-view-spec-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
                 <span class="player-view-name ${className}-color">${player.name}</span>
-                <span class="player-view-fight">${bossIconHtml}${fightTitle} <span id="dpsPlaceholder-${fightId}-${player.id}" style="color:#f4b400; margin-left: 15px; font-size:0.9rem;">(Loading DPS...)</span>${eventsHtml}</span>
+                <div class="player-view-right">
+                    <div class="player-view-fight-line">${bossIconHtml}${fightTitle} <span id="dpsPlaceholder-${fightId}-${player.id}" style="color:#f4b400; margin-left: 15px; font-size:0.9rem;">(Loading DPS...)</span></div>
+                    ${eventsHtml ? `<div class="player-view-events">${eventsHtml}</div>` : ''}
+                </div>
             </div>
 
             <div class="player-view-section">
@@ -684,6 +740,220 @@ function renderPlayerView(data, player, fightInfo) {
             <div id="inlineTimelineContainer" style="display:none; margin-top: 10px;"></div>
         </div>
     `;
+}
+
+// =============================================
+// ALL PLAYERS — RAID SUMMARY VIEW
+// =============================================
+
+window._allViewClassFilter = null; // null = show all, or a class name
+
+function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo) {
+    const isOverall = (fightId === 'overall');
+
+    // Fight title
+    let fightTitle = 'Overall';
+    if (fightInfo) {
+        const duration = fightInfo.endTime - fightInfo.startTime;
+        fightTitle = `${fightInfo.name} — ${formatDuration(duration)}`;
+    }
+    let bossSlug = fightTitle.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase();
+    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 20px; vertical-align: middle; margin-right: 6px; border-radius: 4px;" onerror="this.style.display='none'">`;
+
+    // Group players by class
+    const playersByClass = {};
+    CLASSES.forEach(cls => { playersByClass[cls] = []; });
+    const sorted = [...allActors].sort((a, b) => {
+        const ci = CLASSES.indexOf(a.subType) - CLASSES.indexOf(b.subType);
+        if (ci !== 0) return ci;
+        return a.name.localeCompare(b.name);
+    });
+    sorted.forEach(player => {
+        if (playersByClass[player.subType]) {
+            playersByClass[player.subType].push(player);
+        }
+    });
+
+    // Class filter chips
+    const activeFilter = window._allViewClassFilter;
+    let filterHtml = `<div class="all-view-class-filter">`;
+    filterHtml += `<button class="all-view-class-chip ${!activeFilter ? 'active' : ''}" onclick="filterAllViewByClass(null)">All</button>`;
+    CLASSES.forEach(cls => {
+        if (playersByClass[cls].length === 0) return;
+        const isActive = activeFilter === cls;
+        filterHtml += `<button class="all-view-class-chip ${cls}-chip ${isActive ? 'active' : ''}" onclick="filterAllViewByClass('${cls}')">${cls} <span class="chip-count">${playersByClass[cls].length}</span></button>`;
+    });
+    filterHtml += `</div>`;
+
+    // Render each class section
+    let sectionsHtml = '';
+    CLASSES.forEach(cls => {
+        const players = playersByClass[cls];
+        if (players.length === 0) return;
+        const isHidden = activeFilter && activeFilter !== cls;
+
+        const classIcon = SPEC_ICONS[cls] || 'inv_misc_questionmark';
+        sectionsHtml += `<div class="all-view-class-section ${isHidden ? 'hidden-section' : ''}" data-class="${cls}">`;
+        sectionsHtml += `<div class="all-view-class-header">
+            <img src="/api/icon/${classIcon}.jpg" class="all-view-class-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+            <span class="${cls}-color">${cls}</span>
+            <span class="all-view-class-count">${players.length}</span>
+        </div>`;
+
+        sectionsHtml += `<div class="all-view-players-grid">`;
+        players.forEach(player => {
+            const playerData = processPlayerData(fightId, fightEvents, player);
+            sectionsHtml += renderAllPlayerCard(playerData, player, fightInfo, isOverall);
+        });
+        sectionsHtml += `</div></div>`;
+    });
+
+    return `
+        <div class="all-view">
+            <div class="all-view-header">
+                <span class="all-view-icon">👥</span>
+                <span class="all-view-title">Raid Summary</span>
+                <span class="all-view-fight">${bossIconHtml}${fightTitle}</span>
+            </div>
+            ${filterHtml}
+            ${sectionsHtml}
+        </div>
+    `;
+}
+
+function renderAllPlayerCard(data, player, fightInfo, isOverall) {
+    const spec = data.spec;
+    const specIcon = SPEC_ICONS[spec] || SPEC_ICONS[player.subType] || 'inv_misc_questionmark';
+    const className = player.subType;
+    const fightId = window.selectedFightId;
+    const totalFights = Math.max(1, data.combatantInfos.length);
+
+    // Compact buff icons (no names)
+    const usedBuffs = Object.keys(BUFF_DB).filter(id =>
+        data.combatantInfos.some(auras => auras.includes(parseInt(id)))
+    );
+    let buffsHtml = '';
+    usedBuffs.forEach(id => {
+        const count = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
+        let ratioText = `${count}${isOverall && totalFights > 1 ? '/' + totalFights : ''}`;
+        buffsHtml += `<div class="av-buff" title="${BUFF_DB[id].name}">
+            <img src="/api/icon/${BUFF_DB[id].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+            <span class="av-ratio">${ratioText}</span>
+        </div>`;
+    });
+
+    // Weapon enchant buffs (compact)
+    const weaponBuffsAggregated = {};
+    let totalExpectedWeapons = 0;
+    data.tempEnchants.forEach(info => {
+        totalExpectedWeapons += info.weapons;
+        info.enchants.forEach(eId => {
+            if (ENCHANT_DB[eId]) {
+                let enchName = ENCHANT_DB[eId].name;
+                if (!weaponBuffsAggregated[enchName]) weaponBuffsAggregated[enchName] = { count: 0, icon: ENCHANT_DB[eId].icon || 'inv_misc_questionmark' };
+                weaponBuffsAggregated[enchName].count += 1;
+            }
+        });
+    });
+    Object.entries(weaponBuffsAggregated).forEach(([enchName, d]) => {
+        let ratioText = `${d.count}${isOverall || totalExpectedWeapons > 1 ? '/' + totalExpectedWeapons : ''}`;
+        buffsHtml += `<div class="av-buff av-weapon" title="${enchName} (Weapon)">
+            <img src="/api/icon/${d.icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+            <span class="av-ratio">${ratioText}</span>
+        </div>`;
+    });
+
+    // Compact spell/CD icons (no names)
+    let spellsHtml = '';
+    Object.entries(data.spells)
+        .filter(([spellId]) => SPELL_DB[spellId])
+        .sort(([a], [b]) => {
+            const catA = SPELL_DB[a].category || 2;
+            const catB = SPELL_DB[b].category || 2;
+            return catA - catB;
+        })
+        .forEach(([spellId, sData]) => {
+            let dmgText = sData.damage > 0 ? (sData.damage >= 1000 ? (sData.damage / 1000).toFixed(1) + 'k' : sData.damage) : '';
+            spellsHtml += `<div class="av-spell" title="${SPELL_DB[spellId].name}">
+                <img src="/api/icon/${SPELL_DB[spellId].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+                <span class="av-count">x${Math.max(1, sData.count)}</span>
+                ${dmgText ? `<span class="av-dmg">${dmgText}</span>` : ''}
+            </div>`;
+        });
+
+    // Deaths & Ress (compact)
+    let eventsHtml = '';
+    if (data.deaths && data.deaths.length > 0) {
+        if (isOverall) {
+            eventsHtml += `<span class="av-event av-death">✕${data.deaths.length}</span>`;
+        } else {
+            data.deaths.forEach(d => {
+                let relTime = fightInfo ? d - fightInfo.startTime : 0;
+                eventsHtml += `<span class="av-event av-death">✕${formatDuration(Math.max(0, relTime))}</span>`;
+            });
+        }
+    }
+    if (data.rebirths && data.rebirths.length > 0) {
+        if (isOverall) {
+            const resByType = {};
+            data.rebirths.forEach(r => {
+                if (!resByType[r.type]) resByType[r.type] = { count: 0, icon: r.icon };
+                resByType[r.type].count++;
+            });
+            Object.entries(resByType).forEach(([type, info]) => {
+                eventsHtml += `<span class="av-event av-ress">${info.icon}${info.count}</span>`;
+            });
+        } else {
+            data.rebirths.forEach(r => {
+                let relTime = fightInfo ? r.timestamp - fightInfo.startTime : 0;
+                eventsHtml += `<span class="av-event av-ress">${r.icon}${formatDuration(Math.max(0, relTime))}</span>`;
+            });
+        }
+    }
+
+    let noBuffsHtml = (!buffsHtml) ? '<span class="av-no-data">No buffs</span>' : '';
+    let noSpellsHtml = (!spellsHtml) ? '<span class="av-no-data">—</span>' : '';
+
+    return `
+        <div class="all-view-player-card">
+            <div class="av-player-header">
+                <img src="/api/icon/${specIcon}.jpg" class="av-spec-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+                <span class="av-player-name ${className}-color">${player.name}</span>
+                ${eventsHtml}
+            </div>
+            <div class="av-sections">
+                <div class="av-section">
+                    <div class="av-section-label">Consumables</div>
+                    <div class="av-buff-grid">${buffsHtml || noBuffsHtml}</div>
+                </div>
+                <div class="av-section">
+                    <div class="av-section-label">CDs</div>
+                    <div class="av-spell-grid">${spellsHtml || noSpellsHtml}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function filterAllViewByClass(className) {
+    window._allViewClassFilter = className;
+    // Update chips
+    document.querySelectorAll('.all-view-class-chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    if (!className) {
+        document.querySelector('.all-view-class-chip:first-child').classList.add('active');
+    } else {
+        document.querySelector(`.all-view-class-chip.${className}-chip`).classList.add('active');
+    }
+    // Show/hide sections
+    document.querySelectorAll('.all-view-class-section').forEach(section => {
+        if (!className || section.dataset.class === className) {
+            section.classList.remove('hidden-section');
+        } else {
+            section.classList.add('hidden-section');
+        }
+    });
 }
 
 async function fetchDps(logId, startTime, endTime, playerId) {
@@ -877,7 +1147,7 @@ function toggleGearInline(playerName, encounterId, className, specName) {
     `;
 
     const contentHtmlStr = `
-        <div class="gear-modal-content" style="display:flex; width:100%; gap:15px; padding-top: 10px; border-top: 1px solid #222;">
+        <div class="gear-modal-content" style="display:flex; width:100%; gap:15px; padding-top: 10px;">
             ${tableHtml}
         </div>
     `;
@@ -920,8 +1190,32 @@ function toggleTimelineInline(playerName, fightId) {
         html += '<div class="timeline-empty">No tracked cooldowns or procs used.</div>';
     } else {
         usedSpells.forEach(spellId => {
-            const spellInfo = TIMELINE_SPELLS[spellId];
+            let spellInfo = TIMELINE_SPELLS[spellId];
             if (!spellInfo) return;
+            spellInfo = { ...spellInfo };
+
+            if (spellId == 33370) {
+                let hasScarab = false;
+                if (fightId === 'overall') {
+                    if (window.playerGearDB) {
+                        for (let fId in window.playerGearDB) {
+                            if (window.playerGearDB[fId][playerName] && window.playerGearDB[fId][playerName].some(g => g && g.id === 28190)) {
+                                hasScarab = true;
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    const gear = (window.playerGearDB && window.playerGearDB[fightId] && window.playerGearDB[fightId][playerName]) ? window.playerGearDB[fightId][playerName] : [];
+                    hasScarab = gear.some(g => g && g.id === 28190);
+                }
+
+                if (hasScarab) {
+                    spellInfo.name = "Fate's Decree (Scarab)";
+                    spellInfo.icon = "inv_misc_orb_03";
+                }
+            }
+
             const color = spellInfo.color || '#f4b400';
             html += `
             <div class="timeline-row-container">

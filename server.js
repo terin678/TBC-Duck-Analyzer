@@ -1,9 +1,9 @@
+const path = require('path');
 if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config();
+    require('dotenv').config({ path: path.join(__dirname, '.env') });
 }
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();

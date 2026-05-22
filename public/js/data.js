@@ -89,6 +89,11 @@ const BUFF_DB = {
     16666: {name:"Demonic Rune",icon:"inv_misc_rune_04",category:5},
     27869: {name:"Dark Rune",icon:"spell_shadow_sealofkings",category:5},
     27089: {name:"Mana Emerald",icon:"inv_misc_gem_sapphire_02",category:5},
+    41031: {name:"Nethergon Energy",icon:"inv_potion_137",category:5},
+    41032: {name:"Nethergon Vapor",icon:"inv_potion_131",category:5},
+    28507: {name:"Haste Potion",icon:"inv_potion_108",category:5},
+    28508: {name:"Destruction Potion",icon:"inv_potion_107",category:5},
+    28515: {name:"Ironshield Potion",icon:"inv_potion_133",category:5},
 };
 
 const ENCHANT_DB = {
@@ -230,7 +235,7 @@ const SPELL_DB = {
     20274: {name:"Judgement of Justice",icon:"spell_holy_sealofwrath"},
     20289: {name:"Judgement of Righteousness",icon:"ability_thunderbolt"},
     20424: {name:"Judgement of Command",icon:"ability_warrior_innerrage"},
-    20484: {name:"Rebirth",icon:"spell_nature_reincarnation",category:1},
+    20484: {name:"Rebirth",icon:"spell_nature_reincarnation",category:1,isRes:true},
     31804: {name:"Judgement of the Martyr",icon:"spell_holy_sealofblood"},
     31898: {name:"Judgement of Blood",icon:"spell_holy_auramastery"},
     20549: {name:"War Stomp",icon:"ability_warstomp",category:4},
@@ -265,6 +270,10 @@ const SPELL_DB = {
     28515: {name:"Ironshield Potion",icon:"inv_potion_133",category:5},
     28730: {name:"Arcane Torrent",icon:"spell_shadow_teleport",category:4},
     29166: {name:"Innervate",icon:"spell_nature_lightning",category:1},
+    41031: {name:"Nethergon Energy",icon:"inv_potion_137",category:5},
+    41032: {name:"Nethergon Vapor",icon:"inv_potion_131",category:5},
+    34653: {name:"LC Prayerbook",icon:"inv_relics_libramoftruth",category:3},
+    33702: {name:"Blood Fury",icon:"racial_orc_berserkerstrength",category:3},
     29704: {name:"Shield Bash",icon:"ability_warrior_shieldbash",isInterrupt:true,category:2},
     29858: {name:"Soulshatter",icon:"spell_arcane_arcane01",category:2},
     30449: {name:"Spellsteal",icon:"spell_arcane_arcane02",category:2},
@@ -292,6 +301,9 @@ const SPELL_DB = {
     43204: {name:"Healthstone",icon:"inv_stone_04",category:5},
     45438: {name:"Ice Block",icon:"spell_frost_frost",category:1},
     51582: {name:"Rocket Boots",icon:"inv_gizmo_rocketboot_01",category:3},
+    20608: {name:"Reincarnation",icon:"spell_nature_reincarnation",category:1,isRes:true},
+    20707: {name:"Soulstone Res",icon:"spell_shadow_soulgem",category:1,isRes:true},
+    26994: {name:"Rebirth",icon:"spell_nature_reincarnation",category:1,isRes:true},
 };
 
 const OPTIMAL_ENCHANTS = {
@@ -327,20 +339,24 @@ const OPTIMAL_ENCHANTS = {
 const TIMELINE_SPELLS = {
     // Trinket Procs & Actives
     34774: { name: "Call of the Falcon (DST)", icon: "inv_misc_bone_elfskull_01", color: "#8a2be2" }, // Dragonspine Trophy
-    33649: { name: "Rage of the Unraveller", icon: "inv_misc_hourglass_02", color: "#8a2be2" }, // Hourglass
-    33702: { name: "Violent Odds (Abacus)", icon: "inv_misc_enggizmos_18", color: "#8a2be2" }, // Abacus
+    33649: { name: "Hourglass", icon: "inv_misc_hourglass_02", color: "#8a2be2" }, // Hourglass of the Unraveller
+    33702: { name: "Blood Fury", icon: "racial_orc_berserkerstrength", color: "#d9534f" }, // Blood Fury (SP caster version)
     33370: { name: "Quagmirran's Eye", icon: "inv_misc_eye_01", color: "#179299" }, // Fungal Frenzy
     35163: { name: "Icon of the Silver Crescent", icon: "inv_trinket_naxxramas06", color: "#179299" },
     35166: { name: "Bloodlust Brooch", icon: "inv_trinket_naxxramas03", color: "#d9534f" },
     35084: { name: "Fate's Decree (Scarab)", icon: "inv_misc_orb_03", color: "#179299" },
     23723: { name: "Mind Quickening", icon: "spell_nature_wispheal", color: "#179299" },
+    34477: { name: "Misdirection", icon: "ability_hunter_misdirection", color: "#ABD473", duration: 1000 },
 
     // Potions & Consumables
     28507: { name: "Haste Potion", icon: "inv_potion_108", color: "#e83e8c" },
     28508: { name: "Destruction Potion", icon: "inv_potion_107", color: "#e83e8c" },
+    28515: { name: "Ironshield Potion", icon: "inv_potion_133", color: "#5cb85c" },
     35476: { name: "Drums of Battle", icon: "inv_misc_drum_02", color: "#e83e8c" },
     28499: { name: "Mana Potion", icon: "inv_potion_137", color: "#5bc0de", duration: 1000 },
     17531: { name: "Mana Potion", icon: "inv_potion_137", color: "#5bc0de", duration: 1000 },
+    41031: { name: "Nethergon Energy", icon: "inv_potion_137", color: "#5bc0de", duration: 1000 },
+    41032: { name: "Nethergon Vapor", icon: "inv_potion_131", color: "#e83e8c", duration: 1000 },
     27089: { name: "Mana Emerald", icon: "inv_misc_gem_sapphire_02", color: "#5bc0de", duration: 1000 },
     11932: { name: "Mana Emerald", icon: "inv_misc_gem_sapphire_02", color: "#5bc0de", duration: 1000 },
     33066: { name: "Mana Emerald", icon: "inv_misc_gem_sapphire_02", color: "#5bc0de", duration: 1000 },
@@ -348,6 +364,7 @@ const TIMELINE_SPELLS = {
     27869: { name: "Dark Rune", icon: "spell_shadow_sealofkings", color: "#8a2be2", duration: 1000 },
     13241: { name: "Goblin Sapper", icon: "spell_fire_selfdestruct", color: "#ff4500", duration: 1000 },
     30486: { name: "Super Sapper", icon: "spell_fire_selfdestruct", color: "#ff4500", duration: 1000 },
+    34653: { name: "LC Prayerbook", icon: "inv_relics_libramoftruth", color: "#fff" },
 
     // Class CDs
     34433: { name: "Shadowfiend", icon: "spell_shadow_shadowfiend", color: "#fff", duration: 15000 },
@@ -357,6 +374,7 @@ const TIMELINE_SPELLS = {
     2894: { name: "Fire Elemental", icon: "spell_fire_elemental_totem", color: "#ff4500", duration: 120000 },
     12472: { name: "Icy Veins", icon: "spell_frost_coldhearted", color: "#5bc0de" },
     12042: { name: "Arcane Power", icon: "spell_nature_lightning", color: "#5bc0de" },
+    16166: { name: "Elemental Mastery", icon: "spell_nature_wispheal", color: "#5bc0de", duration: 1000 },
     13750: { name: "Adrenaline Rush", icon: "spell_shadow_shadowworddominate", color: "#f0ad4e" },
     13877: { name: "Blade Flurry", icon: "ability_warrior_punishingblow", color: "#f0ad4e" },
     19574: { name: "Bestial Wrath", icon: "ability_druid_ferociousbite", color: "#5cb85c" },
@@ -364,6 +382,7 @@ const TIMELINE_SPELLS = {
     1719: { name: "Recklessness", icon: "ability_criticalstrike", color: "#c9302c" },
     3045: { name: "Rapid Fire", icon: "ability_hunter_runningshot", color: "#5cb85c" },
     10060: { name: "Power Infusion", icon: "spell_holy_powerinfusion", color: "#fff" },
+    29166: { name: "Innervate", icon: "spell_nature_lightning", color: "#5bc0de" },
     31884: { name: "Avenging Wrath", icon: "spell_holy_avenginwrath", color: "#f4b400" },
     20572: { name: "Blood Fury", icon: "racial_orc_berserkerstrength", color: "#d9534f" },
     26296: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f" },

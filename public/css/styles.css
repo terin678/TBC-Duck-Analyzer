@@ -423,6 +423,7 @@ h1::after {
     background: transparent;
     scrollbar-width: thin;
     scrollbar-color: #2a2a2a transparent;
+    scrollbar-gutter: stable;
 }
 
 .main-content::-webkit-scrollbar {
@@ -472,7 +473,7 @@ h1::after {
 
 .player-view-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 14px;
     padding: 16px 20px;
     background: #151519;
@@ -487,6 +488,8 @@ h1::after {
     border-radius: 6px;
     border: 2px solid #333;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
+    margin-top: 2px;
 }
 
 .player-view-name {
@@ -494,13 +497,31 @@ h1::after {
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 1px;
+    flex-shrink: 0;
+    margin-top: 2px;
 }
 
-.player-view-fight {
+.player-view-right {
+    margin-left: auto;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.player-view-fight-line {
     font-size: 0.82rem;
     color: #666;
-    margin-left: auto;
     font-weight: 600;
+    white-space: nowrap;
+}
+
+.player-view-events {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-end;
 }
 
 .player-view-section {
@@ -1612,6 +1633,316 @@ div.wowhead-tooltip .iconmedium {
 
     /* Discord Modal Mobile */
     .discord-modal { width: 95vw; }
+}
+
+/* =============================================
+   ALL PLAYERS — RAID SUMMARY VIEW
+   ============================================= */
+
+.all-view {
+    max-width: 1100px;
+    margin: 0 auto;
+    animation: fadeIn 0.3s ease;
+}
+
+.all-view-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #151519;
+    border: 1px solid #1e1e25;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.all-view-icon {
+    font-size: 1.4rem;
+}
+
+.all-view-title {
+    font-size: 1.3rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #f4b400;
+}
+
+.all-view-fight {
+    font-size: 0.8rem;
+    color: #666;
+    margin-left: auto;
+    font-weight: 600;
+}
+
+/* Class Filter Chips */
+.all-view-class-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 18px;
+    padding: 10px 14px;
+    background: #0c0c0f;
+    border: 1px solid #1a1a1f;
+    border-radius: 8px;
+}
+
+.all-view-class-chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid #333;
+    background: #111;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.all-view-class-chip:hover {
+    background: #1a1a1a;
+    border-color: #555;
+    color: #ccc;
+}
+
+.all-view-class-chip.active {
+    background: rgba(244, 180, 0, 0.12);
+    border-color: #f4b400;
+    color: #f4b400;
+}
+
+.chip-count {
+    font-size: 0.65rem;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 5px;
+    border-radius: 8px;
+    color: #777;
+}
+
+.all-view-class-chip.active .chip-count {
+    background: rgba(244, 180, 0, 0.15);
+    color: #f4b400;
+}
+
+/* Class-colored chip styles */
+.Warrior-chip.active { background: rgba(199,156,110,0.12); border-color: #C79C6E; color: #C79C6E; }
+.Warrior-chip.active .chip-count { background: rgba(199,156,110,0.15); color: #C79C6E; }
+.Paladin-chip.active { background: rgba(245,140,186,0.12); border-color: #F58CBA; color: #F58CBA; }
+.Paladin-chip.active .chip-count { background: rgba(245,140,186,0.15); color: #F58CBA; }
+.Hunter-chip.active { background: rgba(171,212,115,0.12); border-color: #ABD473; color: #ABD473; }
+.Hunter-chip.active .chip-count { background: rgba(171,212,115,0.15); color: #ABD473; }
+.Rogue-chip.active { background: rgba(255,245,105,0.12); border-color: #FFF569; color: #FFF569; }
+.Rogue-chip.active .chip-count { background: rgba(255,245,105,0.15); color: #FFF569; }
+.Priest-chip.active { background: rgba(255,255,255,0.12); border-color: #FFFFFF; color: #FFFFFF; }
+.Priest-chip.active .chip-count { background: rgba(255,255,255,0.15); color: #FFFFFF; }
+.Shaman-chip.active { background: rgba(0,112,222,0.12); border-color: #0070DE; color: #0070DE; }
+.Shaman-chip.active .chip-count { background: rgba(0,112,222,0.15); color: #0070DE; }
+.Mage-chip.active { background: rgba(105,204,240,0.12); border-color: #69CCF0; color: #69CCF0; }
+.Mage-chip.active .chip-count { background: rgba(105,204,240,0.15); color: #69CCF0; }
+.Warlock-chip.active { background: rgba(148,130,201,0.12); border-color: #9482C9; color: #9482C9; }
+.Warlock-chip.active .chip-count { background: rgba(148,130,201,0.15); color: #9482C9; }
+.Druid-chip.active { background: rgba(255,125,10,0.12); border-color: #FF7D0A; color: #FF7D0A; }
+.Druid-chip.active .chip-count { background: rgba(255,125,10,0.15); color: #FF7D0A; }
+
+/* Class Sections */
+.all-view-class-section {
+    margin-bottom: 18px;
+    animation: fadeIn 0.2s ease;
+}
+
+.all-view-class-section.hidden-section {
+    display: none;
+}
+
+.all-view-class-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #0e0e12;
+    border: 1px solid #1a1a1f;
+    border-radius: 6px 6px 0 0;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.all-view-class-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+.all-view-class-count {
+    font-size: 0.65rem;
+    color: #555;
+    margin-left: 4px;
+    font-weight: 600;
+}
+
+.all-view-players-grid {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #1a1a1f;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+}
+
+/* Player Cards */
+.all-view-player-card {
+    padding: 8px 12px;
+    background: #0a0a0d;
+    border-bottom: 1px solid #131318;
+    transition: background 0.15s;
+}
+
+.all-view-player-card:last-child {
+    border-bottom: none;
+}
+
+.all-view-player-card:hover {
+    background: #0f0f14;
+}
+
+.av-player-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+}
+
+.av-spec-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.av-player-name {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.av-event {
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 4px;
+}
+
+.av-death {
+    color: #ff5252;
+    background: rgba(255, 82, 82, 0.1);
+}
+
+.av-ress {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+/* Sections inside player card */
+.av-sections {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.av-section {
+    flex: 1;
+    min-width: 120px;
+}
+
+.av-section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+}
+
+/* Buff Grid (icon-only) */
+.av-buff-grid,
+.av-spell-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    align-items: center;
+}
+
+.av-buff,
+.av-spell {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    position: relative;
+}
+
+.av-buff img,
+.av-spell img {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    border: 1px solid #333;
+    display: block;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.av-buff.av-weapon img {
+    border-color: #f4b400;
+    box-shadow: 0 0 4px rgba(244, 180, 0, 0.5);
+}
+
+.av-ratio,
+.av-count {
+    font-size: 0.6rem;
+    font-weight: bold;
+    color: #f4b400;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.av-dmg {
+    font-size: 0.55rem;
+    color: #ff5252;
+    font-weight: bold;
+}
+
+.av-no-data {
+    font-size: 0.65rem;
+    color: #444;
+    font-style: italic;
+}
+
+/* "All" player item in sidebar */
+.all-player-item {
+    border-bottom: 1px solid #1a1a1f;
+    gap: 8px;
+}
+
+.all-player-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.all-player-label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #f4b400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 /* === TIMELINE === */
