@@ -458,32 +458,6 @@ const SEAL_TO_TYPE = {
     31801: 'Vengeance'
 };
 
-const SEAL_TO_JUDGEMENT = {
-    'Righteousness': 20289,
-    'Crusader': 21183,
-    'Justice': 20184,
-    'Light': 20185,
-    'Wisdom': 20186,
-    'Command': 20424,
-    'Blood': 31898,
-    'Martyr': 31804,
-    'Vengeance': 31804
-};
-
-const JUDGEMENT_TO_SEAL_TYPE = {
-    20289: 'Righteousness',
-    21183: 'Crusader',
-    20273: 'Crusader',
-    20184: 'Justice',
-    20274: 'Justice',
-    20185: 'Light',
-    20186: 'Wisdom',
-    20272: 'Wisdom',
-    20424: 'Command',
-    31898: 'Blood',
-    31804: 'Martyr'
-};
-
 function processPlayerData(fightId, fightEvents, player) {
     let combatantInfos = [];
     let tempEnchants = [];
@@ -491,7 +465,6 @@ function processPlayerData(fightId, fightEvents, player) {
     let timelineEvents = {};
     let deaths = [];
     let rebirths = [];
-    let activeSealsAuras = new Set();
 
     // Phase 1: combatantinfo + buff events
     fightEvents.forEach(ev => {
@@ -601,35 +574,6 @@ function processPlayerData(fightId, fightEvents, player) {
 
         // Ignorar los "casteos fantasma" de procs pasivos generados por golpes a melee (Sello de Comando/Sangre)
         if (ev.type === 'cast' && (spellId === 20424 || spellId === 31898)) return;
-
-        // Tracking activo de Auras (Buffs) para los Sellos
-        if (ev.type === 'applybuff' && SEAL_TO_TYPE[spellId]) {
-            activeSealsAuras.add(SEAL_TO_TYPE[spellId]);
-        }
-        if (ev.type === 'removebuff' && SEAL_TO_TYPE[spellId]) {
-            activeSealsAuras.delete(SEAL_TO_TYPE[spellId]);
-        }
-
-        // Dynamic Judgement mapping logic
-        if (ev.type === 'cast') {
-            if (spellId === 20271) {
-                let chosenSeal = null;
-                // Prioridad en caso de Twisting (Command -> Blood/Martyr suelen ser los que se twistean)
-                // Se intentará consumir el sello que el paladín quería juzgar. Blood o Comando suelen ser los deseados.
-                if (activeSealsAuras.has('Blood')) chosenSeal = 'Blood';
-                else if (activeSealsAuras.has('Martyr')) chosenSeal = 'Martyr';
-                else if (activeSealsAuras.has('Command')) chosenSeal = 'Command';
-                else if (activeSealsAuras.has('Crusader')) chosenSeal = 'Crusader';
-                else if (activeSealsAuras.size > 0) chosenSeal = Array.from(activeSealsAuras)[0];
-
-                if (chosenSeal && SEAL_TO_JUDGEMENT[chosenSeal]) {
-                    spellId = SEAL_TO_JUDGEMENT[chosenSeal];
-                }
-                // Nota: no limpiamos manualmente activeSealsAuras porque WCL enviará eventos 'removebuff' para el sello consumido
-            } else if (JUDGEMENT_TO_SEAL_TYPE[spellId]) {
-                // If it was already logged dynamically, nothing to clear manually either.
-            }
-        }
 
         if (ev.type === 'cast' && SPELL_DB[spellId] && !SEAL_TO_TYPE[spellId] && !SPELL_DB[spellId].isInterrupt && !SPELL_DB[spellId].isMechanic && !SPELL_DB[spellId].isRes && SPELL_DB[spellId].category !== 5 && SPELL_DB[spellId].category !== 3) {
             if (spellId === 33671) return;
