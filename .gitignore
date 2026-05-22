@@ -40,3 +40,7 @@ build/
 credentials.json
 # Script de pruebas local
 test.js
+# Implementación local
+implementation_plan.md
+# Plan de implementación
+plan.md

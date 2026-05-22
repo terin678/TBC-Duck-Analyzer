@@ -1,8 +1,21 @@
-window.missingAuras = new Set();
-window.missingSpells = new Set();
-window.activeClassFilters = null;
+// =============================================
+// TBC DUCK ANALYZER — Main Application Logic
+// =============================================
 
-// Alias mapping for WCL spec names that don't match our SPEC_ICONS keys
+// === GLOBAL STATE ===
+window.currentReport = null;
+window.currentEvents = null;
+window.currentActors = null;
+window.currentLogId = null;
+window.currentLogTitle = '';
+window.selectedFightId = null;
+window.selectedPlayerName = null;
+window.detectedSpecs = {};
+window.playerGearDB = {};
+window.playerEnchantsForConsole = {};
+
+// === SPEC DETECTION ===
+
 const SPEC_ALIASES = {
     "Druid-Guardian": "Druid-Feral",
     "Druid-Feral Combat": "Druid-Feral",
@@ -10,48 +23,6 @@ const SPEC_ALIASES = {
     "Paladin-Justicar": "Paladin-Protection",
 };
 
-function detectPlayerSpec(player, combatantInfo) {
-    if (!player) return "Unknown";
-
-    // WCL provides spec via player.icon as "class-spec" (e.g. "paladin-protection")
-    // Trust WCL first. Only fall back to stat inference when WCL gives just the class.
-    if (player.icon) {
-        const iconStr = player.icon.toLowerCase();
-
-        // Check if it looks like a "class-spec" or "class" string
-        if (iconStr.includes('-') || CLASSES.map(c => c.toLowerCase()).includes(iconStr)) {
-            const parts = iconStr.split('-');
-
-            if (parts.length >= 2) {
-                // "paladin-protection" -> "Paladin-Protection"
-                const normalized = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('-');
-                // Check aliases first (e.g. "Paladin-Justicar" -> "Paladin-Protection")
-                if (SPEC_ALIASES[normalized]) return SPEC_ALIASES[normalized];
-                // Direct match in our spec icons
-                if (SPEC_ICONS[normalized]) return normalized;
-            } else if (parts.length === 1) {
-                // WCL gave just the class name without spec (e.g. "Paladin")
-                // Attempt stat-based inference if we have combatantInfo
-                const normalized = iconStr.charAt(0).toUpperCase() + iconStr.slice(1);
-                if (CLASSES.includes(normalized)) {
-                    return inferSpecFromStats(normalized, combatantInfo);
-                }
-            }
-        }
-
-        // icon is a raw WoW icon name (not a spec string) - return as-is
-        return player.icon;
-    }
-
-    // Fallback: WCL gave no icon at all
-    if (player.subType && CLASSES.includes(player.subType)) {
-        return inferSpecFromStats(player.subType, combatantInfo);
-    }
-    return player.subType || "Unknown";
-}
-
-
-// Sensible raid defaults per class when WCL doesn't provide a spec AND we have no gear stats
 const CLASS_SPEC_DEFAULTS = {
     "Warrior": "Warrior-Fury",
     "Paladin": "Paladin-Holy",
@@ -64,61 +35,69 @@ const CLASS_SPEC_DEFAULTS = {
     "Druid": "Druid-Balance",
 };
 
-// Fallback: infer spec from combatantInfo stats when WCL doesn't provide a spec.
-// NOTE: WCL reports block/dodge/crit as PERCENTAGES (0-100), armor as raw value.
+function detectPlayerSpec(player, combatantInfo) {
+    if (!player) return "Unknown";
+    if (player.icon) {
+        const iconStr = player.icon.toLowerCase();
+        if (iconStr.includes('-') || CLASSES.map(c => c.toLowerCase()).includes(iconStr)) {
+            const parts = iconStr.split('-');
+            if (parts.length >= 2) {
+                const normalized = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('-');
+                if (SPEC_ALIASES[normalized]) return SPEC_ALIASES[normalized];
+                if (SPEC_ICONS[normalized]) return normalized;
+            } else if (parts.length === 1) {
+                const normalized = iconStr.charAt(0).toUpperCase() + iconStr.slice(1);
+                if (CLASSES.includes(normalized)) {
+                    return inferSpecFromStats(normalized, combatantInfo);
+                }
+            }
+        }
+        return player.icon;
+    }
+    if (player.subType && CLASSES.includes(player.subType)) {
+        return inferSpecFromStats(player.subType, combatantInfo);
+    }
+    return player.subType || "Unknown";
+}
+
 function inferSpecFromStats(className, info) {
     if (!info) return CLASS_SPEC_DEFAULTS[className] || className;
-
-    const agi       = info.agility   || 0;
-    const intel     = info.intellect || 0;
-    const str       = info.strength  || 0;
-    const armor     = info.armor     || 0;
-    const hitSpell  = info.hitSpell  || 0;
-    const hitMelee  = info.hitMelee  || 0;
+    const agi = info.agility || 0;
+    const intel = info.intellect || 0;
+    const str = info.strength || 0;
+    const armor = info.armor || 0;
+    const hitSpell = info.hitSpell || 0;
+    const hitMelee = info.hitMelee || 0;
     const critSpell = info.critSpell || 0;
-    const block     = info.block     || 0;  // % block chance
-    const dodge     = info.dodge     || 0;  // % dodge chance
+    const block = info.block || 0;
+    const dodge = info.dodge || 0;
 
     switch (className) {
         case "Paladin":
-            // Prot: plate + shield = armor > 12000, or block% > 15
             if (armor > 12000 || block > 15) return "Paladin-Protection";
-            // Ret: str dominant over int, has melee hit
             if (str > intel && str > 250 && hitMelee > 0) return "Paladin-Retribution";
             return "Paladin-Holy";
-
         case "Warrior":
-            // Prot: shield equipped = armor > 12000, or block% > 15
             if (armor > 12000 || block > 15) return "Warrior-Protection";
             return "Warrior-Fury";
-
         case "Druid":
             if ((agi > 300 || armor > 15000) && hitMelee > hitSpell) return "Druid-Feral";
             if (hitSpell > 50 && critSpell > 50) return "Druid-Balance";
             if (intel > 300 && hitSpell <= 50 && hitMelee <= 30) return "Druid-Restoration";
             return agi > intel ? "Druid-Feral" : "Druid-Balance";
-
         case "Priest":
             if (hitSpell > 50 && critSpell > 50) return "Priest-Shadow";
             return "Priest-Holy";
-
         case "Shaman":
             if (agi > 300 && hitMelee > 30) return "Shaman-Enhancement";
             if (hitSpell > 50 && critSpell > 50) return "Shaman-Elemental";
             return "Shaman-Restoration";
-
         default:
             return CLASS_SPEC_DEFAULTS[className] || className;
     }
 }
 
-
-function showEncounter(id) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.encounter-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(`tab-${id}`).classList.add('active');
-    document.getElementById(`enc-${id}`).classList.add('active');
-}
+// === UTILITY ===
 
 function parseLogId(input) {
     if (!input) return "";
@@ -129,279 +108,58 @@ function parseLogId(input) {
     return val;
 }
 
-
-
-function buildEncounterHTML(fightId, events, allActors) {
-    let classGroups = {};
-    CLASSES.forEach(c => classGroups[c] = {});
-
-    let playerCombatantInfos = {};
-    let playerTempEnchants = {};
-
-    events.forEach(ev => {
-        if (ev.type === 'combatantinfo') {
-            if (!playerCombatantInfos[ev.sourceID]) playerCombatantInfos[ev.sourceID] = [];
-            playerCombatantInfos[ev.sourceID].push(ev.auras ? ev.auras.map(a => a.ability) : []);
-
-            const p = allActors.find(x => x.id === ev.sourceID);
-            if (!playerTempEnchants[ev.sourceID]) playerTempEnchants[ev.sourceID] = [];
-
-            if (p && ev.gear) {
-                if (!window.playerGearDB) window.playerGearDB = {};
-                if (!window.playerGearDB[fightId]) window.playerGearDB[fightId] = {};
-                window.playerGearDB[fightId][p.name] = ev.gear;
-            }
-
-            // --- DETECCIÓN DE ESPECIALIZACIÓN ---
-            // Pass ev (combatantInfo event) so stat inference can use gear stats when WCL has no spec
-            let playerSpec = detectPlayerSpec(p, ev);
-
-            if (p && p.subType === 'Paladin') {
-                console.log(`[SPEC DEBUG] Paladin: ${p.name} | icon: "${p.icon}" | detected: "${playerSpec}"`);
-            }
-
-            if (p) window.detectedSpecs[p.name] = playerSpec;
-
-            let enchants = [];
-            let weapons = 1;
-
-            if (ev.gear && p) {
-                let offHand = ev.gear[16];
-                if (['Rogue', 'Hunter', 'Warrior', 'Shaman'].includes(p.subType)) {
-                    if (offHand && offHand.id !== 0 && offHand.icon) {
-                        let iconName = offHand.icon.toLowerCase();
-                        let isWeapon = iconName.includes('sword') || iconName.includes('axe') ||
-                            iconName.includes('mace') || iconName.includes('hammer') ||
-                            iconName.includes('dagger') || iconName.includes('fist') ||
-                            iconName.includes('blade') || iconName.includes('knife') ||
-                            iconName.includes('weapon');
-                        if (isWeapon) weapons = 2;
-                    }
-                }
-
-                [15, 16].forEach(slotIdx => {
-                    let item = ev.gear[slotIdx];
-                    if (item && item.id !== 0) {
-                        let rawEnchant = item.temporaryEnchant || item.tempEnchant;
-                        if (rawEnchant) {
-                            if (!window.playerEnchantsForConsole[p.name]) window.playerEnchantsForConsole[p.name] = new Set();
-                            window.playerEnchantsForConsole[p.name].add(rawEnchant);
-                        }
-
-                        if (rawEnchant && ENCHANT_DB[rawEnchant]) {
-                            enchants.push(rawEnchant);
-                        }
-                    }
-                });
-            }
-            playerTempEnchants[ev.sourceID].push({ enchants: enchants, weapons: weapons });
-        } else if (['applybuff', 'applybuffstack', 'refreshbuff', 'cast'].includes(ev.type)) {
-            if (typeof BUFF_DB !== 'undefined' && BUFF_DB[ev.abilityGameID]) {
-                const srcId = ev.sourceID;
-                if (!playerCombatantInfos[srcId]) playerCombatantInfos[srcId] = [[]];
-                else if (playerCombatantInfos[srcId].length === 0) playerCombatantInfos[srcId].push([]);
-
-                if (!playerCombatantInfos[srcId][playerCombatantInfos[srcId].length - 1].includes(ev.abilityGameID)) {
-                    playerCombatantInfos[srcId][playerCombatantInfos[srcId].length - 1].push(ev.abilityGameID);
-                }
-            }
-        }
-    });
-
-    events.forEach(ev => {
-        let playerId = ev.sourceID;
-        if (ev.type === 'damage' && ev.abilityGameID === 33671) playerId = ev.targetID;
-
-        const p = allActors.find(x => x.id === playerId);
-        if (!p) return;
-
-        const subType = p.subType;
-        if (!classGroups[subType]) return;
-
-        let finalSpec = window.detectedSpecs[p.name] || detectPlayerSpec(p) || p.subType;
-        if (!classGroups[subType][p.name]) classGroups[subType][p.name] = { spells: {}, specIcon: finalSpec, playerRef: p };
-
-        if (ev.type === 'cast') {
-            if (!SPELL_DB[ev.abilityGameID] && ev.abilityGameID !== 33671) {
-                window.missingSpells.add(`${ev.abilityGameID}`);
-            }
-            if (ev.abilityGameID === 33671) return;
-        }
-
-        if (ev.type === 'cast' && SPELL_DB[ev.abilityGameID] && !SPELL_DB[ev.abilityGameID].isInterrupt && !SPELL_DB[ev.abilityGameID].isMechanic) {
-            if (!classGroups[subType][p.name].spells[ev.abilityGameID]) classGroups[subType][p.name].spells[ev.abilityGameID] = { count: 0, damage: 0 };
-            classGroups[subType][p.name].spells[ev.abilityGameID].count += 1;
-        }
-        else if (ev.type === 'interrupt' && SPELL_DB[ev.abilityGameID]) {
-            // Solo mostrar interrupts que realmente interrumpen casteos (tipo 'interrupt')
-            const interruptSpellId = ev.abilityGameID;
-            if (!classGroups[subType][p.name].spells[interruptSpellId]) classGroups[subType][p.name].spells[interruptSpellId] = { count: 0, damage: 0 };
-            classGroups[subType][p.name].spells[interruptSpellId].count += 1;
-        }
-        // SUMAMOS EL DAÑO DEL SAPPER DE CLASSIC Y TBC
-        else if (ev.type === 'damage' && (ev.abilityGameID === 13241 || ev.abilityGameID === 30486 || ev.abilityGameID === 33671)) {
-            const itemSpellId = ev.abilityGameID;
-            if (!classGroups[subType][p.name].spells[itemSpellId]) classGroups[subType][p.name].spells[itemSpellId] = { count: 0, damage: 0 };
-            classGroups[subType][p.name].spells[itemSpellId].damage += (ev.amount || 0) + (ev.absorbed || 0);
-            if (ev.abilityGameID === 33671) classGroups[subType][p.name].spells[itemSpellId].count += 1;
-        }
-    });
-
-    let mechSidebarHTML = "";
-    if (fightId !== 'overall') {
-        let shatterLeaderboard = [];
-        CLASSES.forEach(cls => {
-            Object.entries(classGroups[cls]).forEach(([name, data]) => {
-                if (data.spells[33671] && data.spells[33671].damage > 0) {
-                    shatterLeaderboard.push({ name: name, cls: cls, damage: data.spells[33671].damage });
-                }
-            });
-        });
-        shatterLeaderboard.sort((a, b) => b.damage - a.damage);
-        if (shatterLeaderboard.length > 0) {
-            let listHTML = shatterLeaderboard.map((p, index) => {
-                let medal = index === 0 ? "🥇" : (index === 1 ? "🥈" : (index === 2 ? "🥉" : ""));
-                return `<div class="mech-row"><span><span class="medal">${medal}</span><span class="${p.cls}-color font-bold">${p.name}</span></span><span class="spell-damage">${p.damage >= 1000 ? (p.damage / 1000).toFixed(1) + 'k' : p.damage}</span></div>`;
-            }).join('');
-            mechSidebarHTML = `<div class="mechanics-sidebar"><div class="mech-box"><div class="mech-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'flex' : 'none'; this.innerHTML = this.nextElementSibling.style.display === 'none' ? '▶ 🚨 SHATTER DMG' : '▼ 🚨 SHATTER DMG';" style="cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">▼ 🚨 SHATTER DMG</div><div class="mech-body">${listHTML}</div></div></div>`;
-        }
-    }
-
-    let hasEvents = Object.values(classGroups).some(cls => Object.keys(cls).length > 0);
-
-    let classFiltersHTML = "";
-    if (hasEvents) {
-        classFiltersHTML = `<div class="class-filters-container">`;
-        CLASSES.forEach(cls => {
-            if (Object.keys(classGroups[cls]).length > 0) {
-                let iconName = SPEC_ICONS[cls] || 'inv_misc_questionmark';
-                if (cls === 'Paladin') iconName = 'spell_holy_auraoflight';
-                if (cls === 'Warlock') iconName = 'spell_shadow_rainoffire';
-                if (cls === 'Mage') iconName = 'spell_nature_wispsplode';
-
-                let isActive = window.activeClassFilters === null || window.activeClassFilters.has(cls);
-                let btnActiveCls = isActive ? "active" : "";
-
-                classFiltersHTML += `<button class="class-filter-btn ${btnActiveCls}" data-class="${cls}" onclick="toggleClassVisibility('${cls}', this)">
-                    <img src="/api/icon/${iconName}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'" class="filter-icon">
-                    <span class="${cls}-color">${cls}</span>
-                </button>`;
-            }
-        });
-        classFiltersHTML += `</div>`;
-    }
-
-    let html = `${classFiltersHTML}<div class="boss-content-inner"><div class="class-rows-container">`;
-
-    if (!hasEvents) {
-        html += `<p style="text-align:center; color:#888; padding: 20px;">No tracked abilities used.</p>`;
-    } else {
-        html += CLASSES.map(cls => {
-            const playersInClass = classGroups[cls];
-            if (Object.keys(playersInClass).length === 0) return "";
-
-            const playersSorted = Object.entries(playersInClass).sort((a, b) => {
-                let specA = a[1].specIcon || "A";
-                let specB = b[1].specIcon || "B";
-                return specA.localeCompare(specB);
-            });
-
-            let isActive = window.activeClassFilters === null || window.activeClassFilters.has(cls);
-            return `
-            <div class="class-row ${cls}-row" style="display: ${isActive ? 'flex' : 'none'};">
-                <div class="class-header ${cls}-header">${cls}</div>
-                <div class="class-players">
-                    ${playersSorted.map(([name, data]) => {
-                let htmlBuffs = "";
-                const p = allActors.find(x => x.name === name);
-                const infos = p ? (playerCombatantInfos[p.id] || []) : [];
-                const enchInfos = p ? (playerTempEnchants[p.id] || []) : [];
-                const totalFights = Math.max(1, infos.length);
-
-                let standardBuffHtmls = [];
-                let weaponBuffHtmls = [];
-                const isOverall = (fightId === 'overall' && infos.length > 1);
-
-                const usedBuffs = Object.keys(BUFF_DB).filter(id => infos.some(auras => auras.includes(parseInt(id))));
-                usedBuffs.forEach(id => {
-                    const count = infos.filter(auras => auras.includes(parseInt(id))).length;
-                    let ratioDisplay = `<span class="buff-ratio">${count}${isOverall ? `/${totalFights}` : ''}</span>`;
-                    standardBuffHtmls.push(`<div class="buff-item has-tooltip"><img class="buff-icon" src="/api/icon/${BUFF_DB[id].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'"><span class="custom-tooltip">${BUFF_DB[id].name}</span>${ratioDisplay}</div>`);
-                });
-
-                const weaponBuffsAggregated = {};
-                let totalExpectedWeapons = 0;
-                enchInfos.forEach(info => {
-                    totalExpectedWeapons += info.weapons;
-                    info.enchants.forEach(eId => {
-                        if (ENCHANT_DB[eId]) {
-                            let enchName = ENCHANT_DB[eId].name;
-                            if (!weaponBuffsAggregated[enchName]) weaponBuffsAggregated[enchName] = { count: 0, icon: ENCHANT_DB[eId].icon || 'inv_misc_questionmark' };
-                            weaponBuffsAggregated[enchName].count += 1;
-                        }
-                    });
-                });
-
-                Object.entries(weaponBuffsAggregated).forEach(([enchName, d]) => {
-                    let ratioHtml = `<span class="buff-ratio">${d.count}${isOverall || totalExpectedWeapons > 1 ? `/${totalExpectedWeapons}` : ''}</span>`;
-                    weaponBuffHtmls.push(`<div class="buff-item has-tooltip"><img class="buff-icon weapon-enchant" src="/api/icon/${d.icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'"><span class="custom-tooltip">${enchName} (Weapon)</span>${ratioHtml}</div>`);
-                });
-
-                let allBuffHtmls = [...standardBuffHtmls, ...weaponBuffHtmls];
-                htmlBuffs = allBuffHtmls.length === 0 ? '<span style="font-size:0.75rem; color:#ff5252; font-weight:bold;">NO BUFFS</span>' : allBuffHtmls.join('');
-
-                let spellListHtml = Object.entries(data.spells).filter(([spellId]) => SPELL_DB[spellId] && spellId != 33671).sort(([spellIdA], [spellIdB]) => {
-                    const catA = SPELL_DB[spellIdA].category || 2;
-                    const catB = SPELL_DB[spellIdB].category || 2;
-                    return catA - catB;
-                }).map(([spellId, sData]) => {
-                    let dmgText = sData.damage > 0 ? (sData.damage >= 1000 ? (sData.damage / 1000).toFixed(1) + 'k' : sData.damage) : "";
-                    return `<div class="spell-item has-tooltip"><img class="spell-icon" src="/api/icon/${SPELL_DB[spellId].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'"><span class="custom-tooltip">${SPELL_DB[spellId].name}</span><span class="spell-count">x${Math.max(1, sData.count)}</span>${sData.damage > 0 ? `<span class="spell-damage">${dmgText}</span>` : ''}</div>`;
-                }).join('');
-
-                let specRaw = data.specIcon || cls;
-                let specImgName = SPEC_ICONS[specRaw] || SPEC_ICONS[specRaw.split('-')[0]] || SPEC_ICONS[cls] || 'inv_misc_questionmark';
-
-                let gearBtnHtml = `<button class="inspect-btn" onclick="openGearModal('${name}', '${fightId}', '${cls}', '${specRaw}')">🔍 Inspect Gear</button>`;
-
-                return `<div class="player-card"><div class="player-name ${cls}-color"><img src="/api/icon/${specImgName}.jpg" class="spec-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">${name}</div>${gearBtnHtml}${htmlBuffs ? `<div class="buff-bar">${htmlBuffs}</div>` : ''}<div class="spell-grid">${spellListHtml}</div></div>`;
-            }).join('')}
-                </div>
-            </div>`;
-        }).join('');
-    }
-
-    html += `</div>${mechSidebarHTML}</div>`;
-    return html;
+function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function formatDuration(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// === PAGE TRANSITIONS ===
+
+function transitionToApp() {
+    document.getElementById('landingPage').classList.add('hidden');
+    document.getElementById('appLayout').classList.add('visible');
+}
+
+function goBackToLanding() {
+    document.getElementById('appLayout').classList.remove('visible');
+    document.getElementById('landingPage').classList.remove('hidden');
+    window.selectedFightId = null;
+    window.selectedPlayerName = null;
+    window.currentReport = null;
+    window.currentEvents = null;
+    window.currentActors = null;
+    document.getElementById('btnDiscord').style.display = 'none';
+}
+
+// === MAIN AUDIT FUNCTION ===
+
 async function auditarLog() {
-    const rawInput = document.getElementById('logId').value.trim();
+    const rawInput = document.getElementById('logInput').value.trim();
     const logId = parseLogId(rawInput);
+    if (!logId) return;
 
-    const divTabs = document.getElementById('encounterTabs');
-    const divRes = document.getElementById('resultados');
-
-    divTabs.innerHTML = "";
-    divRes.innerHTML = "<p style='text-align:center; color:#f4b400; font-weight:bold; font-size:1.2rem; margin-top:20px;'>POLICE IS INVESTIGATING...</p>";
-
+    window.currentLogId = logId;
     window.detectedSpecs = {};
+    window.playerGearDB = {};
     window.playerEnchantsForConsole = {};
-    
-    // Solo inicializamos los filtros si es la primera vez (null) para no pisar selecciones entre logs
-    if (window.activeClassFilters === null) {
-        window.activeClassFilters = new Set(CLASSES);
-    }
+
+    const statusEl = document.getElementById('landingStatus');
+    statusEl.innerHTML = "<p style='color:#f4b400; font-weight:bold; font-size:1.2rem;'>POLICE IS INVESTIGATING...</p>";
 
     try {
-        const responseData = await fetch('/api/audit', {
+        const response = await fetch('/api/audit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ logId })
         });
 
-        const res = await responseData.json();
-
+        const res = await response.json();
         if (res.error) throw new Error(res.error);
         if (res.errors) throw new Error(res.errors[0].message);
         if (!res.data || !res.data.reportData || !res.data.reportData.report) {
@@ -411,46 +169,71 @@ async function auditarLog() {
         const report = res.data.reportData.report;
         const allActors = report.masterData.actors || [];
         const allEvents = report.events.data || [];
+
+        window.currentReport = report;
+        window.currentEvents = allEvents;
+        window.currentActors = allActors;
         window.currentLogTitle = report.title;
 
-        let tabsHtml = `<button id="tab-overall" class="tab-btn overall active" onclick="showEncounter('overall')">OVERALL</button>`;
-        let contentHtml = `<div id="enc-overall" class="encounter-content active">${buildEncounterHTML('overall', allEvents, allActors)}</div>`;
-        let wipeCounts = {};
+        // Pre-process: detect specs and store gear from combatantinfo events
+        allEvents.forEach(ev => {
+            if (ev.type === 'combatantinfo') {
+                const p = allActors.find(x => x.id === ev.sourceID);
+                if (p) {
+                    const spec = detectPlayerSpec(p, ev);
+                    window.detectedSpecs[p.name] = spec;
 
-        report.fights.forEach(fight => {
-            let isKill = fight.kill;
-            let statusText = isKill ? "" : ` #${wipeCounts[fight.name] = (wipeCounts[fight.name] || 0) + 1}`;
-            
-            let bossIconHtml = "";
-            let bossKey = fight.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            // Gruul's Lair
-            if (bossKey.includes('gruul')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-gruul-the-dragonkiller.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('maulgar')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-high-king-maulgar.png" class="boss-tab-icon">`;
-            // Magtheridon's Lair
-            else if (bossKey.includes('magtheridon')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-magtheridon.png" class="boss-tab-icon">`;
-            // Karazhan
-            else if (bossKey.includes('attumen')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-attumen-the-huntsman.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('moroes')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-moroes.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('maiden')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-maiden-of-virtue.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('opera') || bossKey.includes('romulo') || bossKey.includes('julianne') || bossKey.includes('big-bad-wolf') || bossKey.includes('wizard-of-oz') || bossKey.includes('crone')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-opera.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('curator')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-the-curator.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('shade') || bossKey.includes('aran')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-shade-of-aran.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('illhoof') || bossKey.includes('terestian')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-terestian-illhoof.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('netherspite')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-netherspite.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('malchezaar') || bossKey.includes('prince')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-prince-malchezaar.png" class="boss-tab-icon">`;
-            else if (bossKey.includes('chess')) bossIconHtml = `<img src="/assets/bosses/ui-ej-boss-chess-alliance.png" class="boss-tab-icon">`;
-
-            tabsHtml += `<button id="tab-${fight.id}" class="tab-btn ${isKill ? "kill" : "wipe"}" onclick="showEncounter('${fight.id}')">${bossIconHtml} ${fight.name}${statusText}</button>`;
-            const fightEvents = allEvents.filter(ev => ev.timestamp >= (fight.startTime - 15000) && ev.timestamp <= (fight.endTime + 5000));
-            contentHtml += `<div id="enc-${fight.id}" class="encounter-content">${buildEncounterHTML(fight.id, fightEvents, allActors)}</div>`;
+                    if (ev.gear) {
+                        // Store gear for the first fight that has it (for overall)
+                        if (!window.playerGearDB['overall']) window.playerGearDB['overall'] = {};
+                        if (!window.playerGearDB['overall'][p.name]) {
+                            window.playerGearDB['overall'][p.name] = ev.gear;
+                        }
+                    }
+                }
+            }
         });
 
-        document.getElementById('encounterTabs').innerHTML = tabsHtml;
-        divRes.innerHTML = contentHtml;
-        document.getElementById('btnDiscord').style.display = "inline-block";
+        // Also store gear per fight
+        report.fights.forEach(fight => {
+            const fightEvents = allEvents.filter(ev =>
+                ev.timestamp >= (fight.startTime - 15000) && ev.timestamp <= (fight.endTime + 5000)
+            );
+            fightEvents.forEach(ev => {
+                if (ev.type === 'combatantinfo' && ev.gear) {
+                    const p = allActors.find(x => x.id === ev.sourceID);
+                    if (p) {
+                        if (!window.playerGearDB[fight.id]) window.playerGearDB[fight.id] = {};
+                        window.playerGearDB[fight.id][p.name] = ev.gear;
+                    }
+                }
+            });
+        });
+
+        // Transition to app layout
+        transitionToApp();
+
+        // Set report info
+        document.getElementById('reportInfo').textContent = logId;
+
+        // Render sidebars
+        renderFightsSidebar(report);
+        renderPlayersSidebar(allActors);
+
+        // Show Discord button
+        document.getElementById('btnDiscord').style.display = 'block';
+
+        // Update URL
         window.history.pushState({}, '', '/report/' + logId);
 
-        // --- PRECARGA INVISIBLE DE NOMBRES WOWHEAD ---
+        // Reset content area
+        document.getElementById('contentArea').innerHTML = `
+            <div class="content-placeholder">
+                <div class="placeholder-icon">🦆</div>
+                <p>Select a fight and a player to view the analysis</p>
+            </div>`;
+
+        // Wowhead prefetch
         let prefetchDiv = document.getElementById('wh-prefetch');
         if (!prefetchDiv) {
             prefetchDiv = document.createElement('div');
@@ -474,22 +257,720 @@ async function auditarLog() {
         });
         prefetchDiv.innerHTML = prefetchHtml;
 
-    } catch (e) { divRes.innerHTML = `<p style='text-align:center; color:#ff5252; font-weight:bold; font-size:1.1rem; margin-top:20px;'>Error: ${e.message}</p>`; }
+    } catch (e) {
+        statusEl.innerHTML = `<p style='color:#ff5252; font-weight:bold; font-size:1.1rem;'>Error: ${e.message}</p>`;
+    }
 }
 
+// === SIDEBAR RENDERING ===
+
+function renderFightsSidebar(report) {
+    const fightsList = document.getElementById('fightsList');
+    let html = '';
+
+    // OVERALL entry
+    html += `<div class="fight-item" data-fight="overall" onclick="selectFight('overall')">
+        <div class="fight-info">
+            <div class="fight-name">Overall</div>
+            <div class="fight-status fight-status-overall">ALL FIGHTS</div>
+        </div>
+    </div>`;
+
+    // Individual fights
+    let wipeCounts = {};
+    report.fights.forEach(fight => {
+        const duration = fight.endTime - fight.startTime;
+        const timeStr = formatDuration(duration);
+        const isKill = fight.kill;
+        const statusClass = isKill ? 'fight-status-kill' : 'fight-status-wipe';
+        const statusText = isKill ? 'KILL' : 'WIPE';
+
+        let wipeNum = '';
+        if (!isKill) {
+            wipeCounts[fight.name] = (wipeCounts[fight.name] || 0) + 1;
+            wipeNum = ` #${wipeCounts[fight.name]}`;
+        }
+
+        html += `<div class="fight-item" data-fight="${fight.id}" onclick="selectFight('${fight.id}')">
+            <div class="fight-info">
+                <div class="fight-name">${fight.name}${wipeNum}</div>
+                <div class="fight-status ${statusClass}">${statusText}</div>
+            </div>
+            <div class="fight-time">${timeStr}</div>
+        </div>`;
+    });
+
+    fightsList.innerHTML = html;
+}
+
+function renderPlayersSidebar(allActors) {
+    const playersList = document.getElementById('playersList');
+
+    // Sort by class order, then by name
+    const sorted = [...allActors].sort((a, b) => {
+        const ci = CLASSES.indexOf(a.subType) - CLASSES.indexOf(b.subType);
+        if (ci !== 0) return ci;
+        return a.name.localeCompare(b.name);
+    });
+
+    let html = sorted.map(player => {
+        const spec = window.detectedSpecs[player.name] || player.subType;
+        const specIcon = SPEC_ICONS[spec] || SPEC_ICONS[player.subType] || 'inv_misc_questionmark';
+        const className = player.subType;
+        // Escape single quotes in player names for onclick
+        const safeName = player.name.replace(/'/g, "\\'");
+        return `<div class="player-item" data-player="${escapeHtml(player.name)}" onclick="selectPlayer('${safeName}')">
+            <img src="/api/icon/${specIcon}.jpg" class="player-item-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+            <span class="${className}-color">${player.name}</span>
+        </div>`;
+    }).join('');
+
+    playersList.innerHTML = html;
+}
+
+// === SELECTION HANDLERS ===
+
+function selectFight(fightId) {
+    window.selectedFightId = fightId;
+    document.querySelectorAll('.fight-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.fight == fightId);
+    });
+    renderMainContent();
+}
+
+function selectPlayer(playerName) {
+    window.selectedPlayerName = playerName;
+    document.querySelectorAll('.player-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.player === playerName);
+    });
+    renderMainContent();
+}
+
+// === MAIN CONTENT RENDERING ===
+
+function renderMainContent() {
+    const contentArea = document.getElementById('contentArea');
+
+    if (!window.selectedFightId || !window.selectedPlayerName) {
+        let msg = 'Select a fight and a player to view the analysis';
+        if (window.selectedFightId && !window.selectedPlayerName) {
+            msg = 'Now select a player to view the analysis';
+        } else if (!window.selectedFightId && window.selectedPlayerName) {
+            msg = 'Now select a fight to view the analysis';
+        }
+        contentArea.innerHTML = `<div class="content-placeholder"><div class="placeholder-icon">🦆</div><p>${msg}</p></div>`;
+        return;
+    }
+
+    const fightId = window.selectedFightId;
+    const playerName = window.selectedPlayerName;
+    const report = window.currentReport;
+    const allEvents = window.currentEvents;
+    const allActors = window.currentActors;
+
+    // Get fight events
+    let fightEvents;
+    let fightInfo = null;
+    if (fightId === 'overall') {
+        fightEvents = allEvents;
+    } else {
+        fightInfo = report.fights.find(f => f.id == fightId);
+        if (!fightInfo) {
+            contentArea.innerHTML = '<div class="content-placeholder"><p>Fight not found</p></div>';
+            return;
+        }
+        fightEvents = allEvents.filter(ev =>
+            ev.timestamp >= (fightInfo.startTime - 15000) && ev.timestamp <= (fightInfo.endTime + 5000)
+        );
+    }
+
+    // Find player actor
+    const player = allActors.find(a => a.name === playerName);
+    if (!player) {
+        contentArea.innerHTML = '<div class="content-placeholder"><p>Player not found</p></div>';
+        return;
+    }
+
+    // Process and render
+    const playerData = processPlayerData(fightId, fightEvents, player);
+    contentArea.innerHTML = renderPlayerView(playerData, player, fightInfo);
+
+    // Fetch DPS
+    let sTime = fightInfo ? fightInfo.startTime : 0;
+    let eTime = fightInfo ? fightInfo.endTime : (report.endTime - report.startTime);
+    fetchDps(window.currentLogId, sTime, eTime, player.id);
+
+    // Refresh Wowhead tooltips
+    if (typeof $WowheadPower !== 'undefined') {
+        $WowheadPower.refreshLinks();
+    }
+}
+
+// === PLAYER DATA PROCESSING ===
+
+function processPlayerData(fightId, fightEvents, player) {
+    let combatantInfos = [];
+    let tempEnchants = [];
+    let spells = {};
+    let timelineEvents = {};
+    let deaths = [];
+    let rebirths = [];
+
+    // Phase 1: combatantinfo + buff events
+    fightEvents.forEach(ev => {
+        if (ev.type === 'combatantinfo' && ev.sourceID === player.id) {
+            combatantInfos.push(ev.auras ? ev.auras.map(a => a.ability) : []);
+
+            if (ev.gear) {
+                if (!window.playerGearDB[fightId]) window.playerGearDB[fightId] = {};
+                window.playerGearDB[fightId][player.name] = ev.gear;
+            }
+
+            // Temp enchants
+            let enchants = [];
+            let weapons = 1;
+            if (ev.gear) {
+                let offHand = ev.gear[16];
+                if (['Rogue', 'Hunter', 'Warrior', 'Shaman'].includes(player.subType)) {
+                    if (offHand && offHand.id !== 0 && offHand.icon) {
+                        let iconName = offHand.icon.toLowerCase();
+                        let isWeapon = iconName.includes('sword') || iconName.includes('axe') ||
+                            iconName.includes('mace') || iconName.includes('hammer') ||
+                            iconName.includes('dagger') || iconName.includes('fist') ||
+                            iconName.includes('blade') || iconName.includes('knife') ||
+                            iconName.includes('weapon');
+                        if (isWeapon) weapons = 2;
+                    }
+                }
+
+                [15, 16].forEach(slotIdx => {
+                    let item = ev.gear[slotIdx];
+                    if (item && item.id !== 0) {
+                        let rawEnchant = item.temporaryEnchant || item.tempEnchant;
+                        if (!window.playerEnchantsForConsole[player.name]) window.playerEnchantsForConsole[player.name] = new Set();
+                        if (rawEnchant) window.playerEnchantsForConsole[player.name].add(rawEnchant);
+                        if (rawEnchant && ENCHANT_DB[rawEnchant]) {
+                            enchants.push(rawEnchant);
+                        }
+                    }
+                });
+            }
+            tempEnchants.push({ enchants, weapons });
+        }
+
+        // Buff tracking from applybuff/refreshbuff/cast events
+        let isBuffTarget = ['applybuff', 'applybuffstack', 'refreshbuff'].includes(ev.type) && ev.targetID === player.id;
+        let isCastSource = ev.type === 'cast' && ev.sourceID === player.id;
+
+        if (isBuffTarget || isCastSource) {
+            if (typeof BUFF_DB !== 'undefined' && BUFF_DB[ev.abilityGameID]) {
+                if (combatantInfos.length === 0) combatantInfos.push([]);
+                let lastInfos = combatantInfos[combatantInfos.length - 1];
+                if (!lastInfos.includes(ev.abilityGameID)) {
+                    lastInfos.push(ev.abilityGameID);
+                }
+            }
+        }
+    });
+
+    // Phase 2: Spell casts, interrupts, damage
+    fightEvents.forEach(ev => {
+        if (ev.type === 'death' && (ev.targetID === player.id || (!ev.targetID && ev.sourceID === player.id))) {
+            deaths.push(ev.timestamp);
+        }
+        if (ev.type === 'cast' && ev.abilityGameID === 20484 && ev.targetID === player.id) {
+            rebirths.push(ev.timestamp);
+        }
+
+        let playerId = ev.sourceID;
+        if (ev.type === 'damage' && ev.abilityGameID === 33671) playerId = ev.targetID;
+        if (['applybuff', 'applybuffstack', 'refreshbuff', 'removebuff'].includes(ev.type)) playerId = ev.targetID;
+        if (playerId !== player.id) return;
+
+        if (ev.type === 'cast' && SPELL_DB[ev.abilityGameID] && !SPELL_DB[ev.abilityGameID].isInterrupt && !SPELL_DB[ev.abilityGameID].isMechanic && SPELL_DB[ev.abilityGameID].category !== 5 && SPELL_DB[ev.abilityGameID].category !== 3) {
+            if (ev.abilityGameID === 33671) return;
+            if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
+            spells[ev.abilityGameID].count += 1;
+        }
+        else if (ev.type === 'interrupt' && SPELL_DB[ev.abilityGameID]) {
+            if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
+            spells[ev.abilityGameID].count += 1;
+        }
+        else if (ev.type === 'damage' && (ev.abilityGameID === 13241 || ev.abilityGameID === 30486 || ev.abilityGameID === 33671)) {
+            if (!spells[ev.abilityGameID]) spells[ev.abilityGameID] = { count: 0, damage: 0 };
+            spells[ev.abilityGameID].damage += (ev.amount || 0) + (ev.absorbed || 0);
+            if (ev.abilityGameID === 33671) spells[ev.abilityGameID].count += 1;
+        }
+
+        // Phase 3: Timeline tracking
+        if (typeof TIMELINE_SPELLS !== 'undefined' && TIMELINE_SPELLS[ev.abilityGameID]) {
+            let spellId = ev.abilityGameID;
+            if (!timelineEvents[spellId]) timelineEvents[spellId] = [];
+            
+            if (['applybuff', 'applybuffstack', 'refreshbuff'].includes(ev.type)) {
+                let openEv = timelineEvents[spellId].find(t => t.end === null);
+                if (!openEv) {
+                    timelineEvents[spellId].push({ start: ev.timestamp, end: null });
+                }
+            } else if (ev.type === 'removebuff') {
+                let openEv = timelineEvents[spellId].find(t => t.end === null);
+                if (openEv) {
+                    openEv.end = ev.timestamp;
+                }
+            } else if (ev.type === 'cast' && TIMELINE_SPELLS[spellId].duration) {
+                // Track instantaneous casts like Sappers that have a defined fake duration for visual purposes
+                timelineEvents[spellId].push({ start: ev.timestamp, end: ev.timestamp + TIMELINE_SPELLS[spellId].duration });
+            }
+        }
+    });
+
+    // Cleanup any open timeline events
+    Object.keys(timelineEvents).forEach(spellId => {
+        timelineEvents[spellId].forEach(ev => {
+            if (ev.end === null) {
+                // If it never removed, assume it lasted 15s or until the end of fight
+                // We will cap it in render.
+                ev.end = ev.start + 15000; 
+            }
+        });
+    });
+
+    return {
+        combatantInfos,
+        tempEnchants,
+        spells,
+        timelineEvents,
+        deaths,
+        rebirths,
+        spec: window.detectedSpecs[player.name] || player.subType
+    };
+}
+
+// === PLAYER VIEW RENDERING ===
+
+function renderPlayerView(data, player, fightInfo) {
+    const spec = data.spec;
+    const specIcon = SPEC_ICONS[spec] || SPEC_ICONS[player.subType] || 'inv_misc_questionmark';
+    const className = player.subType;
+    const fightId = window.selectedFightId;
+    const isOverall = (fightId === 'overall');
+    const totalFights = Math.max(1, data.combatantInfos.length);
+
+    // Fight title
+    let fightTitle = 'Overall';
+    if (fightInfo) {
+        const duration = fightInfo.endTime - fightInfo.startTime;
+        fightTitle = `${fightInfo.name} — ${formatDuration(duration)}`;
+    }
+
+    // === BUFFS ===
+    let standardBuffHtmls = [];
+    let weaponBuffHtmls = [];
+
+    const usedBuffs = Object.keys(BUFF_DB).filter(id =>
+        data.combatantInfos.some(auras => auras.includes(parseInt(id)))
+    );
+    usedBuffs.forEach(id => {
+        const count = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
+        let ratioDisplay = `<span class="buff-ratio">${count}${isOverall && totalFights > 1 ? `/${totalFights}` : ''}</span>`;
+        standardBuffHtmls.push(`<div class="buff-item"><img class="buff-icon" src="/api/icon/${BUFF_DB[id].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'"><span class="buff-name">${BUFF_DB[id].name}</span>${ratioDisplay}</div>`);
+    });
+
+    // Weapon enchant buffs
+    const weaponBuffsAggregated = {};
+    let totalExpectedWeapons = 0;
+    data.tempEnchants.forEach(info => {
+        totalExpectedWeapons += info.weapons;
+        info.enchants.forEach(eId => {
+            if (ENCHANT_DB[eId]) {
+                let enchName = ENCHANT_DB[eId].name;
+                if (!weaponBuffsAggregated[enchName]) weaponBuffsAggregated[enchName] = { count: 0, icon: ENCHANT_DB[eId].icon || 'inv_misc_questionmark' };
+                weaponBuffsAggregated[enchName].count += 1;
+            }
+        });
+    });
+    Object.entries(weaponBuffsAggregated).forEach(([enchName, d]) => {
+        let ratioHtml = `<span class="buff-ratio">${d.count}${isOverall || totalExpectedWeapons > 1 ? `/${totalExpectedWeapons}` : ''}</span>`;
+        weaponBuffHtmls.push(`<div class="buff-item"><img class="buff-icon weapon-enchant" src="/api/icon/${d.icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'"><span class="buff-name">${enchName} (Weapon)</span>${ratioHtml}</div>`);
+    });
+
+    let allBuffHtmls = [...standardBuffHtmls, ...weaponBuffHtmls];
+    let buffsHtml = allBuffHtmls.length === 0
+        ? '<span class="no-buffs">NO BUFFS</span>'
+        : allBuffHtmls.join('');
+
+    // === SPELLS ===
+    let spellListHtml = Object.entries(data.spells)
+        .filter(([spellId]) => SPELL_DB[spellId])
+        .sort(([a], [b]) => {
+            const catA = SPELL_DB[a].category || 2;
+            const catB = SPELL_DB[b].category || 2;
+            return catA - catB;
+        })
+        .map(([spellId, sData]) => {
+            let dmgText = sData.damage > 0 ? (sData.damage >= 1000 ? (sData.damage / 1000).toFixed(1) + 'k' : sData.damage) : '';
+            return `<div class="spell-item">
+                <img class="spell-icon" src="/api/icon/${SPELL_DB[spellId].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+                <span class="spell-name">${SPELL_DB[spellId].name}</span>
+                <span class="spell-count">x${Math.max(1, sData.count)}</span>
+                ${sData.damage > 0 ? `<span class="spell-damage">${dmgText}</span>` : ''}
+            </div>`;
+        }).join('');
+
+    // === GEAR BUTTON ===
+    const safeName = player.name.replace(/'/g, "\\'");
+    let gearBtnHtml = `<button class="inspect-btn" onclick="toggleGearInline('${safeName}', '${fightId}', '${className}', '${spec}')">🔍 Inspect Gear</button>`;
+
+    // === TIMELINE BUTTON ===
+    window.timelineDB = window.timelineDB || {};
+    if (!window.timelineDB[fightId]) window.timelineDB[fightId] = {};
+    window.timelineDB[fightId][player.name] = data.timelineEvents;
+
+    let timelineBtnHtml = '';
+    if (!isOverall) {
+        timelineBtnHtml = `<button class="inspect-btn timeline-btn" onclick="toggleTimelineInline('${safeName}', '${fightId}')">⏱️ Timeline</button>`;
+    }
+
+    // === DEATHS & RESS ===
+    let eventsHtml = '';
+    if (data.deaths && data.deaths.length > 0) {
+        if (isOverall) {
+            eventsHtml += `<span class="event-pill event-death" style="color:#ff5252; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(255,82,82,0.1); padding: 2px 6px; border-radius: 4px;">✕ ${data.deaths.length} Deaths</span>`;
+        } else {
+            data.deaths.forEach(d => {
+                let relTime = fightInfo ? d - fightInfo.startTime : 0;
+                eventsHtml += `<span class="event-pill event-death" style="color:#ff5252; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(255,82,82,0.1); padding: 2px 6px; border-radius: 4px;">✕ Dead at ${formatDuration(Math.max(0, relTime))}</span>`;
+            });
+        }
+    }
+    if (data.rebirths && data.rebirths.length > 0) {
+        if (isOverall) {
+            eventsHtml += `<span class="event-pill event-ress" style="color:#4caf50; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(76,175,80,0.1); padding: 2px 6px; border-radius: 4px;">✚ ${data.rebirths.length} Combat Res</span>`;
+        } else {
+            data.rebirths.forEach(r => {
+                let relTime = fightInfo ? r - fightInfo.startTime : 0;
+                eventsHtml += `<span class="event-pill event-ress" style="color:#4caf50; margin-left: 10px; font-size: 0.85rem; font-weight: bold; background: rgba(76,175,80,0.1); padding: 2px 6px; border-radius: 4px;">✚ Combat Res at ${formatDuration(Math.max(0, relTime))}</span>`;
+            });
+        }
+    }
+
+    // === BOSS ICON ===
+    let bossSlug = fightTitle.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase();
+    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 24px; vertical-align: middle; margin-right: 8px; border-radius: 4px;" onerror="this.style.display='none'">`;
+
+    return `
+        <div class="player-view">
+            <div class="player-view-header">
+                <img src="/api/icon/${specIcon}.jpg" class="player-view-spec-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+                <span class="player-view-name ${className}-color">${player.name}</span>
+                <span class="player-view-fight">${bossIconHtml}${fightTitle} <span id="dpsPlaceholder-${fightId}-${player.id}" style="color:#f4b400; margin-left: 15px; font-size:0.9rem;">(Loading DPS...)</span>${eventsHtml}</span>
+            </div>
+
+            <div class="player-view-section">
+                <div class="player-view-section-title">Consumables & Buffs</div>
+                <div class="buff-bar">${buffsHtml}</div>
+            </div>
+
+            <div class="player-view-section">
+                <div class="player-view-section-title">Abilities</div>
+                <div class="spell-grid">${spellListHtml || '<span class="no-data">No tracked abilities used</span>'}</div>
+            </div>
+
+            <div class="player-view-actions">
+                ${gearBtnHtml}
+                ${timelineBtnHtml}
+            </div>
+            <div id="inlineGearContainer" style="display:none; margin-top: 10px;"></div>
+            <div id="inlineTimelineContainer" style="display:none; margin-top: 10px;"></div>
+        </div>
+    `;
+}
+
+async function fetchDps(logId, startTime, endTime, playerId) {
+    try {
+        const response = await fetch('/api/dps', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logId, startTime, endTime, playerId })
+        });
+        const res = await response.json();
+        const placeholders = document.querySelectorAll(`[id$="-${playerId}"]`);
+        placeholders.forEach(placeholder => {
+            if (placeholder.id.startsWith('dpsPlaceholder-')) {
+                if (res.error) {
+                    placeholder.textContent = "(DPS error)";
+                } else if (res.isHealing) {
+                    placeholder.textContent = `| ${res.dps} HPS (${(res.total / 1000).toFixed(1)}k heal)`;
+                } else {
+                    placeholder.textContent = `| ${res.dps} DPS (${(res.total / 1000).toFixed(1)}k dmg)`;
+                }
+            }
+        });
+    } catch (err) {
+        const placeholders = document.querySelectorAll(`[id$="-${playerId}"]`);
+        placeholders.forEach(placeholder => {
+            if (placeholder.id.startsWith('dpsPlaceholder-')) placeholder.textContent = "";
+        });
+    }
+}
 
 // =============================================
-// DISCORD WEBHOOK PROFILE MANAGER
-// Profiles stored in localStorage as JSON array
-// [{id, name, url}]
+// GEAR INSPECTOR (kept from original)
 // =============================================
 
-let _editingWebhookId = null; // null = adding new, string = editing existing
+function toggleGearInline(playerName, encounterId, className, specName) {
+    const container = document.getElementById('inlineGearContainer');
+    if (container.style.display === 'flex') {
+        container.style.display = 'none';
+        return;
+    }
+    
+    // Hide timeline if open
+    const timelineContainer = document.getElementById('inlineTimelineContainer');
+    if (timelineContainer) timelineContainer.style.display = 'none';
+
+    container.style.display = 'flex';
+    container.innerHTML = '<p style="color:#aaa;">Loading gear...</p>';
+
+    const gear = (window.playerGearDB && window.playerGearDB[encounterId] && window.playerGearDB[encounterId][playerName]) ? window.playerGearDB[encounterId][playerName] : [];
+
+    if (!gear || gear.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:#aaa; padding:20px; width:100%;">No gear data available for this encounter.</p>`;
+        return;
+    }
+
+    const groups = [
+        { title: "Armor", slots: [0, 2, 14, 4, 8, 9, 5, 6, 7] },
+        { title: "Jewelry", slots: [1, 10, 11, 12, 13] },
+        { title: "Weapons", slots: [15, 16, 17] }
+    ];
+
+    let groupHtmlMap = { "Armor": "", "Jewelry": "", "Weapons": "" };
+    let allGearIds = gear.filter(g => g && g.id !== 0).map(g => g.id).join(':');
+
+    const ring1 = gear[10];
+    const ring2 = gear[11];
+    const isEnchanter = (
+        (ring1 && ring1.id !== 0 && (ring1.permanentEnchant || ring1.enchant)) ||
+        (ring2 && ring2.id !== 0 && (ring2.permanentEnchant || ring2.enchant))
+    );
+
+    for (let i = 0; i <= 18; i++) {
+        let item = gear[i];
+
+        if (item && item.id !== 0) {
+            let iconUrlStr = item.icon ? item.icon.toLowerCase().replace(/\s+/g, '_').replace(/\.jpg$/i, '') : '';
+            let iconUrl = iconUrlStr ? `/api/icon/${iconUrlStr}.jpg` : '/api/icon/inv_misc_questionmark.jpg';
+
+            let wowheadParams = `item=${item.id}&pcs=${allGearIds}`;
+            let gemsHtml = '';
+            let gemsTableHtml = '';
+            if (item.gems && item.gems.length > 0) {
+                let gemIdsStr = item.gems.map(g => g.id).join(':');
+                wowheadParams += `&gems=${gemIdsStr}`;
+
+                item.gems.forEach((g, gemIdx) => {
+                    let gemIconStr = g.icon ? g.icon.toLowerCase().replace(/\s+/g, '_').replace(/\.jpg$/i, '') : 'inv_misc_questionmark';
+                    let isMetaGem = (i === 0 && gemIdx === 0);
+                    let gemClass = isMetaGem ? 'paperdoll-gem-icon meta-gem' : 'paperdoll-gem-icon';
+                    let gemTableClass = isMetaGem ? 'socket-icon meta-gem' : 'socket-icon';
+                    let linkStyle = isMetaGem ? 'display:inline-block; line-height:0;' : 'display:inline-block; line-height:0; border-radius:50%;';
+                    let linkTableStyle = isMetaGem ? 'display:inline-block; line-height:0; margin:0 1px;' : 'display:inline-block; line-height:0; border-radius:50%; margin:0 1px;';
+                    gemsHtml += `<a href="https://www.wowhead.com/tbc/item=${g.id}" onclick="event.preventDefault();" data-wowhead="item=${g.id}&domain=tbc" data-wh-rename-link="false" data-wh-icon-size="none" style="${linkStyle}"><img class="${gemClass}" src="/api/icon/${gemIconStr}.jpg" onerror="this.style.display='none'"></a>`;
+                    gemsTableHtml += `<a href="https://www.wowhead.com/tbc/item=${g.id}" onclick="event.preventDefault();" data-wowhead="item=${g.id}&domain=tbc" data-wh-rename-link="false" data-wh-icon-size="none" style="${linkTableStyle}"><img class="${gemTableClass}" src="/api/icon/${gemIconStr}.jpg" onerror="this.style.display='none'"></a>`;
+                });
+            }
+
+            let permEnchant = item.permanentEnchant || item.enchant;
+            let rawEnchant = permEnchant;
+            let enchantHtml = '';
+            let slotId = i + 1;
+
+            function isEnchantable(sId) {
+                const validSlots = [1, 3, 5, 7, 8, 9, 10, 15, 16, 17];
+                return validSlots.includes(sId);
+            }
+
+            let needsEnchant = isEnchantable(slotId);
+
+            if ((i === 10 || i === 11) && isEnchanter) {
+                needsEnchant = true;
+            }
+
+            if (slotId === 17) {
+                const itemName = (item.name || "").toLowerCase();
+                const itemType = (item.type || "").toLowerCase();
+                const itemSubType = (item.subType || "").toLowerCase();
+                if (!itemName.includes("shield") && !itemType.includes("shield") && !itemType.includes("weapon") && !itemSubType.includes("shield")) {
+                    needsEnchant = false;
+                }
+            }
+
+            let isMissingEnchant = false;
+
+            if (needsEnchant && (typeof permEnchant === 'undefined' || !permEnchant || permEnchant === 0)) {
+                isMissingEnchant = true;
+                enchantHtml = `<span style="color: #ff5252; font-weight:bold;">Slacking</span>`;
+            } else if (rawEnchant && rawEnchant !== 0) {
+                wowheadParams += `&ench=${rawEnchant}`;
+                let color = "#ff5252";
+                if (typeof OPTIMAL_ENCHANTS !== 'undefined' && OPTIMAL_ENCHANTS[specName]) {
+                    const enchData = OPTIMAL_ENCHANTS[specName];
+                    if (enchData.best && enchData.best.includes(rawEnchant)) {
+                        color = "#4caf50";
+                    } else if (enchData.alt && enchData.alt.includes(rawEnchant)) {
+                        color = "#f4b400";
+                    }
+                }
+                if (ENCHANT_DB[rawEnchant]) {
+                    enchantHtml = `<span style="color: ${color};">${ENCHANT_DB[rawEnchant].name}</span>`;
+                } else {
+                    enchantHtml = `<a href="https://www.wowhead.com/tbc/enchant=${rawEnchant}" data-wowhead="domain=tbc" style="color: ${color}; text-decoration:none; pointer-events: none;">Enchant #${rawEnchant}</a>`;
+                }
+            }
+
+            wowheadParams += `&domain=tbc`;
+
+            let qClass = '', iconClass = '';
+            if (item.quality === 4) { qClass = 'q-epic'; iconClass = 'icon-q4'; }
+            else if (item.quality === 3) { qClass = 'q-rare'; iconClass = 'icon-q3'; }
+            else if (item.quality === 5) { qClass = 'q-legendary'; iconClass = 'icon-q5'; }
+            else if (item.quality === 2) { qClass = 'q-uncommon'; iconClass = 'icon-q2'; }
+
+            let fallbackWowhead = iconUrlStr ? `https://wow.zamimg.com/images/wow/icons/large/${iconUrlStr}.jpg` : '/api/icon/inv_misc_questionmark.jpg';
+
+            let rowHtml = `
+                <div class="gear-table-row">
+                    <div class="gear-table-icon-group">
+                        <a href="https://www.wowhead.com/tbc/item=${item.id}" onclick="event.preventDefault();" data-wowhead="${wowheadParams}" data-wh-rename-link="false" data-wh-icon-size="none" style="display:block; text-decoration:none;">
+                            <img class="gear-table-icon ${iconClass}" src="${iconUrl}" onerror="this.src='${fallbackWowhead}'; this.onerror=function(){this.src='/api/icon/inv_misc_questionmark.jpg'};">
+                        </a>
+                    </div>
+                    <div class="gear-table-details">
+                        <span class="gear-table-name ${qClass}" style="background-image:none !important; padding-left:0 !important;">
+                            <a href="https://www.wowhead.com/tbc/item=${item.id}" onclick="event.preventDefault();" data-wowhead="domain=tbc" data-wh-rename-link="true" class="item-name-no-tooltip">...</a>
+                        </span>
+                        ${enchantHtml ? `<div class="gear-table-enchants">${enchantHtml}</div>` : ''}
+                    </div>
+                </div>`;
+
+            groups.forEach(group => {
+                if (group.slots.includes(i)) groupHtmlMap[group.title] += rowHtml;
+            });
+
+        }
+    }
+
+    tableHtml = `
+        <div class="gear-column" style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+            <div class="table-section-title">Armor</div>
+            ${groupHtmlMap["Armor"]}
+        </div>
+        <div class="gear-column" style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+            <div class="table-section-title">Jewelry</div>
+            ${groupHtmlMap["Jewelry"]}
+        </div>
+        <div class="gear-column" style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+            <div class="table-section-title">Weapons</div>
+            ${groupHtmlMap["Weapons"]}
+        </div>
+    `;
+
+    const contentHtmlStr = `
+        <div class="gear-modal-content" style="display:flex; width:100%; gap:15px; padding-top: 10px; border-top: 1px solid #222;">
+            ${tableHtml}
+        </div>
+    `;
+
+    container.innerHTML = contentHtmlStr;
+
+    if (typeof $WowheadPower !== 'undefined') {
+        $WowheadPower.refreshLinks();
+    }
+}
+
+// === TIMELINE INLINE ===
+function toggleTimelineInline(playerName, fightId) {
+    const container = document.getElementById('inlineTimelineContainer');
+    if (container.style.display === 'block') {
+        container.style.display = 'none';
+        return;
+    }
+    
+    // Hide gear if open
+    const gearContainer = document.getElementById('inlineGearContainer');
+    if (gearContainer) gearContainer.style.display = 'none';
+
+    if (!window.timelineDB || !window.timelineDB[fightId] || !window.timelineDB[fightId][playerName]) {
+        container.innerHTML = '<div class="timeline-empty">No timeline data available.</div>';
+        container.style.display = 'block';
+        return;
+    }
+
+    const events = window.timelineDB[fightId][playerName];
+    const fightInfo = window.currentReport.fights.find(f => f.id == fightId || f.id == parseInt(fightId));
+    if (!fightInfo) return;
+    
+    const durationMs = fightInfo.endTime - fightInfo.startTime;
+    let html = `<div class="timeline-wrapper"><div class="timeline-title">FIGHT TIMELINE</div><div class="timeline-content">`;
+    
+    const usedSpells = Object.keys(events).filter(sId => events[sId].length > 0);
+    
+    if (usedSpells.length === 0) {
+        html += '<div class="timeline-empty">No tracked cooldowns or procs used.</div>';
+    } else {
+        usedSpells.forEach(spellId => {
+            const spellInfo = TIMELINE_SPELLS[spellId];
+            if (!spellInfo) return;
+            const color = spellInfo.color || '#f4b400';
+            html += `
+            <div class="timeline-row-container">
+                <div class="timeline-spell-name" style="color: ${color};">${spellInfo.name}</div>
+                <div class="timeline-track">`;
+                
+            events[spellId].forEach(ev => {
+                let relStart = ev.start - fightInfo.startTime;
+                let relEnd = ev.end - fightInfo.startTime;
+                relStart = Math.max(0, relStart);
+                relEnd = Math.min(durationMs, relEnd);
+                
+                if (relEnd > relStart) {
+                    const leftPct = (relStart / durationMs) * 100;
+                    const widthPct = ((relEnd - relStart) / durationMs) * 100;
+                    html += `<div class="timeline-bar" style="left: ${leftPct}%; width: ${widthPct}%; background-color: ${color}; opacity: 0.7; box-shadow: 0 0 8px ${color}; border: 1px solid ${color};"></div>`;
+                }
+            });
+            html += `</div></div>`;
+        });
+        
+        // Draw the time axis
+        html += `<div class="timeline-axis">
+            <span>0:00</span>
+            <span>${formatDuration(durationMs/4)}</span>
+            <span>${formatDuration(durationMs/2)}</span>
+            <span>${formatDuration(durationMs * 0.75)}</span>
+            <span>${formatDuration(durationMs)}</span>
+        </div>`;
+    }
+    
+    html += `</div></div>`;
+    container.innerHTML = html;
+    container.style.display = 'block';
+}
+
+function closeGearModal() {
+    document.getElementById('gearOverlay').classList.remove('is-open');
+}
+
+// =============================================
+// DISCORD WEBHOOK SYSTEM (kept from original)
+// =============================================
+
+let _editingWebhookId = null;
 
 function getWebhookProfiles() {
-    try {
-        return JSON.parse(localStorage.getItem('discord_webhooks') || '[]');
-    } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('discord_webhooks') || '[]'); }
+    catch { return []; }
 }
 
 function saveWebhookProfiles(profiles) {
@@ -500,11 +981,7 @@ function renderWebhookProfiles() {
     const list = document.getElementById('webhookProfilesList');
     if (!list) return;
     const profiles = getWebhookProfiles();
-
-    if (profiles.length === 0) {
-        list.innerHTML = '';
-        return;
-    }
+    if (profiles.length === 0) { list.innerHTML = ''; return; }
 
     list.innerHTML = profiles.map(p => `
         <div class="webhook-profile-card">
@@ -521,14 +998,6 @@ function renderWebhookProfiles() {
     `).join('');
 }
 
-function escapeHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
 function showWebhookForm(editId = null) {
     _editingWebhookId = editId;
     const form = document.getElementById('webhookForm');
@@ -540,17 +1009,12 @@ function showWebhookForm(editId = null) {
     if (editId) {
         const profiles = getWebhookProfiles();
         const p = profiles.find(x => x.id === editId);
-        if (p) {
-            nameInput.value = p.name;
-            urlInput.value = p.url;
-        }
+        if (p) { nameInput.value = p.name; urlInput.value = p.url; }
         formTitle.textContent = '✏️ Edit Profile';
     } else {
-        nameInput.value = '';
-        urlInput.value = '';
+        nameInput.value = ''; urlInput.value = '';
         formTitle.textContent = '➕ New Profile';
     }
-
     section.style.display = 'none';
     form.style.display = 'flex';
     nameInput.focus();
@@ -580,25 +1044,18 @@ function saveWebhookProfile() {
     }
 
     const profiles = getWebhookProfiles();
-
     if (_editingWebhookId) {
         const idx = profiles.findIndex(x => x.id === _editingWebhookId);
-        if (idx !== -1) {
-            profiles[idx].name = name;
-            profiles[idx].url = url;
-        }
+        if (idx !== -1) { profiles[idx].name = name; profiles[idx].url = url; }
     } else {
         profiles.push({ id: Date.now().toString(), name, url });
     }
-
     saveWebhookProfiles(profiles);
     hideWebhookForm();
     renderWebhookProfiles();
 }
 
-function editWebhookProfile(id) {
-    showWebhookForm(id);
-}
+function editWebhookProfile(id) { showWebhookForm(id); }
 
 function deleteWebhookProfile(id) {
     const profiles = getWebhookProfiles().filter(x => x.id !== id);
@@ -612,12 +1069,9 @@ async function sendToWebhookProfile(id) {
     if (!p) return;
 
     const btn = document.querySelector(`.webhook-profile-card .webhook-btn-send[onclick*="${id}"]`);
-    if (btn) {
-        btn.textContent = '⏳ Sending...';
-        btn.disabled = true;
-    }
+    if (btn) { btn.textContent = '⏳ Sending...'; btn.disabled = true; }
 
-    const logId = parseLogId(document.getElementById('logId').value);
+    const logId = window.currentLogId;
     const reportUrl = `${window.location.origin}/report/${logId}`;
     const msg = {
         embeds: [{
@@ -631,9 +1085,7 @@ async function sendToWebhookProfile(id) {
         const resp = await fetch(p.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(msg) });
         if (resp.ok || resp.status === 204) {
             if (btn) { btn.textContent = '✅ Sent!'; setTimeout(() => { btn.textContent = '▶ Send'; btn.disabled = false; }, 2000); }
-        } else {
-            throw new Error(`HTTP ${resp.status}`);
-        }
+        } else { throw new Error(`HTTP ${resp.status}`); }
     } catch (e) {
         if (btn) { btn.textContent = '❌ Error'; setTimeout(() => { btn.textContent = '▶ Send'; btn.disabled = false; }, 2500); }
     }
@@ -641,7 +1093,6 @@ async function sendToWebhookProfile(id) {
 
 function enviarADiscord() {
     document.getElementById('discordOverlay').classList.add('is-open');
-    // Always show list first, hide form
     hideWebhookForm();
     renderWebhookProfiles();
 }
@@ -651,293 +1102,39 @@ function closeDiscordModal() {
     hideWebhookForm();
 }
 
-// Legacy: kept for compatibility but now unused
-async function procesarDiscordWebhook() {}
-
+// =============================================
+// INITIALIZATION
+// =============================================
 
 window.onload = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    let potentialLogId = urlParams.get('log');
+    let potentialLogId = null;
 
+    // Check URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    potentialLogId = urlParams.get('log');
+
+    // Check /report/:logId path
     if (window.location.pathname.startsWith('/report/')) {
         potentialLogId = window.location.pathname.split('/report/')[1];
     }
 
     if (potentialLogId) {
-        document.getElementById('logId').value = potentialLogId;
+        document.getElementById('logInput').value = potentialLogId;
         auditarLog();
     }
 
-    document.getElementById('logId').addEventListener('keypress', function (event) {
+    // Enter key on input
+    document.getElementById('logInput').addEventListener('keypress', function (event) {
         if (event.key === 'Enter') {
             auditarLog();
         }
     });
 
+    // Escape key closes modals
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             document.getElementById('gearOverlay').classList.remove('is-open');
+            document.getElementById('discordOverlay').classList.remove('is-open');
         }
     });
 };
-
-
-
-window.toggleClassVisibility = function(cls, btn) {
-    btn.classList.toggle('active');
-    let isActive = btn.classList.contains('active');
-
-    if (isActive) {
-        window.activeClassFilters.add(cls);
-    } else {
-        window.activeClassFilters.delete(cls);
-    }
-
-    // Aplicar los cambios en TODAS las pre-renderizaciones
-    document.querySelectorAll(`.class-row.${cls}-row`).forEach(row => {
-        row.style.display = isActive ? 'flex' : 'none';
-    });
-    
-    // Sincronizar todos los botones representativos de esa misma clase
-    document.querySelectorAll(`.class-filter-btn[data-class="${cls}"]`).forEach(b => {
-        if (isActive) b.classList.add('active');
-        else b.classList.remove('active');
-    });
-};
-
-function openGearModal(playerName, encounterId, className, specName) {
-    const gear = (window.playerGearDB && window.playerGearDB[encounterId] && window.playerGearDB[encounterId][playerName]) ? window.playerGearDB[encounterId][playerName] : [];
-
-    console.log(`--- DEBUG GEAR: ${playerName} ---`);
-    if (gear && gear.length > 0) {
-        gear.forEach((item, index) => {
-            if (!item || item.id === 0) return;
-            const slotId = item.slotId || (index + 1);
-            if (item.permanentEnchant) {
-                console.log(`Slot: ${slotId} | Item: ${item.name} | EnchantID: ${item.permanentEnchant}`);
-            } else {
-                console.log(`Slot: ${slotId} | Item: ${item.name} | No permanent enchant found`);
-            }
-        });
-    }
-
-    document.getElementById('gearModalTitle').innerHTML = `<img src="/api/icon/${SPEC_ICONS[specName] || SPEC_ICONS[specName.split('-')[0]] || SPEC_ICONS[className] || 'inv_misc_questionmark'}.jpg" class="spec-icon" style="width:24px; height:24px; vertical-align:middle; border-radius:4px; margin: 0 8px 0 0; border: 1px solid #444;" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'"> <span class="${className}-color" style="text-transform: uppercase;">${playerName}</span>`;
-
-    let paperDollHtml = '';
-    let tableHtml = '';
-
-    if (!gear || gear.length === 0) {
-        document.getElementById('gearModalContent').innerHTML = `<p style="text-align:center; color:#aaa; padding:20px;">No gear data available for this encounter.</p>`;
-        document.getElementById('gearOverlay').classList.add('is-open');
-        return;
-    }
-
-    const groups = [
-        { title: "Armor", slots: [0, 2, 14, 4, 8, 9, 5, 6, 7] },
-        { title: "Jewelry", slots: [1, 10, 11, 12, 13] },
-        { title: "Weapons", slots: [15, 16, 17] }
-    ];
-
-    let groupHtmlMap = { "Armor": "", "Jewelry": "", "Weapons": "" };
-
-    // Fetch all equipped item IDs for set bonus detection
-    let allGearIds = gear.filter(g => g && g.id !== 0).map(g => g.id).join(':');
-
-    // Pre-check: is this player an Enchanter?
-    // In TBC only Enchanters can enchant their own rings (slots i=10 and i=11).
-    // If either ring has a permanentEnchant, the player is an Enchanter
-    // and BOTH rings should have one.
-    const ring1 = gear[10];
-    const ring2 = gear[11];
-    const isEnchanter = (
-        (ring1 && ring1.id !== 0 && (ring1.permanentEnchant || ring1.enchant)) ||
-        (ring2 && ring2.id !== 0 && (ring2.permanentEnchant || ring2.enchant))
-    );
-
-    // Built paperDoll slots & table rows
-    for (let i = 0; i <= 18; i++) {
-        let item = gear[i];
-
-        if (item && item.id !== 0) {
-            let iconUrlStr = item.icon ? item.icon.toLowerCase().replace(/\s+/g, '_').replace(/\.jpg$/i, '') : '';
-            let iconUrl = iconUrlStr ? `/api/icon/${iconUrlStr}.jpg` : '/api/icon/inv_misc_questionmark.jpg';
-
-            // Collect gems, enchants, and set pieces for Wowhead Tooltips
-            let wowheadParams = `item=${item.id}&pcs=${allGearIds}`;
-            let gemIdsStr = '';
-
-            // Gems using medium icon so they exist on server, we resize via CSS
-            let gemsHtml = '';
-            let gemsTableHtml = '';
-            if (item.gems && item.gems.length > 0) {
-                gemIdsStr = item.gems.map(g => g.id).join(':');
-                wowheadParams += `&gems=${gemIdsStr}`;
-
-                item.gems.forEach((g, gemIdx) => {
-                    let gemIconStr = g.icon ? g.icon.toLowerCase().replace(/\s+/g, '_').replace(/\.jpg$/i, '') : 'inv_misc_questionmark';
-                    let isMetaGem = (i === 0 && gemIdx === 0);
-                    let gemClass = isMetaGem ? 'paperdoll-gem-icon meta-gem' : 'paperdoll-gem-icon';
-                    let gemTableClass = isMetaGem ? 'socket-icon meta-gem' : 'socket-icon';
-                    let linkStyle = isMetaGem ? 'display:inline-block; line-height:0;' : 'display:inline-block; line-height:0; border-radius:50%;';
-                    let linkTableStyle = isMetaGem ? 'display:inline-block; line-height:0; margin:0 1px;' : 'display:inline-block; line-height:0; border-radius:50%; margin:0 1px;';
-                    gemsHtml += `<a href="https://www.wowhead.com/tbc/item=${g.id}" onclick="event.preventDefault();" data-wowhead="item=${g.id}&domain=tbc" data-wh-rename-link="false" data-wh-icon-size="none" style="${linkStyle}"><img class="${gemClass}" src="/api/icon/${gemIconStr}.jpg" onerror="this.style.display='none'"></a>`;
-                    gemsTableHtml += `<a href="https://www.wowhead.com/tbc/item=${g.id}" onclick="event.preventDefault();" data-wowhead="item=${g.id}&domain=tbc" data-wh-rename-link="false" data-wh-icon-size="none" style="${linkTableStyle}"><img class="${gemTableClass}" src="/api/icon/${gemIconStr}.jpg" onerror="this.style.display='none'"></a>`;
-                });
-            }
-
-            let permEnchant = item.permanentEnchant || item.enchant;
-            let rawEnchant = permEnchant;
-            let enchantHtml = '';
-
-            let slotId = i + 1;
-
-            function isEnchantable(sId) {
-                // Standard enchantable slots
-                // 1=Head, 3=Shoulder, 5=Chest, 7=Legs, 8=Feet, 9=Wrist, 10=Hands
-                // 15=Back, 16=MainHand, 17=OffHand/Shield
-                const validSlots = [1, 3, 5, 7, 8, 9, 10, 15, 16, 17];
-                return validSlots.includes(sId);
-            }
-
-            let needsEnchant = isEnchantable(slotId);
-
-            // Rings (i=10 → slotId=11, i=11 → slotId=12):
-            // Only flag as needing enchant if the player is confirmed as an Enchanter
-            if ((i === 10 || i === 11) && isEnchanter) {
-                needsEnchant = true;
-            }
-
-            if (slotId === 17) {
-                const itemName = (item.name || "").toLowerCase();
-                const itemType = (item.type || "").toLowerCase();
-                const itemSubType = (item.subType || "").toLowerCase();
-                if (!itemName.includes("shield") && !itemType.includes("shield") && !itemType.includes("weapon") && !itemSubType.includes("shield")) {
-                    needsEnchant = false;
-                }
-            }
-
-            let isMissingEnchant = false;
-
-            if (needsEnchant && (typeof permEnchant === 'undefined' || !permEnchant || permEnchant === 0)) {
-                isMissingEnchant = true;
-                enchantHtml = `<span style="color: #ff5252; font-weight:bold;">Slacking</span>`;
-            } else if (rawEnchant && rawEnchant !== 0) {
-                wowheadParams += `&ench=${rawEnchant}`;
-                let color = "#ff5252";
-                let enchantEmoji = "❓";
-                if (typeof OPTIMAL_ENCHANTS !== 'undefined' && OPTIMAL_ENCHANTS[specName]) {
-                    const enchData = OPTIMAL_ENCHANTS[specName];
-                    if (enchData.best && enchData.best.includes(rawEnchant)) {
-                        color = "#4caf50";
-                        enchantEmoji = "✨";
-                    } else if (enchData.alt && enchData.alt.includes(rawEnchant)) {
-                        color = "#f4b400";
-                        enchantEmoji = "🟨";
-                    }
-                }
-
-                if (ENCHANT_DB[rawEnchant]) {
-                    enchantHtml = `${enchantEmoji} <span style="color: ${color};">${ENCHANT_DB[rawEnchant].name}</span>`;
-                } else {
-                    enchantHtml = `${enchantEmoji} <a href="https://www.wowhead.com/tbc/enchant=${rawEnchant}" data-wowhead="domain=tbc" style="color: ${color}; text-decoration:none; opacity: 1; pointer-events: none;">Enchant #${rawEnchant}</a>`;
-                }
-            }
-
-            // Add domain
-            wowheadParams += `&domain=tbc`;
-
-            // Quality colors class
-            let qClass = '';
-            let iconClass = '';
-            if (item.quality === 4) { qClass = 'q-epic'; iconClass = 'icon-q4'; }
-            else if (item.quality === 3) { qClass = 'q-rare'; iconClass = 'icon-q3'; }
-            else if (item.quality === 5) { qClass = 'q-legendary'; iconClass = 'icon-q5'; }
-            else if (item.quality === 2) { qClass = 'q-uncommon'; iconClass = 'icon-q2'; }
-
-            // To make sure wowhead links are positioned over the image inside the slot box properly, wrap them inside.
-            paperDollHtml += `<div class="gear-slot paperdoll-slot slot-${i} ${iconClass}">
-                <a href="https://www.wowhead.com/tbc/item=${item.id}" onclick="event.preventDefault();" data-wowhead="${wowheadParams}" data-wh-rename-link="false" data-wh-icon-size="none" style="display:block; width:100%; height:100%;">
-                    <img src="${iconUrl}" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'" class="slot-icon" ${isMissingEnchant ? 'style="border: 1px solid #ff5252; box-shadow: 0 0 10px #ff5252; width:100%; height:100%; display:block; object-fit:cover;"' : 'style="width:100%; height:100%; display:block; object-fit:cover;"'}>
-                </a>
-                <div class="gem-container paperdoll-gems">${gemsHtml}</div>
-                ${isMissingEnchant ? `<div style="position:absolute; top:-6px; right:-6px; font-size:12px; font-weight:bold; color:#ff5252; text-shadow:0 0 3px #000, 0 0 3px #000; z-index:25; pointer-events:none;">❌</div>` : ''}
-            </div>`;
-
-            // Generate row HTML
-            let rowHtml = `
-                <div class="gear-table-row">
-                    <div class="gear-table-icon-group">
-                        <a href="https://www.wowhead.com/tbc/item=${item.id}" onclick="event.preventDefault();" data-wowhead="${wowheadParams}" data-wh-rename-link="false" data-wh-icon-size="none" style="display:block; text-decoration:none;">
-                            <img class="gear-table-icon ${iconClass}" src="${iconUrl}" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
-                        </a>
-                    </div>
-                    <div class="gear-table-details">
-                        <span class="gear-table-name ${qClass}" style="background-image:none !important; padding-left:0 !important;">
-                            <a href="https://www.wowhead.com/tbc/item=${item.id}" onclick="event.preventDefault();" data-wowhead="domain=tbc" data-wh-rename-link="true" class="item-name-no-tooltip">...</a>
-                        </span>
-                        ${enchantHtml ? `<div class="gear-table-enchants">${enchantHtml}</div>` : ''}
-                    </div>
-                </div>`;
-
-            // Put in correct group
-            groups.forEach(group => {
-                if (group.slots.includes(i)) groupHtmlMap[group.title] += rowHtml;
-            });
-
-        } else {
-            // Empy slots remain absolute correctly
-            paperDollHtml += `<div class="gear-slot slot-${i}" style="opacity:0.2; background: url('/api/icon/inv_misc_questionmark.jpg') center/cover;"></div>`;
-        }
-    }
-
-    // Assemble table groups in two columns
-    tableHtml = `
-        <div class="gear-column-left">
-            <div class="table-section-title">Armor</div>
-            ${groupHtmlMap["Armor"]}
-        </div>
-        <div class="gear-column-right">
-            <div class="table-section-title">Jewelry</div>
-            ${groupHtmlMap["Jewelry"]}
-            <div class="table-section-title">Weapons</div>
-            ${groupHtmlMap["Weapons"]}
-        </div>
-    `;
-
-    let bgIcon = SPEC_ICONS[specName] || SPEC_ICONS[specName.split('-')[0]] || SPEC_ICONS[className] || 'inv_misc_questionmark';
-
-    const contentHtmlStr = `
-        <div class="gear-modal-content">
-            <div class="paperdoll-container" style="background: radial-gradient(circle, #2a2a2a 0%, #111 80%); border: 2px solid #222; border-radius: 12px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9);">
-                <div style="position: absolute; top:15px; left:50%; transform:translateX(-50%); width:150px; height:405px; background: url('data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 185\\'%3E%3Cpath fill=\\'%23333\\' opacity=\\'0.5\\' d=\\'M35,20 C35,10 65,10 65,20 C65,30 60,35 50,35 C40,35 35,30 35,20 Z M25,40 L75,40 L85,100 L75,100 L70,60 L60,60 L60,180 L40,180 L40,60 L30,60 L25,100 L15,100 Z\\'/%3E%3C/svg%3E') center/contain no-repeat;"></div>
-                ${paperDollHtml}
-            </div>
-            <div class="gear-table-container">
-                ${tableHtml}
-            </div>
-        </div>
-    `;
-
-    const fragment = document.createDocumentFragment();
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = contentHtmlStr;
-    while (tempDiv.firstChild) {
-        fragment.appendChild(tempDiv.firstChild);
-    }
-
-    const gearContentEl = document.getElementById('gearModalContent');
-    gearContentEl.innerHTML = '';
-    gearContentEl.appendChild(fragment);
-
-    document.getElementById('gearOverlay').classList.add('is-open');
-
-    if (typeof $WowheadPower !== 'undefined') {
-        $WowheadPower.refreshLinks();
-    }
-}
-
-function closeGearModal() {
-    document.getElementById('gearOverlay').classList.remove('is-open');
-}
-
-

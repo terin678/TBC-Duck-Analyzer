@@ -8,11 +8,11 @@
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
-
         gtag('config', 'G-7P3JK2357E');
     </script>
     <script>var whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: true, domain: 'tbc', hide: { icon: true } };</script>
     <script src="https://wow.zamimg.com/widgets/power.js"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
@@ -31,17 +31,65 @@
 
 <body>
 
-    <div id="feedbackBtn" class="feedback-btn" title="Report a bug or suggestion">
-        📝 Feedback
+    <!-- ==================== LANDING PAGE ==================== -->
+    <div id="landingPage" class="landing-page">
+        <div class="landing-content">
+            <div class="logo-container">
+                <h1>TBC DUCK ANALYZER</h1>
+            </div>
+            <div class="top-bar">
+                <input type="text" id="logInput" placeholder="Paste log URL or ID here..." autocomplete="off"
+                    spellcheck="false" data-lpignore="true">
+                <button onclick="auditarLog()" class="audit-btn">LOG CHECK</button>
+            </div>
+            <div id="landingStatus" class="landing-status"></div>
+        </div>
+        <footer class="landing-footer">
+            <p>TBC Duck Analyzer v1.2 &copy; 2026 | <a
+                    href="https://github.com/patitokun03-spec/TBC-Duck-Analyzer" target="_blank">Open Source on
+                    GitHub</a></p>
+            <p class="footer-sub">WoW TBC Log Analyzer | Made for the community</p>
+        </footer>
     </div>
 
-    <div id="githubBtn" class="github-btn" title="Go to GitHub repository">
-        ⭐ GitHub
+    <!-- ==================== APP LAYOUT (hidden initially) ==================== -->
+    <div id="appLayout" class="app-layout">
+
+        <!-- LEFT SIDEBAR — FIGHTS -->
+        <aside class="sidebar sidebar-left" id="sidebarLeft">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">🦆 TBC Duck Analyzer</div>
+                <div class="sidebar-report-id" id="reportInfo"></div>
+                <a href="#" class="sidebar-back" onclick="goBackToLanding(); return false;">← Change report</a>
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">FIGHTS</div>
+                <div id="fightsList" class="sidebar-list"></div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content" id="mainContent">
+            <div id="contentArea">
+                <div class="content-placeholder">
+                    <div class="placeholder-icon">🦆</div>
+                    <p>Select a fight and a player to view the analysis</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT SIDEBAR — PLAYERS -->
+        <aside class="sidebar sidebar-right" id="sidebarRight">
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">PLAYERS</div>
+                <div id="playersList" class="sidebar-list"></div>
+            </div>
+        </aside>
+
     </div>
 
-
-
-    <!-- MODAL DE EQUIPO (PAPERDOLL) -->
+    <!-- ==================== GEAR INSPECTOR MODAL ==================== -->
     <div class="overlay" id="gearOverlay">
         <div class="settings-modal paperdoll-card" style="width: 1000px; max-width: 95vw;">
             <div class="settings-header">
@@ -54,7 +102,7 @@
         </div>
     </div>
 
-    <!-- MODAL DISCORD WEBHOOK PROFILES -->
+    <!-- ==================== DISCORD WEBHOOK MODAL ==================== -->
     <div class="overlay" id="discordOverlay">
         <div class="discord-modal">
             <div class="discord-modal-header">
@@ -62,33 +110,31 @@
                 <button class="discord-close-btn" onclick="closeDiscordModal()">×</button>
             </div>
             <div class="discord-modal-body">
-                <!-- Profile List -->
                 <div class="webhook-profiles-section">
                     <div class="webhook-section-title">
                         <span>📋 Saved Profiles</span>
                         <button class="webhook-add-btn" onclick="showWebhookForm()">+ Add New</button>
                     </div>
-                    <div id="webhookProfilesList" class="webhook-profiles-list">
-                        <!-- Rendered by JS -->
-                    </div>
+                    <div id="webhookProfilesList" class="webhook-profiles-list"></div>
                 </div>
-
-                <!-- Add / Edit Form (hidden by default) -->
                 <div id="webhookForm" class="webhook-form" style="display:none;">
                     <div class="webhook-form-title" id="webhookFormTitle">➕ New Profile</div>
                     <div class="webhook-form-fields">
                         <div class="webhook-form-group">
                             <label class="discord-label">Profile Name</label>
-                            <input type="text" id="webhookNameInput" class="discord-input" placeholder="e.g. Raid Officers, #logs...">
+                            <input type="text" id="webhookNameInput" class="discord-input"
+                                placeholder="e.g. Raid Officers, #logs...">
                         </div>
                         <div class="webhook-form-group">
                             <label class="discord-label">Webhook URL</label>
-                            <input type="text" id="discordWebhookInput" class="discord-input" placeholder="https://discord.com/api/webhooks/...">
+                            <input type="text" id="discordWebhookInput" class="discord-input"
+                                placeholder="https://discord.com/api/webhooks/...">
                         </div>
                     </div>
                     <div class="webhook-form-actions">
                         <button class="discord-cancel-btn" onclick="hideWebhookForm()">← Back</button>
-                        <button class="discord-save-profile-btn" onclick="saveWebhookProfile()">💾 Save Profile</button>
+                        <button class="discord-save-profile-btn" onclick="saveWebhookProfile()">💾 Save
+                            Profile</button>
                     </div>
                 </div>
             </div>
@@ -98,52 +144,24 @@
         </div>
     </div>
 
-    <div class="container">
+    <!-- ==================== FIXED BUTTONS ==================== -->
+    <div id="feedbackBtn" class="feedback-btn" title="Report a bug or suggestion">📝 Feedback</div>
+    <div id="githubBtn" class="github-btn" title="Go to GitHub repository">⭐ GitHub</div>
+    <button id="btnDiscord" onclick="enviarADiscord()" class="discord-float-btn" style="display:none;">💬
+        Discord</button>
 
-
-        <div class="logo-container">
-            <h1>TBC DUCK ANALYZER</h1>
-        </div>
-
-        <div class="top-bar">
-            <input type="text" id="logId" placeholder="Paste log URL or ID here..." autocomplete="off"
-                spellcheck="false" data-lpignore="true">
-            <button onclick="auditarLog()" class="audit-btn">LOG CHECK</button>
-            <button id="btnDiscord" onclick="enviarADiscord()"
-                style="display:none; background:#5865F2; margin-left:10px; color:white;">SEND TO DISCORD</button>
-        </div>
-
-        <div id="encounterTabs" class="encounter-tabs"></div>
-
-        <div id="resultados"></div>
-    </div>
-
+    <!-- ==================== SCRIPTS ==================== -->
     <script src="/js/data.js"></script>
     <script src="/js/script.js"></script>
     <script>
-        // GitHub Feedback System
         document.getElementById('feedbackBtn').addEventListener('click', function () {
-            const gitHubIssueUrl = 'https://github.com/patitokun03-spec/TBC-Duck-Analyzer/issues/new?labels=feedback&template=bug_report.md';
-            window.open(gitHubIssueUrl, '_blank');
+            window.open('https://github.com/patitokun03-spec/TBC-Duck-Analyzer/issues/new?labels=feedback&template=bug_report.md', '_blank');
         });
-
-        // GitHub Repository Button
         document.getElementById('githubBtn').addEventListener('click', function () {
             window.open('https://github.com/patitokun03-spec/TBC-Duck-Analyzer', '_blank');
         });
-
-
     </script>
 
-    <!-- Removed duplicate script tags -->
-
-    <footer class="app-footer">
-        <div class="footer-content">
-            <p>TBC Duck Analyzer v1.2 © 2026 | <a href="https://github.com/patitokun03-spec/TBC-Duck-Analyzer"
-                    target="_blank">Open Source on GitHub</a></p>
-            <p style="font-size: 0.85rem; color: #888;">WoW TBC Log Analyzer | Made for the community</p>
-        </div>
-    </footer>
 </body>
 
 </html>

@@ -77,21 +77,22 @@ app.post('/api/audit', async (req, res) => {
 
                 // Obtener IDs de spells dinámicamente de data.js para no duplicar código
                 const dataJs = fs.readFileSync(path.join(__dirname, 'public', 'js', 'data.js'), 'utf8');
-                const spellDbMatch = dataJs.match(/const SPELL_DB = \{([\s\S]*?)\n\};/);
-                let castIds = "";
-                if (spellDbMatch) {
-                    const matches = [...spellDbMatch[1].matchAll(/^\s+(\d+):/gm)];
-                    castIds = matches.map(m => m[1]).join(',');
-                } else {
-                    return res.status(500).json({ error: "No se pudo leer SPELL_DB desde data.js" });
-                }
+                
+                const parseIds = (varName) => {
+                    const idx = dataJs.indexOf(`const ${varName} =`);
+                    if (idx === -1) return "";
+                    let nextIdx = dataJs.indexOf('const ', idx + 10);
+                    if (nextIdx === -1) nextIdx = dataJs.length;
+                    const block = dataJs.substring(idx, nextIdx);
+                    const matches = [...block.matchAll(/^\s+(\d+):/gm)];
+                    return matches.map(m => m[1]).join(',');
+                };
 
-                const buffDbMatch = dataJs.match(/const BUFF_DB = \{([\s\S]*?)\n\};/);
-                let buffIds = "";
-                if (buffDbMatch) {
-                    const matches = [...buffDbMatch[1].matchAll(/^\s+(\d+):/gm)];
-                    buffIds = matches.map(m => m[1]).join(',');
-                }
+                let castIds = parseIds('SPELL_DB');
+                if (!castIds) return res.status(500).json({ error: "No se pudo leer SPELL_DB desde data.js" });
+
+                let buffIds = parseIds('BUFF_DB');
+                let timelineIds = parseIds('TIMELINE_SPELLS');
 
                 // Petición a WarcraftLogs para obtener token
                 const responseToken = await axios.post(
@@ -104,9 +105,23 @@ app.post('/api/audit', async (req, res) => {
                 if (!token) throw new Error("Invalid or expired API Keys.");
 
                 // Query y filtro
-                const filterExp = `(type = 'cast' AND ability.id IN (${castIds})) OR (type = 'damage' AND ability.id IN (13241, 30486, 33671)) OR type = 'interrupt' OR type = 'combatantinfo' OR (type IN ('applybuff', 'applybuffstack', 'refreshbuff', 'cast') AND ability.id IN (${buffIds}))`;
+                const filterExp = `(type = 'cast' AND ability.id IN (${castIds},${timelineIds})) OR (type = 'damage' AND ability.id IN (13241, 30486, 33671)) OR type = 'interrupt' OR type = 'combatantinfo' OR (type IN ('applybuff', 'applybuffstack', 'refreshbuff', 'removebuff', 'cast') AND ability.id IN (${buffIds},${timelineIds}))`;
+                // Función para obtener todas las páginas de eventos
+                const fetchEventsPaginated = async (startEvent, startDeath) => {
+                    const evStr = startEvent !== null ? `events(startTime: ${startEvent}, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp }` : '';
+                    const deathStr = startDeath !== null ? `deaths: events(startTime: ${startDeath}, endTime: 999999999999, dataType: Deaths) { data nextPageTimestamp }` : '';
+                    
+                    if (!evStr && !deathStr) return null;
+
+                    const q = JSON.stringify({ query: `{reportData {report(code: "${logId}") { ${evStr} ${deathStr} }}}` });
+                    const res = await axios.post("https://www.warcraftlogs.com/api/v2/client", q, { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } });
+                    if (res.data.errors) throw new Error(res.data.errors[0].message);
+                    return res.data.data.reportData.report;
+                };
+
+                // Petición Inicial
                 const query = JSON.stringify({
-                    query: `{reportData {report(code: "${logId}") {title fights(killType: Encounters) { id name startTime endTime kill } masterData { actors(type: "Player") { id name subType icon } } events(startTime: 0, endTime: 999999999999, filterExpression: "${filterExp}") { data }}}}`
+                    query: `{reportData {report(code: "${logId}") {title fights(killType: Encounters) { id name startTime endTime kill } masterData { actors(type: "Player") { id name subType icon } } events(startTime: 0, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp } deaths: events(startTime: 0, endTime: 999999999999, dataType: Deaths) { data nextPageTimestamp }}}}`
                 });
 
                 const responseData = await axios.post(
@@ -118,6 +133,32 @@ app.post('/api/audit', async (req, res) => {
                 if (responseData.data.errors) {
                     throw new Error(responseData.data.errors[0].message);
                 }
+
+                // Manejar la paginación (si el log es muy largo, WCL corta a los 10k eventos)
+                let report = responseData.data.data.reportData.report;
+                let nextEvent = report.events?.nextPageTimestamp || null;
+                let nextDeath = report.deaths?.nextPageTimestamp || null;
+
+                while (nextEvent !== null || nextDeath !== null) {
+                    const page = await fetchEventsPaginated(nextEvent, nextDeath);
+                    if (!page) break;
+                    if (nextEvent !== null && page.events) {
+                        report.events.data = report.events.data.concat(page.events.data);
+                        nextEvent = page.events.nextPageTimestamp || null;
+                    }
+                    if (nextDeath !== null && page.deaths) {
+                        report.deaths.data = report.deaths.data.concat(page.deaths.data);
+                        nextDeath = page.deaths.nextPageTimestamp || null;
+                    }
+                }
+
+                // Mezclar muertes con el array principal de eventos para que el frontend lo lea igual
+                if (report.deaths && report.deaths.data) {
+                    report.events.data = report.events.data.concat(report.deaths.data);
+                }
+
+                // Ordenar por timestamp
+                report.events.data.sort((a, b) => a.timestamp - b.timestamp);
 
                 // Guardar en la base de datos (caché)
                 const responseString = JSON.stringify(responseData.data);
@@ -138,6 +179,66 @@ app.post('/api/audit', async (req, res) => {
 
     } catch (error) {
         console.error(error);
+        res.status(500).json({ error: "Unknown error" });
+    }
+});
+app.post('/api/dps', async (req, res) => {
+    try {
+        const { logId, startTime, endTime, playerId } = req.body;
+        if (!logId || startTime == null || endTime == null || !playerId) {
+            return res.status(400).json({ error: "Missing required parameters" });
+        }
+
+        const cacheKey = `dps_${logId}_${startTime}_${endTime}_${playerId}`;
+
+        db.get("SELECT log_data FROM logs_cache WHERE log_id = ?", [cacheKey], async (err, row) => {
+            if (row && row.log_data) {
+                try { return res.json(JSON.parse(row.log_data)); } catch (e) {}
+            }
+
+            try {
+                const responseToken = await axios.post(
+                    "https://www.warcraftlogs.com/oauth/token",
+                    `grant_type=client_credentials&client_id=${process.env.WCL_CLIENT_ID}&client_secret=${process.env.WCL_CLIENT_SECRET}`,
+                    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+                );
+                const token = responseToken.data.access_token;
+
+                const query = JSON.stringify({
+                    query: `{reportData {report(code: "${logId}") {
+                        damage: table(dataType: DamageDone, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
+                        healing: table(dataType: Healing, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
+                    }}}`
+                });
+
+                const responseData = await axios.post(
+                    "https://www.warcraftlogs.com/api/v2/client",
+                    query,
+                    { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }
+                );
+
+                if (responseData.data.errors) throw new Error(responseData.data.errors[0].message);
+
+                const report = responseData.data?.data?.reportData?.report;
+                const dmgTotal = report?.damage?.data?.entries?.[0]?.total || 0;
+                const healTotal = report?.healing?.data?.entries?.[0]?.total || 0;
+                
+                const duration = (endTime - startTime) / 1000;
+                let result = {};
+                if (healTotal > dmgTotal * 1.5) { // If it's a healer
+                    result = { dps: Math.round(healTotal / duration), total: healTotal, isHealing: true };
+                } else {
+                    result = { dps: Math.round(dmgTotal / duration), total: dmgTotal, isHealing: false };
+                }
+
+                db.run("INSERT OR REPLACE INTO logs_cache (log_id, log_data) VALUES (?, ?)", [cacheKey, JSON.stringify(result)]);
+                res.json(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ error: "DPS fetch error" });
+            }
+        });
+    } catch (error) {
         res.status(500).json({ error: "Unknown error" });
     }
 });
