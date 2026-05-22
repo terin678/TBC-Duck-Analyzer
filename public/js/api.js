@@ -35,9 +35,16 @@ export async function auditarLog() {
         const allActors = report.masterData.actors || [];
         const allEvents = report.events.data || [];
 
+        // Solo mostrar jugadores que tienen un evento combatantinfo
+        // (WCL solo genera este evento para miembros reales de la raid/grupo)
+        const combatantIds = new Set(
+            allEvents.filter(ev => ev.type === 'combatantinfo').map(ev => ev.sourceID)
+        );
+        const raidActors = allActors.filter(a => combatantIds.has(a.id));
+
         state.currentReport = report;
         state.currentEvents = allEvents;
-        state.currentActors = allActors;
+        state.currentActors = raidActors;
         state.currentLogTitle = report.title;
 
         // Pre-process: detect specs and store gear from combatantinfo events
