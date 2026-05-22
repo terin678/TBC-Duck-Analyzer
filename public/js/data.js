@@ -503,3 +503,13 @@ const TIMELINE_SPELLS = {
     26296: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f" },
     20594: { name: "Stoneform", icon: "spell_shadow_unholystrength", color: "#777" },
 };
+
+if (typeof window !== 'undefined') {
+    window.CLASSES = CLASSES;
+    window.SPEC_ICONS = SPEC_ICONS;
+    window.BUFF_DB = BUFF_DB;
+    window.ENCHANT_DB = ENCHANT_DB;
+    window.SPELL_DB = SPELL_DB;
+    window.TIMELINE_SPELLS = TIMELINE_SPELLS;
+    window.OPTIMAL_ENCHANTS = OPTIMAL_ENCHANTS;
+}
