@@ -97,7 +97,7 @@ export function renderPlayerView(data, player, fightInfo) {
 
     const usedBuffs = Object.keys(window.BUFF_DB).filter(id =>
         window.BUFF_DB[id].category !== 3 && window.BUFF_DB[id].category !== 'seal' && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
-    ).sort((a, b) => window.BUFF_DB[a].category - window.BUFF_DB[b].category);
+    ).sort((a, b) => (window.BUFF_DB[a].order ?? 99) - (window.BUFF_DB[b].order ?? 99));
     
     usedBuffs.forEach(id => {
         const count = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
@@ -332,7 +332,7 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
     // Compact buff icons (no names)
     const usedBuffs = Object.keys(window.BUFF_DB).filter(id =>
         window.BUFF_DB[id].category !== 3 && window.BUFF_DB[id].category !== 'seal' && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
-    );
+    ).sort((a, b) => (window.BUFF_DB[a].order ?? 99) - (window.BUFF_DB[b].order ?? 99));
     let buffsHtml = '';
     usedBuffs.forEach(id => {
         const count = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
