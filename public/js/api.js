@@ -68,11 +68,14 @@ export async function auditarLog() {
 
         // Also store gear per fight
         report.fights.forEach(fight => {
-            const fightEvents = allEvents.filter(ev =>
-                ev.timestamp >= (fight.startTime - 15000) && ev.timestamp <= (fight.endTime + 5000)
-            );
-            fightEvents.forEach(ev => {
-                if (ev.type === 'combatantinfo' && ev.gear) {
+            const combatantInfosMap = {};
+            allEvents.forEach(ev => {
+                if (ev.type === 'combatantinfo' && ev.timestamp <= fight.startTime + 15000 && ev.timestamp >= fight.startTime - 180000) {
+                    combatantInfosMap[ev.sourceID] = ev;
+                }
+            });
+            Object.values(combatantInfosMap).forEach(ev => {
+                if (ev.gear) {
                     const p = allActors.find(x => x.id === ev.sourceID);
                     if (p) {
                         if (!state.playerGearDB[fight.id]) state.playerGearDB[fight.id] = {};

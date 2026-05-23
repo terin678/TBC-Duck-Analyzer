@@ -34,9 +34,20 @@ export function renderMainContent() {
             contentArea.innerHTML = '<div class="content-placeholder"><p>Fight not found</p></div>';
             return;
         }
-        fightEvents = allEvents.filter(ev =>
-            ev.timestamp >= (fightInfo.startTime - 15000) && ev.timestamp <= (fightInfo.endTime + 5000)
-        );
+        const combatantInfosMap = {};
+        const regularEvents = [];
+        
+        allEvents.forEach(ev => {
+            if (ev.type === 'combatantinfo') {
+                if (ev.timestamp <= fightInfo.startTime + 15000 && ev.timestamp >= fightInfo.startTime - 180000) {
+                    combatantInfosMap[ev.sourceID] = ev;
+                }
+            } else if (ev.timestamp >= (fightInfo.startTime - 15000) && ev.timestamp <= (fightInfo.endTime + 5000)) {
+                regularEvents.push(ev);
+            }
+        });
+        
+        fightEvents = [...Object.values(combatantInfosMap), ...regularEvents].sort((a, b) => a.timestamp - b.timestamp);
     }
 
     // "All" view — raid summary
