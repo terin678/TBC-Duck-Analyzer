@@ -2,6 +2,15 @@
 
 All notable changes to TBC Duck Analyzer are documented here.
 
+## [1.2.1] - 2026-05-23
+
+### 🐛 Bug Fixes & Improvements
+- **RP Encounter Buff Tracking** - Expanded the `combatantinfo` search window up to 3 minutes prior to combat start. Fixes a critical issue where long RP fights (e.g., Kael'thas) would discard all initial buffs and gear data on wipes.
+- **In-Combat Consumables Tracker** - Added tracking for Super Mana Potions, Super Healing Potions, Injectors, and all types of Drums (Battle, Restoration, Speed, War, Panic) to ensure they appear under Consumables & Buffs when used mid-fight (especially post-resurrection).
+- **Player Sorting Logic** - Upgraded the player sorting algorithm in the UI. Characters are now cleanly grouped by **Class**, then by **Specialization**, and finally sorted **Alphabetically**.
+
+---
+
 ## [1.2.0] - 2026-04-14
 
 ### ✨ Full-Stack Migration & Architecture
