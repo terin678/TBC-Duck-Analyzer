@@ -2,6 +2,15 @@
 
 Todos los cambios importantes en este proyecto serán documentados en este archivo.
 
+## [1.2.1] - 2026-05-23
+
+### 🐛 Soluciones y Mejoras
+- **Rastreo de Buffs en Encounters con RP** - Se amplió la ventana de búsqueda de `combatantinfo` hasta 3 minutos antes del inicio del combate. Esto soluciona un error crítico donde peleas con RP largo (ej. Kael'thas) descartaban todos los buffs y gear iniciales en los wipes.
+- **Rastreo de Consumibles de Combate** - Se añadió rastreo para Pociones de Maná y Vida Superiores, Inyectores y todos los tipos de Tambores (Battle, Restoration, Speed, War, Panic) para asegurar que aparezcan en Consumibles y Buffs si se usan a mitad del combate (especialmente post-resurrección).
+- **Lógica de Ordenación de Jugadores** - Se mejoró el algoritmo de ordenación en la interfaz. Los personajes ahora se agrupan limpiamente por **Clase**, luego por **Especialización**, y finalmente de forma **Alfabética**.
+
+---
+
 ## [1.2.0] - 2026-04-14
 
 ### ✨ Migración Full-Stack y Arquitectura
