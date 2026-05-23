@@ -49,10 +49,14 @@ export function renderPlayersSidebar(allActors) {
         <span class="all-player-label">All</span>
     </div>`;
 
-    // Sort by class order, then by name
+    // Sort by class order, then by spec, then by name
     const sorted = [...allActors].sort((a, b) => {
         const ci = window.CLASSES.indexOf(a.subType) - window.CLASSES.indexOf(b.subType);
         if (ci !== 0) return ci;
+        const specA = state.detectedSpecs[a.name] || a.subType;
+        const specB = state.detectedSpecs[b.name] || b.subType;
+        const si = specA.localeCompare(specB);
+        if (si !== 0) return si;
         return a.name.localeCompare(b.name);
     });
 
