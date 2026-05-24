@@ -37,6 +37,8 @@ export function processPlayerData(fightId, fightEvents, player) {
     let rebirths = [];
     let activeSeal = null;
     let itemCasts = {};
+    let prePots = {};
+
 
     // Phase 1: combatantinfo + buff events
     fightEvents.forEach(ev => {
@@ -49,6 +51,12 @@ export function processPlayerData(fightId, fightEvents, player) {
                     const spellId = aura.ability;
                     if (SEAL_TO_TYPE[spellId]) {
                         activeSeal = SEAL_TO_TYPE[spellId];
+                    }
+                    if (typeof window.BUFF_DB !== 'undefined' && window.BUFF_DB[spellId]) {
+                        let isConsumable = window.BUFF_DB[spellId].category === 5 || window.BUFF_DB[spellId].order === 70;
+                        if (isConsumable) {
+                            prePots[spellId] = (prePots[spellId] || 0) + 1;
+                        }
                     }
                     if (typeof window.TIMELINE_SPELLS !== 'undefined' && window.TIMELINE_SPELLS[spellId]) {
                         if (!timelineEvents[spellId]) timelineEvents[spellId] = [];
@@ -162,10 +170,12 @@ export function processPlayerData(fightId, fightEvents, player) {
         if (ev.type === 'cast' && (spellId === 20424 || spellId === 31898)) return;
 
         if (ev.type === 'cast') {
-            if (window.BUFF_DB && window.BUFF_DB[spellId]) {
+            let counted = false;
+            if (typeof window.BUFF_DB !== 'undefined' && window.BUFF_DB[spellId]) {
                 itemCasts[spellId] = (itemCasts[spellId] || 0) + 1;
+                counted = true;
             }
-            if (window.SPELL_DB && window.SPELL_DB[spellId] && window.SPELL_DB[spellId].category === 5) {
+            if (!counted && typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[spellId] && window.SPELL_DB[spellId].category === 5) {
                 itemCasts[spellId] = (itemCasts[spellId] || 0) + 1;
             }
         }
@@ -260,6 +270,7 @@ export function processPlayerData(fightId, fightEvents, player) {
         deaths,
         rebirths,
         itemCasts,
+        prePots,
         spec: state.detectedSpecs[player.name] || player.subType
     };
 }

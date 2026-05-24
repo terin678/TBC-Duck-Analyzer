@@ -117,8 +117,9 @@ export function renderPlayerView(data, player, fightInfo) {
 
         if (isConsumableCast) {
             let casts = data.itemCasts[id] || 0;
+            let pre = data.prePots[id] || 0;
             // Total uses = in-combat casts + pre-pots (present in combatantInfo)
-            let totalUses = casts + ciCount;
+            let totalUses = casts + pre;
             ratioDisplay = `<span class="buff-ratio">x${totalUses}</span>`;
         } else {
             ratioDisplay = `<span class="buff-ratio">${ciCount}${isOverall && totalFights > 1 ? `/${totalFights}` : ''}</span>`;
@@ -367,7 +368,8 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
 
         if (isConsumableCast) {
             let casts = data.itemCasts[id] || 0;
-            let totalUses = casts + ciCount;
+            let pre = data.prePots[id] || 0;
+            let totalUses = casts + pre;
             ratioText = `x${totalUses}`;
         } else {
             ratioText = `${ciCount}${isOverall && totalFights > 1 ? '/' + totalFights : ''}`;
