@@ -1,7 +1,7 @@
-import { state } from './state.js';
-import { parseLogId } from './utils.js';
-import { detectPlayerSpec } from './utils.js';
-import { renderFightsSidebar, renderPlayersSidebar } from './ui/sidebar.js';
+import { state } from './state.js?v=1.2.3';
+import { parseLogId } from './utils.js?v=1.2.3';
+import { detectPlayerSpec } from './utils.js?v=1.2.3';
+import { renderFightsSidebar, renderPlayersSidebar } from './ui/sidebar.js?v=1.2.3';
 
 export async function auditarLog() {
     const rawInput = document.getElementById('logInput').value.trim();

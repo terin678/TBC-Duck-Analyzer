@@ -1,5 +1,5 @@
-import { state } from '../state.js';
-import { formatDuration, escapeHtml } from '../utils.js';
+import { state } from '../state.js?v=1.2.3';
+import { formatDuration, escapeHtml } from '../utils.js?v=1.2.3';
 
 export function renderFightsSidebar(report) {
     const fightsList = document.getElementById('fightsList');
