@@ -107,12 +107,23 @@ export function renderPlayerView(data, player, fightInfo) {
     let weaponBuffHtmls = [];
 
     const usedBuffs = Object.keys(window.BUFF_DB).filter(id =>
-        window.BUFF_DB[id].category !== 3 && window.BUFF_DB[id].category !== 'seal' && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
+        window.BUFF_DB[id].category !== 3 && window.BUFF_DB[id].category !== 'seal' && (data.combatantInfos.some(auras => auras.includes(parseInt(id))) || data.itemCasts[id])
     ).sort((a, b) => (window.BUFF_DB[a].order ?? 99) - (window.BUFF_DB[b].order ?? 99));
     
     usedBuffs.forEach(id => {
-        const count = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
-        let ratioDisplay = `<span class="buff-ratio">${count}${isOverall && totalFights > 1 ? `/${totalFights}` : ''}</span>`;
+        const isConsumableCast = window.BUFF_DB[id].category === 5 || window.BUFF_DB[id].order === 70;
+        let ratioDisplay = '';
+        const ciCount = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
+
+        if (isConsumableCast) {
+            let casts = data.itemCasts[id] || 0;
+            // Total uses = in-combat casts + pre-pots (present in combatantInfo)
+            let totalUses = casts + ciCount;
+            ratioDisplay = `<span class="buff-ratio">x${totalUses}</span>`;
+        } else {
+            ratioDisplay = `<span class="buff-ratio">${ciCount}${isOverall && totalFights > 1 ? `/${totalFights}` : ''}</span>`;
+        }
+
         standardBuffHtmls.push(`<div class="buff-item"><img class="buff-icon" src="/api/icon/${window.BUFF_DB[id].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'"><span class="buff-name">${window.BUFF_DB[id].name}</span>${ratioDisplay}</div>`);
     });
 
@@ -346,12 +357,22 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
 
     // Compact buff icons (no names)
     const usedBuffs = Object.keys(window.BUFF_DB).filter(id =>
-        window.BUFF_DB[id].category !== 3 && window.BUFF_DB[id].category !== 'seal' && data.combatantInfos.some(auras => auras.includes(parseInt(id)))
+        window.BUFF_DB[id].category !== 3 && window.BUFF_DB[id].category !== 'seal' && (data.combatantInfos.some(auras => auras.includes(parseInt(id))) || data.itemCasts[id])
     ).sort((a, b) => (window.BUFF_DB[a].order ?? 99) - (window.BUFF_DB[b].order ?? 99));
     let buffsHtml = '';
     usedBuffs.forEach(id => {
-        const count = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
-        let ratioText = `${count}${isOverall && totalFights > 1 ? '/' + totalFights : ''}`;
+        const isConsumableCast = window.BUFF_DB[id].category === 5 || window.BUFF_DB[id].order === 70;
+        let ratioText = '';
+        const ciCount = data.combatantInfos.filter(auras => auras.includes(parseInt(id))).length;
+
+        if (isConsumableCast) {
+            let casts = data.itemCasts[id] || 0;
+            let totalUses = casts + ciCount;
+            ratioText = `x${totalUses}`;
+        } else {
+            ratioText = `${ciCount}${isOverall && totalFights > 1 ? '/' + totalFights : ''}`;
+        }
+
         buffsHtml += `<div class="av-buff" title="${window.BUFF_DB[id].name}">
             <img src="/api/icon/${window.BUFF_DB[id].icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
             <span class="av-ratio">${ratioText}</span>

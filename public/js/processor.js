@@ -36,6 +36,7 @@ export function processPlayerData(fightId, fightEvents, player) {
     let deaths = [];
     let rebirths = [];
     let activeSeal = null;
+    let itemCasts = {};
 
     // Phase 1: combatantinfo + buff events
     fightEvents.forEach(ev => {
@@ -160,6 +161,15 @@ export function processPlayerData(fightId, fightEvents, player) {
         // Ignorar los "casteos fantasma" de procs pasivos generados por golpes a melee (Sello de Comando/Sangre)
         if (ev.type === 'cast' && (spellId === 20424 || spellId === 31898)) return;
 
+        if (ev.type === 'cast') {
+            if (window.BUFF_DB && window.BUFF_DB[spellId]) {
+                itemCasts[spellId] = (itemCasts[spellId] || 0) + 1;
+            }
+            if (window.SPELL_DB && window.SPELL_DB[spellId] && window.SPELL_DB[spellId].category === 5) {
+                itemCasts[spellId] = (itemCasts[spellId] || 0) + 1;
+            }
+        }
+
         if (ev.type === 'cast' && window.SPELL_DB && window.SPELL_DB[spellId] && !SEAL_TO_TYPE[spellId] && !window.SPELL_DB[spellId].isInterrupt && !window.SPELL_DB[spellId].isMechanic && !window.SPELL_DB[spellId].isRes && window.SPELL_DB[spellId].category !== 5 && window.SPELL_DB[spellId].category !== 3) {
             if (spellId === 33671) return;
             if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
@@ -249,6 +259,7 @@ export function processPlayerData(fightId, fightEvents, player) {
         timelineEvents,
         deaths,
         rebirths,
+        itemCasts,
         spec: state.detectedSpecs[player.name] || player.subType
     };
 }
