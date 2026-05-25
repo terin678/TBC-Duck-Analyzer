@@ -185,6 +185,7 @@ const ENCHANT_DB = {
     2659: {name:"+150 HP"},
     2661: {name:"+6 Stats"},
     2662: {name:"+120 Armor"},
+    2666: {name:"+30 Intellect"},
     2667: {name:"Savagery"},
     2668: {name:"+20 SP & Heal"},
     2669: {name:"+40 SP"},
@@ -477,7 +478,7 @@ const OPTIMAL_ENCHANTS = {
     "Warrior-Arms": {best:[3003,2986,2997,2661,368,2647,684,3012,2940,2939,2673],alt:[2983,1891,2657,1593,1594,2996,1583,2564,3010,3011,911,2667,2670,2929]},
     "Warrior-Fury": {best:[3003,2986,2997,2661,368,2647,684,3012,2940,2939,2673],alt:[2983,1891,2657,1593,1594,2996,1583,2564,3010,3011,911,2667,2670,2929]},
     "Warrior-Protection": {best:[2999,2991,2661,2659,2622,2649,684,3013,2940,2673,1071],alt:[2978,1891,2662,368,1888,2613,2648,2647,2996,2990,3012,3010,3011,911,929,2670,2655,2605]},
-    "Paladin-Holy": {best:[3001,2980,2979,2661,2621,2617,2930,2322,2746,2940,2343,2654,369],alt:[3002,2982,2995,2715,1891,2659,2654,2928,2566,2668,2650,2937,2745,2748,2747,2590,911,2992,3150,2657,2705,2505,2669,2928]},
+    "Paladin-Holy": {best:[3001,2980,2979,2661,2621,2617,2930,2322,2746,2940,2343,2654,369,2666],alt:[3002,2982,2995,2715,1891,2659,2654,2928,2566,2668,2650,2937,2745,2748,2747,2590,911,2992,3150,2657,2705,2505,2669,2928]},
     "Paladin-Protection": {best:[2999,3002,2991,2661,2659,2622,2646,2650,2937,2748,2940,2649,2669,1071,2928,2928],alt:[2978,1891,2662,368,1888,2613,2648,2647,2996,2990,3012,3010,3011,911,929,2669,2670,2655,2605]},
     "Paladin-Retribution": {best:[3003,2986,2997,2661,368,2647,684,3012,2940,2939,2657,2673],alt:[2983,1891,1593,1594,2996,1583,2564,3010,3011,911,2667,2670,2929]},
     "Hunter-BeastMastery": {best:[3003,2986,2997,2661,368,1593,2564,3012,2940,2939,2673,2724,2929],alt:[2606,2983,1891,2657,1594,2647,2996,684,1583,3010,3011,911,2657,2670]},
@@ -512,7 +513,7 @@ const TIMELINE_SPELLS = {
     33370: { name: "Quagmirran's Eye", icon: "inv_misc_eye_01", color: "#179299" }, // Fungal Frenzy
     35163: { name: "Icon of the Silver Crescent", icon: "inv_trinket_naxxramas06", color: "#179299" },
     35166: { name: "Bloodlust Brooch", icon: "inv_trinket_naxxramas03", color: "#d9534f" },
-    35084: { name: "Fate's Decree (Scarab)", icon: "inv_misc_orb_03", color: "#179299" },
+    35084: { name: "Scarab of the Infinite Cycle", icon: "inv_misc_orb_03", color: "#179299" },
     23723: { name: "Mind Quickening", icon: "spell_nature_wispheal", color: "#179299" },
     34477: { name: "Misdirection", icon: "ability_hunter_misdirection", color: "#ABD473", duration: 1000 },
     33807: { name: "Abacus of Violent Odds", icon: "inv_misc_enggizmos_18", color: "#179299" },
@@ -564,9 +565,9 @@ const TIMELINE_SPELLS = {
     29166: { name: "Innervate", icon: "spell_nature_lightning", color: "#5bc0de" },
     31884: { name: "Avenging Wrath", icon: "spell_holy_avenginwrath", color: "#f4b400" },
     20572: { name: "Blood Fury", icon: "racial_orc_berserkerstrength", color: "#d9534f" },
-    20554: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f" },
-    26296: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f" },
-    26297: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f" },
+    20554: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
+    26296: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
+    26297: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
     20594: { name: "Stoneform", icon: "spell_shadow_unholystrength", color: "#777" },
 };
 
