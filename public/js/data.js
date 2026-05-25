@@ -82,6 +82,7 @@ const BUFF_DB = {
     35271: {name:"Shortribs / Talbuk",           icon:"inv_misc_food_48",                order:40},
     43722: {name:"Spicy Hot Talbuk",             icon:"inv_misc_food_84_roastclefthoof", order:40},
     43763: {name:"Spicy Hot Talbuk",             icon:"inv_misc_food_84_roastclefthoof", order:40},
+    43764: {name:"Spicy Hot Talbuk",             icon:"inv_misc_food_84_roastclefthoof", order:40},
     45020: {name:"Hot Apple Cider",              icon:"inv_drink_23",                    order:40},
 
     // ── SCROLLS (order 50) ─────────────────────────────────────────────────
