@@ -314,6 +314,7 @@ const SPELL_DB = {
     17534: {name:"Super Healing Potion",icon:"inv_potion_153",category:5},
     18562: {name:"Swiftmend",icon:"inv_relics_idolofrejuvenation",category:2},
     19574: {name:"Bestial Wrath",icon:"ability_druid_ferociousbite",category:1},
+    10308: {name:"Hammer of Justice",icon:"spell_holy_sealofmight",category:1},
     20216: {name:"Divine Flavor",icon:"spell_holy_heal",category:2},
     20235: {name:"Lay on Hands",icon:"spell_holy_layonhands",category:1},
     20271: {name:"Judgement",icon:"spell_holy_righteousfury"},
