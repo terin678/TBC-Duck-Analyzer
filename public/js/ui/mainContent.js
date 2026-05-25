@@ -244,7 +244,7 @@ export function renderPlayerView(data, player, fightInfo) {
     return `
         <div class="player-view">
             <div class="player-view-header">
-                <div style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-right: 15px; color: #ddd; font-size: 1rem; font-weight: bold; padding: 6px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="if(window.selectPlayer) window.selectPlayer('__ALL__')" title="Back to All Players">
+                <div style="position: absolute; left: -85px; top: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #ddd; font-size: 1rem; font-weight: bold; padding: 6px 12px; background: rgba(255,255,255,0.08); border-radius: 6px; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'" onclick="if(window.selectPlayer) window.selectPlayer('__ALL__')" title="Back to All Players">
                     <span style="margin-right: 6px; font-size: 1.2rem; line-height: 1;">&#8592;</span> All
                 </div>
                 <img src="/api/icon/${specIcon}.jpg" class="player-view-spec-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">

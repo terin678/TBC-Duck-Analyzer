@@ -502,6 +502,7 @@ h1::after {
 }
 
 .player-view-header {
+    position: relative;
     display: flex;
     align-items: flex-start;
     gap: 14px;
