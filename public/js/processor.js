@@ -1,4 +1,4 @@
-import { state } from './state.js?v=1.2.3';
+import { state } from './state.js?v=1.2.7';
 
 const SEAL_TO_TYPE = {
     // Seal of Righteousness
@@ -30,6 +30,7 @@ const SEAL_TO_TYPE = {
 
 export function processPlayerData(fightId, fightEvents, player) {
     let combatantInfos = [];
+    let lastCiTimestamp = 0;
     let tempEnchants = [];
     let spells = {};
     let timelineEvents = {};
@@ -43,6 +44,8 @@ export function processPlayerData(fightId, fightEvents, player) {
     // Phase 1: combatantinfo + buff events
     fightEvents.forEach(ev => {
         if (ev.type === 'combatantinfo' && ev.sourceID === player.id) {
+            if (ev.timestamp - lastCiTimestamp <= 30000) return;
+            lastCiTimestamp = ev.timestamp;
             combatantInfos.push(ev.auras ? ev.auras.map(a => a.ability) : []);
 
             // Initialize timeline events for buffs already active at start
@@ -108,10 +111,11 @@ export function processPlayerData(fightId, fightEvents, player) {
 
         if (isBuffTarget || isCastSource) {
             if (typeof window.BUFF_DB !== 'undefined' && window.BUFF_DB[ev.abilityGameID]) {
-                if (combatantInfos.length === 0) combatantInfos.push([]);
-                let lastInfos = combatantInfos[combatantInfos.length - 1];
-                if (!lastInfos.includes(ev.abilityGameID)) {
-                    lastInfos.push(ev.abilityGameID);
+                if (combatantInfos.length > 0) {
+                    let lastInfos = combatantInfos[combatantInfos.length - 1];
+                    if (!lastInfos.includes(ev.abilityGameID)) {
+                        lastInfos.push(ev.abilityGameID);
+                    }
                 }
             }
         }
@@ -126,9 +130,9 @@ export function processPlayerData(fightId, fightEvents, player) {
         // ── Detección de resurrecciones ────────────────────────────────────────
         // Se hace ANTES del filtro de playerId para que no se pierdan eventos
         // donde WCL no incluye targetID (ej: Ankh del propio Shaman)
-        const isRebirth = (ev.abilityGameID === 20484 || ev.abilityGameID === 21849 || ev.abilityGameID === 21850 || ev.abilityGameID === 26993 || ev.abilityGameID === 26994);
+        const isRebirth = (ev.abilityGameID === 20484 || ev.abilityGameID === 20739 || ev.abilityGameID === 20742 || ev.abilityGameID === 20747 || ev.abilityGameID === 20748 || ev.abilityGameID === 26994);
         const isAnkh = (ev.abilityGameID === 20608);
-        const isSoulstone = (ev.abilityGameID === 20707 || ev.abilityGameID === 20748 || ev.abilityGameID === 20749 || ev.abilityGameID === 20750 || ev.abilityGameID === 20758 || ev.abilityGameID === 27239);
+        const isSoulstone = (ev.abilityGameID === 20707 || ev.abilityGameID === 20762 || ev.abilityGameID === 20749 || ev.abilityGameID === 20750 || ev.abilityGameID === 20758 || ev.abilityGameID === 27239);
 
         // El jugador es el objetivo o la fuente (Ankh se castea a sí mismo)
         const playerIsTarget = (ev.targetID === player.id);
@@ -147,13 +151,6 @@ export function processPlayerData(fightId, fightEvents, player) {
                 }
                 else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isSoulstone && playerIsTarget) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Soulstone', icon: '💎' });
-                }
-                else if (ev.type === 'resurrect' && (playerIsTarget || playerIsSource)) {
-                    if (player.subType === 'Shaman') {
-                        rebirths.push({ timestamp: ev.timestamp, type: 'Ankh', icon: '⚡' });
-                    } else {
-                        rebirths.push({ timestamp: ev.timestamp, type: 'Resurrect', icon: '✨' });
-                    }
                 }
             }
         }
@@ -190,11 +187,11 @@ export function processPlayerData(fightId, fightEvents, player) {
             spells[spellId].count += 1;
         }
         // Sappers: track cast count + accumulate damage from hits
-        else if (ev.type === 'cast' && (spellId === 13241 || spellId === 30486)) {
+        else if (ev.type === 'cast' && (spellId === 13241 || spellId === 30486 || spellId === 30216 || spellId === 30217)) {
             if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
             spells[spellId].count += 1;
         }
-        else if (ev.type === 'damage' && (spellId === 13241 || spellId === 30486 || spellId === 33671)) {
+        else if (ev.type === 'damage' && (spellId === 13241 || spellId === 30486 || spellId === 30216 || spellId === 30217 || spellId === 33671)) {
             if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
             spells[spellId].damage += (ev.amount || 0) + (ev.absorbed || 0);
             if (spellId === 33671) spells[spellId].count += 1;

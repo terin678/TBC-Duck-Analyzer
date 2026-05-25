@@ -1,5 +1,5 @@
-import { state } from '../state.js?v=1.2.3';
-import { formatDuration, escapeHtml } from '../utils.js?v=1.2.3';
+import { state } from '../state.js?v=1.2.7';
+import { formatDuration, escapeHtml } from '../utils.js?v=1.2.7';
 
 // =============================================
 // GEAR INSPECTOR 

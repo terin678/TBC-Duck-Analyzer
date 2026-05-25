@@ -545,6 +545,9 @@ h1::after {
     color: #666;
     font-weight: 600;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .player-view-events {

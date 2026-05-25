@@ -1,7 +1,7 @@
-import { state } from '../state.js?v=1.2.3';
-import { formatDuration } from '../utils.js?v=1.2.3';
-import { processPlayerData } from '../processor.js?v=1.2.3';
-import { fetchDps } from '../api.js?v=1.2.3';
+import { state } from '../state.js?v=1.2.7';
+import { formatDuration } from '../utils.js?v=1.2.7';
+import { processPlayerData } from '../processor.js?v=1.2.7';
+import { fetchDps } from '../api.js?v=1.2.7';
 
 export function renderMainContent() {
     const contentArea = document.getElementById('contentArea');
@@ -118,8 +118,8 @@ export function renderPlayerView(data, player, fightInfo) {
         if (isConsumableCast) {
             let casts = data.itemCasts[id] || 0;
             let pre = data.prePots[id] || 0;
-            // Total uses = in-combat casts + pre-pots (present in combatantInfo)
             let totalUses = casts + pre;
+            if (totalUses === 0) return;
             ratioDisplay = `<span class="buff-ratio">x${totalUses}</span>`;
         } else {
             ratioDisplay = `<span class="buff-ratio">${ciCount}${isOverall && totalFights > 1 ? `/${totalFights}` : ''}</span>`;
@@ -239,11 +239,14 @@ export function renderPlayerView(data, player, fightInfo) {
 
     // === BOSS ICON ===
     let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
-    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 24px; vertical-align: middle; margin-right: 8px; border-radius: 4px;" onerror="this.style.display='none'">`;
+    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.style.display='none'">`;
 
     return `
         <div class="player-view">
             <div class="player-view-header">
+                <div style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-right: 15px; color: #ddd; font-size: 1rem; font-weight: bold; padding: 6px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="if(window.selectPlayer) window.selectPlayer('__ALL__')" title="Back to All Players">
+                    <span style="margin-right: 6px; font-size: 1.2rem; line-height: 1;">&#8592;</span> All
+                </div>
                 <img src="/api/icon/${specIcon}.jpg" class="player-view-spec-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
                 <span class="player-view-name ${className}-color">${player.name}</span>
                 <div class="player-view-right">
@@ -282,7 +285,22 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
         fightTitle = `${fightInfo.name} — ${formatDuration(duration)}`;
     }
     let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
-    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 20px; vertical-align: middle; margin-right: 6px; border-radius: 4px;" onerror="this.style.display='none'">`;
+    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.style.display='none'">`;
+
+    // Calculate global max fights for the overall denominator
+    let globalMaxFights = 1;
+    if (isOverall) {
+        const ciCounts = {};
+        fightEvents.forEach(ev => {
+            if (ev.type === 'combatantinfo') {
+                ciCounts[ev.sourceID] = (ciCounts[ev.sourceID] || 0) + 1;
+            }
+        });
+        const counts = Object.values(ciCounts);
+        if (counts.length > 0) {
+            globalMaxFights = Math.max(...counts);
+        }
+    }
 
     // Group players by class
     const playersByClass = {};
@@ -331,7 +349,7 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
         sectionsHtml += `<div class="all-view-players-grid">`;
         players.forEach(player => {
             const playerData = processPlayerData(fightId, fightEvents, player);
-            sectionsHtml += renderAllPlayerCard(playerData, player, fightInfo, isOverall);
+            sectionsHtml += renderAllPlayerCard(playerData, player, fightInfo, isOverall, globalMaxFights);
         });
         sectionsHtml += `</div></div>`;
     });
@@ -349,12 +367,12 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     `;
 }
 
-function renderAllPlayerCard(data, player, fightInfo, isOverall) {
+function renderAllPlayerCard(data, player, fightInfo, isOverall, globalMaxFights = 1) {
     const spec = data.spec;
     const specIcon = window.SPEC_ICONS[spec] || window.SPEC_ICONS[player.subType] || 'inv_misc_questionmark';
     const className = player.subType;
     const fightId = state.selectedFightId;
-    const totalFights = Math.max(1, data.combatantInfos.length);
+    const totalFights = isOverall ? globalMaxFights : Math.max(1, data.combatantInfos.length);
 
     // Compact buff icons (no names)
     const usedBuffs = Object.keys(window.BUFF_DB).filter(id =>
@@ -370,6 +388,7 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
             let casts = data.itemCasts[id] || 0;
             let pre = data.prePots[id] || 0;
             let totalUses = casts + pre;
+            if (totalUses === 0) return;
             ratioText = `x${totalUses}`;
         } else {
             ratioText = `${ciCount}${isOverall && totalFights > 1 ? '/' + totalFights : ''}`;
@@ -481,7 +500,7 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall) {
         <div class="all-view-player-card">
             <div class="av-player-header">
                 <img src="/api/icon/${specIcon}.jpg" class="av-spec-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
-                <span class="av-player-name ${className}-color">${player.name}</span>
+                <span class="av-player-name ${className}-color" style="cursor: pointer;" onclick="if(window.selectPlayer) window.selectPlayer('${player.name}')" title="Click to view details for ${player.name}">${player.name}</span>
                 ${eventsHtml}
             </div>
             <div class="av-sections">

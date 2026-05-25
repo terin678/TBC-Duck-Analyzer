@@ -107,7 +107,7 @@ app.post('/api/audit', async (req, res) => {
 
                 const resAbilityIds = [20608, 20707, 20748, 20749, 20750, 20758, 27239, 20484, 21849, 21850, 26993, 26994].join(',');
                 // Query y filtro
-                const filterExp = `(type = 'cast' AND ability.id IN (${castIds},${timelineIds})) OR (type = 'damage' AND ability.id IN (13241, 30486, 33671)) OR type = 'interrupt' OR type = 'combatantinfo' OR type = 'resurrect' OR (type IN ('applybuff', 'applybuffstack', 'refreshbuff', 'removebuff', 'cast') AND ability.id IN (${buffIds},${timelineIds},${resAbilityIds}))`;
+                const filterExp = `(type = 'cast' AND ability.id IN (${castIds},${timelineIds})) OR (type = 'damage' AND ability.id IN (13241, 30486, 33671, 30216, 30217)) OR type = 'interrupt' OR type = 'combatantinfo' OR type = 'resurrect' OR (type IN ('applybuff', 'applybuffstack', 'refreshbuff', 'removebuff', 'cast') AND ability.id IN (${buffIds},${timelineIds},${resAbilityIds}))`;
                 // Función para obtener todas las páginas de eventos
                 const fetchEventsPaginated = async (startEvent, startDeath) => {
                     const evStr = startEvent !== null ? `events(startTime: ${startEvent}, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp }` : '';
@@ -123,7 +123,7 @@ app.post('/api/audit', async (req, res) => {
 
                 // Petición Inicial
                 const query = JSON.stringify({
-                    query: `{reportData {report(code: "${logId}") {title fights(killType: Encounters) { id name startTime endTime kill } masterData { actors(type: "Player") { id name subType icon } } events(startTime: 0, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp } deaths: events(startTime: 0, endTime: 999999999999, dataType: Deaths) { data nextPageTimestamp }}}}`
+                    query: `{reportData {report(code: "${logId}") {title fights { id name startTime endTime kill difficulty } masterData { actors(type: "Player") { id name subType icon } } events(startTime: 0, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp } deaths: events(startTime: 0, endTime: 999999999999, dataType: Deaths) { data nextPageTimestamp }}}}`
                 });
 
                 const responseData = await axios.post(
@@ -213,10 +213,18 @@ app.post('/api/dps', async (req, res) => {
                 );
                 const token = responseToken.data.access_token;
                 let query;
-                if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
+                if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0 && fightIDs[0] === 'all') {
                     query = JSON.stringify({
                         query: `{reportData {report(code: "${logId}") {
-                            fights(killType: Encounters) { id startTime endTime }
+                            fights { id startTime endTime }
+                            damage: table(dataType: DamageDone, startTime: 0, endTime: 999999999999, sourceID: ${playerId})
+                            healing: table(dataType: Healing, startTime: 0, endTime: 999999999999, sourceID: ${playerId})
+                        }}}`
+                    });
+                } else if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
+                    query = JSON.stringify({
+                        query: `{reportData {report(code: "${logId}") {
+                            fights { id startTime endTime }
                             damage: table(dataType: DamageDone, fightIDs: [${fightIDs.join(',')}], sourceID: ${playerId})
                             healing: table(dataType: Healing, fightIDs: [${fightIDs.join(',')}], sourceID: ${playerId})
                         }}}`
@@ -224,7 +232,7 @@ app.post('/api/dps', async (req, res) => {
                 } else {
                     query = JSON.stringify({
                         query: `{reportData {report(code: "${logId}") {
-                            fights(killType: Encounters) { id startTime endTime }
+                            fights { id startTime endTime }
                             damage: table(dataType: DamageDone, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
                             healing: table(dataType: Healing, startTime: ${startTime}, endTime: ${endTime}, sourceID: ${playerId})
                         }}}`
@@ -248,7 +256,13 @@ app.post('/api/dps', async (req, res) => {
 
                 let duration = 0;
                 const fights = report?.fights || [];
-                if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
+                if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0 && fightIDs[0] === 'all') {
+                    let totalDurationMs = 0;
+                    fights.forEach(f => {
+                        totalDurationMs += (f.endTime - f.startTime);
+                    });
+                    duration = Math.max(1, totalDurationMs / 1000);
+                } else if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
                     let totalDurationMs = 0;
                     fights.forEach(f => {
                         if (fightIDs.includes(f.id) || fightIDs.includes(f.id.toString())) {

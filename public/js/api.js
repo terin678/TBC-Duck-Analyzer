@@ -1,7 +1,7 @@
-import { state } from './state.js?v=1.2.3';
-import { parseLogId } from './utils.js?v=1.2.3';
-import { detectPlayerSpec } from './utils.js?v=1.2.3';
-import { renderFightsSidebar, renderPlayersSidebar } from './ui/sidebar.js?v=1.2.3';
+import { state } from './state.js?v=1.2.7';
+import { parseLogId } from './utils.js?v=1.2.7';
+import { detectPlayerSpec } from './utils.js?v=1.2.7';
+import { renderFightsSidebar, renderPlayersSidebar } from './ui/sidebar.js?v=1.2.7';
 
 export async function auditarLog() {
     const rawInput = document.getElementById('logInput').value.trim();
@@ -101,12 +101,14 @@ export async function auditarLog() {
         // Update URL
         window.history.pushState({}, '', '/report/' + logId);
 
-        // Reset content area
-        document.getElementById('contentArea').innerHTML = `
-            <div class="content-placeholder">
-                <div class="placeholder-icon">🦆</div>
-                <p>Select a fight and a player to view the analysis</p>
-            </div>`;
+        // Auto-select "Overall" and "All Players"
+        if (typeof window.selectFight === 'function' && typeof window.selectPlayer === 'function') {
+            state.selectedFightId = 'overall';
+            document.querySelectorAll('.fight-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.fight == 'overall');
+            });
+            window.selectPlayer('__ALL__');
+        }
 
         // Wowhead prefetch
         let prefetchDiv = document.getElementById('wh-prefetch');
@@ -148,12 +150,16 @@ export async function fetchDps(logId, fightIDs, playerId) {
         const fightIdKey = (fightIDs && fightIDs.length === 1) ? fightIDs[0] : 'overall';
         const placeholders = document.querySelectorAll(`[id="dpsPlaceholder-${fightIdKey}-${playerId}"]`);
         placeholders.forEach(placeholder => {
+            const formatAmount = (total) => {
+                if (total >= 1000000) return (total / 1000000).toFixed(2) + 'm';
+                return (total / 1000).toFixed(1) + 'k';
+            };
             if (res.error) {
                 placeholder.textContent = "(DPS error)";
             } else if (res.isHealing) {
-                placeholder.textContent = `| ${res.dps} HPS (${(res.total / 1000).toFixed(1)}k heal)`;
+                placeholder.textContent = `| ${res.dps} HPS (${formatAmount(res.total)} heal)`;
             } else {
-                placeholder.textContent = `| ${res.dps} DPS (${(res.total / 1000).toFixed(1)}k dmg)`;
+                placeholder.textContent = `| ${res.dps} DPS (${formatAmount(res.total)} dmg)`;
             }
         });
     } catch (err) {

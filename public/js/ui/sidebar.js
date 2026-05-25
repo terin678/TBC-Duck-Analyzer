@@ -1,5 +1,5 @@
-import { state } from '../state.js?v=1.2.3';
-import { formatDuration, escapeHtml } from '../utils.js?v=1.2.3';
+import { state } from '../state.js?v=1.2.7';
+import { formatDuration, escapeHtml } from '../utils.js?v=1.2.7';
 
 export function renderFightsSidebar(report) {
     const fightsList = document.getElementById('fightsList');
@@ -15,7 +15,8 @@ export function renderFightsSidebar(report) {
 
     // Individual fights
     let wipeCounts = {};
-    report.fights.forEach(fight => {
+    const bossFights = report.fights.filter(f => f.kill === true || f.kill === false || f.difficulty);
+    bossFights.forEach(fight => {
         const duration = fight.endTime - fight.startTime;
         const timeStr = formatDuration(duration);
         const isKill = fight.kill;
