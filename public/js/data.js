@@ -371,6 +371,8 @@ const SPELL_DB = {
     31892: {name:"Seal of Blood",icon:"spell_holy_sealofblood",category:2},
     31801: {name:"Seal of Vengeance",icon:"spell_holy_sealofblood",category:2},
     34870: {name:"Seal of the Martyr",icon:"spell_holy_sealofblood",category:2},
+    1044: {name:"Blessing of Freedom",icon:"spell_holy_sealofvalor",category:1},
+    10278: {name:"Blessing of Protection",icon:"spell_holy_sealofprotection",category:1},
     20549: {name:"War Stomp",icon:"ability_warstomp",category:4},
     20554: {name:"Berserking",icon:"racial_troll_berserk",category:1},
     20572: {name:"Blood Fury",icon:"racial_orc_berserkerstrength",category:1},
@@ -519,6 +521,7 @@ const TIMELINE_SPELLS = {
     23723: { name: "Mind Quickening", icon: "spell_nature_wispheal", color: "#179299" },
     34477: { name: "Misdirection", icon: "ability_hunter_misdirection", color: "#ABD473", duration: 1000 },
     33807: { name: "Abacus of Violent Odds", icon: "inv_misc_enggizmos_18", color: "#179299" },
+    42084: { name: "Tsunami", icon: "inv_jewelry_talisman_04", color: "#8a2be2" },
 
     // Potions & Consumables
     28507: { name: "Haste Potion", icon: "inv_potion_108", color: "#e83e8c" },
@@ -571,6 +574,11 @@ const TIMELINE_SPELLS = {
     26296: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
     26297: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
     20594: { name: "Stoneform", icon: "spell_shadow_unholystrength", color: "#777" },
+    6774: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00", duration: 21000 },
+    31549: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00", duration: 21000 },
+    5171: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00", duration: 21000 },
+    1044: { name: "Blessing of Freedom", icon: "spell_holy_sealofvalor", color: "#f58cba", duration: 14000 },
+    10278: { name: "Blessing of Protection", icon: "spell_holy_sealofprotection", color: "#f58cba", duration: 10000 },
 };
 
 if (typeof window !== 'undefined') {

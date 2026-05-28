@@ -162,27 +162,42 @@ export function processPlayerData(fightId, fightEvents, player) {
 
         let spellId = ev.abilityGameID;
 
-
         // Ignorar los "casteos fantasma" de procs pasivos generados por golpes a melee (Sello de Comando/Sangre)
         if (ev.type === 'cast' && (spellId === 20424 || spellId === 31898)) return;
 
-        if (ev.type === 'cast') {
-            let counted = false;
-            if (typeof window.BUFF_DB !== 'undefined' && window.BUFF_DB[spellId]) {
-                itemCasts[spellId] = (itemCasts[spellId] || 0) + 1;
-                counted = true;
-            }
-            if (!counted && typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[spellId] && window.SPELL_DB[spellId].category === 5) {
-                itemCasts[spellId] = (itemCasts[spellId] || 0) + 1;
+        // Para Consumibles y CDs, WCL a veces registra 'applybuff' pero no 'cast' (especialmente en trash)
+        let isConsumableOrCD = false;
+        let isBuffOrCast = ev.type === 'cast' || (ev.type === 'applybuff' && ev.sourceID === player.id);
+        
+        if (isBuffOrCast) {
+            if (!itemCasts._lastTimestamp) itemCasts._lastTimestamp = {};
+            
+            let timeSinceLast = ev.timestamp - (itemCasts._lastTimestamp[spellId] || 0);
+            if (timeSinceLast > 5000) { // Evitar doble conteo entre cast y applybuff
+                let counted = false;
+                if (typeof window.BUFF_DB !== 'undefined' && window.BUFF_DB[spellId]) {
+                    itemCasts[spellId] = (itemCasts[spellId] || 0) + 1;
+                    counted = true;
+                    itemCasts._lastTimestamp[spellId] = ev.timestamp;
+                }
+                if (!counted && typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[spellId] && window.SPELL_DB[spellId].category === 5) {
+                    itemCasts[spellId] = (itemCasts[spellId] || 0) + 1;
+                    counted = true;
+                    itemCasts._lastTimestamp[spellId] = ev.timestamp;
+                }
+                
+                // Track class CDs
+                if (!counted && window.SPELL_DB && window.SPELL_DB[spellId] && !SEAL_TO_TYPE[spellId] && !window.SPELL_DB[spellId].isInterrupt && !window.SPELL_DB[spellId].isMechanic && !window.SPELL_DB[spellId].isRes && window.SPELL_DB[spellId].category !== 5 && window.SPELL_DB[spellId].category !== 3) {
+                    if (spellId !== 33671) {
+                        if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
+                        spells[spellId].count += 1;
+                        itemCasts._lastTimestamp[spellId] = ev.timestamp;
+                    }
+                }
             }
         }
 
-        if (ev.type === 'cast' && window.SPELL_DB && window.SPELL_DB[spellId] && !SEAL_TO_TYPE[spellId] && !window.SPELL_DB[spellId].isInterrupt && !window.SPELL_DB[spellId].isMechanic && !window.SPELL_DB[spellId].isRes && window.SPELL_DB[spellId].category !== 5 && window.SPELL_DB[spellId].category !== 3) {
-            if (spellId === 33671) return;
-            if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
-            spells[spellId].count += 1;
-        }
-        else if (ev.type === 'interrupt' && window.SPELL_DB && window.SPELL_DB[spellId]) {
+        if (ev.type === 'interrupt' && window.SPELL_DB && window.SPELL_DB[spellId]) {
             if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
             spells[spellId].count += 1;
         }
