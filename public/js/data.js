@@ -574,9 +574,9 @@ const TIMELINE_SPELLS = {
     26296: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
     26297: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
     20594: { name: "Stoneform", icon: "spell_shadow_unholystrength", color: "#777" },
-    6774: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00", duration: 21000 },
-    31549: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00", duration: 21000 },
-    5171: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00", duration: 21000 },
+    6774: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00" },
+    31549: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00" },
+    5171: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00" },
     1044: { name: "Blessing of Freedom", icon: "spell_holy_sealofvalor", color: "#f58cba", duration: 14000 },
     10278: { name: "Blessing of Protection", icon: "spell_holy_sealofprotection", color: "#f58cba", duration: 10000 },
 };
