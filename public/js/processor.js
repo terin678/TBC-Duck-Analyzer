@@ -570,8 +570,8 @@ export function processPlayerData(fightId, fightEvents, player) {
         Object.entries(debuffTimeline).forEach(([debuffName, dl]) => {
             const realSet = hasRealEvents[debuffName] || new Set();
             Object.entries(dl.targets).forEach(([tName, segs]) => {
-                if (realSet.has(tName)) {
-                    // Remove estimated cast-based segments, keep only real ones
+                if (realSet.size > 0) {
+                    // Remove estimated cast-based segments globally if any real events exist
                     dl.targets[tName] = segs.filter(s => s.real !== false);
                 }
                 // Close any still-open segments at fight end
