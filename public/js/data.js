@@ -683,7 +683,8 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [30823], name: "Shamanistic Rage",     icon: "spell_nature_shamanrage" },
             { ids: [25587], topIds: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury" },
             { ids: [8512],  name: "Windfury Totem",         icon: "spell_nature_windfury", rankString: "(Rank 1)" },
-            { ids: [25359, 25528], name: "Grace of Air Totem",   icon: "spell_nature_invisibilitytotem" },
+            { ids: [25359], name: "Grace of Air Totem",   icon: "spell_nature_invisibilitytotem" },
+            { ids: [25528], name: "Strength of Earth Totem",   icon: "spell_nature_earthbindtotem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem" },
         ],
         debuffs: [
@@ -692,8 +693,9 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25454, 10414, 10413, 10412, 8046, 8045, 8044], name: "Earth Shock", icon: "spell_nature_earthshock", color: "#8e44ad", isCastPoint: true },
             { ids: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury",       color: "#3498db", alwaysOnTop: true, sortOrder: 0, group: "air-totem" },
             { ids: [8512],  name: "Windfury Totem (Rank 1)",icon: "spell_nature_windfury",       color: "#5bc0de", alwaysOnTop: true, sortOrder: 1, group: "air-totem" },
-            { ids: [25359, 25528], name: "Grace of Air Totem",  icon: "spell_nature_invisibilitytotem",color: "#2ecc71", alwaysOnTop: true, sortOrder: 2, group: "air-totem" },
+            { ids: [25359], name: "Grace of Air Totem",  icon: "spell_nature_invisibilitytotem",color: "#2ecc71", alwaysOnTop: true, sortOrder: 2, group: "air-totem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem",  color: "#9b59b6", alwaysOnTop: true, sortOrder: 3, group: "air-totem" },
+            { ids: [25528], name: "Strength of Earth Totem",  icon: "spell_nature_earthbindtotem",color: "#e67e22", alwaysOnTop: true, sortOrder: 4, group: "earth-totem" },
         ]
     },
     "Shaman-Elemental": {

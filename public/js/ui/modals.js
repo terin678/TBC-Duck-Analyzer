@@ -424,6 +424,7 @@ export function toggleCastsDebuffInline(playerName, fightId) {
         </div>`;
 
         html += '</div></div>';
+        }
     }
 
     html += '</div>';
