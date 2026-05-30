@@ -199,7 +199,7 @@ export function renderPlayerView(data, player, fightInfo) {
         timelineBtnHtml = `<button class="inspect-btn timeline-btn" onclick="window.toggleTimelineInline('${safeName}', '${fightId}')">⏱️ Timeline</button>`;
     }
 
-    // === CASTS/DEBUFF BUTTON ===
+    // === CASTS/UPTIME BUTTON ===
     if (!state.castsDebuffDB) state.castsDebuffDB = {};
     if (!state.castsDebuffDB[fightId]) state.castsDebuffDB[fightId] = {};
     state.castsDebuffDB[fightId][player.name] = { castCounts: data.castCounts, debuffTimeline: data.debuffTimeline };
@@ -208,7 +208,7 @@ export function renderPlayerView(data, player, fightInfo) {
     const hasDebuffData = data.debuffTimeline && Object.keys(data.debuffTimeline).length > 0;
     let castsBtnHtml = '';
     if (hasCastData || hasDebuffData) {
-        castsBtnHtml = `<button class="inspect-btn casts-btn" onclick="window.toggleCastsDebuffInline('${safeName}', '${fightId}')">🎯 Casts/Debuff</button>`;
+        castsBtnHtml = `<button class="inspect-btn casts-btn" onclick="window.toggleCastsDebuffInline('${safeName}', '${fightId}')">🎯 Casts/Uptime</button>`;
     }
 
     // === DEATHS & RESS (chronological) ===

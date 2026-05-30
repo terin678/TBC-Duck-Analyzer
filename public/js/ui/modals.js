@@ -291,7 +291,7 @@ export function toggleCastsDebuffInline(playerName, fightId) {
 
                     if (validRows.length > 0) {
                         html += '<div class="cd-section">';
-                        html += '<div class="cd-section-title">🩸 Debuff Uptime <span class="cd-overall-label">(Overall — all fights)</span></div>';
+                        html += '<div class="cd-section-title">🩸 Uptime <span class="cd-overall-label">(Overall — all fights)</span></div>';
                         html += '<div class="cd-overall-uptime-list">';
 
                         validRows.forEach(({ debuffName, dlData, uptime }) => {
@@ -323,7 +323,7 @@ export function toggleCastsDebuffInline(playerName, fightId) {
 
         if (validDebuffs.length > 0 && durationMs > 0) {
             html += '<div class="cd-section">';
-            html += '<div class="cd-section-title">🩸 Debuff Uptime</div>';
+            html += '<div class="cd-section-title">🩸 Uptime</div>';
             html += '<div class="cd-debuff-block">';
 
             validDebuffs
