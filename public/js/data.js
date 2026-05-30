@@ -529,6 +529,8 @@ const TIMELINE_SPELLS = {
     33702: { name: "Blood Fury", icon: "racial_orc_berserkerstrength", color: "#d9534f" }, // Blood Fury (SP caster version)
     33370: { name: "Quagmirran's Eye", icon: "inv_misc_eye_01", color: "#179299" }, // Fungal Frenzy
     35163: { name: "Icon of the Silver Crescent", icon: "inv_trinket_naxxramas06", color: "#179299" },
+    35165: { name: "Essence of the Martyr", icon: "inv_valentineperfumebottle", color: "#179299" },
+    29601: { name: "Pendant of the Violet Eye", icon: "inv_trinket_naxxramas02", color: "#179299" },
     35166: { name: "Bloodlust Brooch", icon: "inv_trinket_naxxramas03", color: "#d9534f" },
     35084: { name: "Scarab of the Infinite Cycle", icon: "inv_misc_orb_03", color: "#179299" },
     23723: { name: "Mind Quickening", icon: "spell_nature_wispheal", color: "#179299" },
@@ -587,6 +589,7 @@ const TIMELINE_SPELLS = {
     10060: { name: "Power Infusion", icon: "spell_holy_powerinfusion", color: "#fff" },
     29166: { name: "Innervate", icon: "spell_nature_lightning", color: "#ff7d0a" },
     31884: { name: "Avenging Wrath", icon: "spell_holy_avenginwrath", color: "#f4b400" },
+    31842: { name: "Divine Illumination", icon: "spell_holy_divineillumination", color: "#f4b400" },
     20572: { name: "Blood Fury", icon: "racial_orc_berserkerstrength", color: "#d9534f" },
     20554: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
     26296: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },

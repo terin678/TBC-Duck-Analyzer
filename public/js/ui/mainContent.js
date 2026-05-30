@@ -251,8 +251,10 @@ export function renderPlayerView(data, player, fightInfo) {
     }
 
     // === BOSS ICON ===
-    let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
-    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.style.display='none'">`;
+    let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.trim().replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
+    // Removes trailing hyphens if any
+    bossSlug = bossSlug.replace(/-+$/, '');
+    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'; this.onerror=null;">`;
 
     return `
         <div class="player-view">
@@ -299,8 +301,9 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
         const duration = fightInfo.endTime - fightInfo.startTime;
         fightTitle = `${fightInfo.name} — ${formatDuration(duration)}`;
     }
-    let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
-    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.style.display='none'">`;
+    let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.trim().replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
+    bossSlug = bossSlug.replace(/-+$/, '');
+    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/ui-ej-boss-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'; this.onerror=null;">`;
 
     // Calculate global max fights for the overall denominator
     let globalMaxFights = 1;
