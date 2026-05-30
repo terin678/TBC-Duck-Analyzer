@@ -83,12 +83,25 @@ body::before {
     text-shadow: 0 0 50px rgba(244, 180, 0, 0.05);
     z-index: -1;
     pointer-events: none;
-    animation: duckPulse 8s infinite alternate;
+    animation: duckPulse 4s ease-in-out infinite alternate;
 }
 
 @keyframes duckPulse {
-    0% { text-shadow: 0 0 50px rgba(244, 180, 0, 0.02); }
-    100% { text-shadow: 0 0 150px rgba(244, 180, 0, 0.1); }
+    0% {
+        text-shadow: 0 0 30px rgba(244, 180, 0, 0.02),
+                     0 0 50px rgba(244, 180, 0, 0.02);
+    }
+    50% {
+        text-shadow: 0 0 50px rgba(244, 180, 0, 0.1),
+                     0 0 100px rgba(244, 180, 0, 0.08),
+                     0 0 150px rgba(244, 180, 0, 0.05);
+    }
+    100% {
+        text-shadow: 0 0 80px rgba(244, 180, 0, 0.15),
+                     0 0 150px rgba(244, 180, 0, 0.15),
+                     0 0 200px rgba(244, 180, 0, 0.1),
+                     0 0 250px rgba(244, 180, 0, 0.05);
+    }
 }
 
 .landing-page.hidden {
