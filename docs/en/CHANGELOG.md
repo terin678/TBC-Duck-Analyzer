@@ -1,6 +1,23 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to TBC Duck Analyzer are documented here.
+
+## [2.0.0] - 2026-05-30
+
+### ✨ Full-Stack Migration & Architecture
+- **Node.js Express Backend** - Migrated to a Node.js express backend (`server.js`) replacing pure static HTML structure.
+- **SQLite Caching** - Integrated local SQLite database to securely cache GraphQL WCL requests, drastically reducing load times and API quota usage.
+- **Environment Variables** - WCL credentials securely handled via `.env` files instead of client-side local storage.
+
+### 🎨 Features & UI
+- **Uptime & Timelines** - Added highly interactive Casts & Uptime tracking module.
+- **Pre-Combat Buff Tracking** - Custom `combatantinfo` parser injects pre-combat buffs (e.g. Battle Shout, Totems) seamlessly into the timelines.
+- **Sunder Armor & Devastate** - Implemented detailed tracking for Warrior armor debuffs and cast counts.
+- **Windfury & Totem Tracking** - Combined Windfury ranks for clean timeline tracking, and enabled exact Rank 1 cast counting.
+- **Engineering Tracking** - Added robust tracking for Dense Dynamite, Fel Iron Bombs, Sappers, and Adamantite Grenades.
+- **Dynamic Fallbacks** - Smart fallback handling removes generic "Raid" or "Environment" timeline segments when real application events exist.
+
+---
 
 ## [1.2.1] - 2026-05-23
 
@@ -14,9 +31,7 @@ All notable changes to this project will be documented in this file.
 ## [1.2.0] - 2026-04-14
 
 ### ✨ Full-Stack Migration & Architecture
-- **Node.js Integration** - Migrated to a Node.js express backend environment (`server.js`) replacing pure static configuration logic.
 - **Local Proxy for Assets** - Server now intelligently intercepts, caches, and serves Wowhead icons via `/api/icon/` endpoints to radically reduce load times and bandwidth.
-- **SQLite Database Integration** - Integrated `logs_cache` system directly into backend for persistent querying.
 - **Docker Support** - Packaged backend application using `Dockerfile` and `docker-compose.yml` for unified, consistent local testing and cloud environment rollouts.
 
 ### 🐛 Gear Inspector & Logic Fixes
@@ -24,7 +39,6 @@ All notable changes to this project will be documented in this file.
 - **Enchant Priority Logic** - "❌ Slacking" warning now accurately respects the precedence of permanent enchants over temporary enchantments like oils or stones.
 - **Off-hand Weapon Validation** - Reworked rules conditionally targeting item sub-types. Enchants strictly validated only when dealing with genuine shields or standard weapons.
 - **UI Grid Perfection** - Addressed flexbox margin desyncs linking paperdoll spacing cleanly with armor container titles.
-- **Console Debugs** - Silent debugging logs injected directly within iteration loop mapping exact equipment metadata visually.
 
 ---
 
@@ -40,94 +54,15 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [1.0.0] - 2026-04-05 - OFFICIAL RELEASE
+## [1.0.0] - 2026-04-05 - Official Release
 
-### ✨ New Features
-- WarcraftLogs log analysis system
-- Consumables tracking (potions, sappers, sharpening stones)
-- Automatic buff and weapon enchant detection
-- Auto specialization panel
-- Discord Webhooks support
-
-### 🎯 Interrupt Abilities Added
-- **Rogue**: Kick (38768)
-- **Warrior**: Pummel (6554), Shield Bash (29704)
-- **Mage**: Counterspell (2139)
-- **Shaman**: Earth Shock (25454)
-
-Only displayed when they actually interrupt a cast.
-
-### 🏁 Racial Abilities Added
-- **Blood Elf**: Arcane Torrent (28730)
-- **Undead**: Will of the Forsaken (7744)
-- **Dwarf**: Stoneform (20594)
-- **Tauren**: War Stomp (20549)
-
-### 📁 Infrastructure Improvements
-- Reorganized folder structure (css/, js/, assets/, docs/)
-- Integrated feedback system (GitHub Issues)
-- Initial tutorial for new users
-- Complete documentation
-
-### 🔧 Technical Changes
-- 145+ icons downloaded locally (better performance)
-- Icon migration to assets/icons
-- Improved specialization detection
-- Conditional interrupt display logic
-
-### ✅ Completed
-- Analyze consumables per player
-- Display buffs and enchants
-- Track interrupts per event
-- Detect TBC specs
-- Local API key storage system
-
-### 🚧 Known Issues/Limitations
-- WarcraftLogs doesn't always send specific specialization (only class)
-- Some rare consumable icons may not be available
-- No tracking of damage from suboptimal consumables (planned for v1.1)
-
-### 📊 Statistics
-- 145 icons in repository
-- 26 supported consumables
-- 4 interrupts + 1 shield bash
-- 4 racial abilities
-- 9 WoW TBC classes
-
----
-
-## [0.9.0] - 2026-04-01 - Beta
-
-### ✨ Beta Features
-- Initial analysis prototype
-- Basic specialization tracking
-- First 10 consumables
-
-### 🐛 Bug Fixes
-- Fixed pixelated icon issue (resolved w/ medium quality)
-- Fixed Paladin Protection detection error
-
----
-
-## Upcoming Improvements (v1.1+)
-
-### Phase 1: Equipment (v1.1)
-- [ ] Automatic equipment scanner
-- [ ] Mark suboptimal consumables
-- [ ] Suggest enchant improvements
-- [ ] Cache analyzed logs
-
-### Phase 2: Analysis (v1.2)
-- [ ] Per-encounter statistics
-- [ ] Player comparison
-- [ ] Consumable ranking
-- [ ] Export to CSV/JSON
-
-### Phase 3: Community (v1.3)
-- [ ] Comments system
-- [ ] Share analysis
-- [ ] Discord bot integration
-- [ ] Public log database
+### ✨ Features
+- **Log Analysis** - Analyze World of Warcraft TBC combat logs from Warcraft Logs
+- **Consumables Tracking** - Track potions, sappers, food buffs, and weapon enchants per player
+- **Interrupt Detection** - Automatically detect interrupt abilities used in combat
+- **Racial Abilities** - Track racial ability usage (Arcane Torrent, Stoneform, War Stomp, etc.)
+- **Auto Spec Detection** - Automatically identify player specialization
+- **Interactive UI** - Dark theme with modern, responsive design
 
 ---
 
@@ -135,20 +70,6 @@ Only displayed when they actually interrupt a cast.
 
 This project follows [Semantic Versioning](https://semver.org/)
 
-- **MAJOR** - Breaking changes (new API, structure)
+- **MAJOR** - Incompatible changes (new API, structure)
 - **MINOR** - New features (backwards compatible)
-- **PATCH** - Bugfixes and hotfixes
-
----
-
-## How to Report Changes
-
-If you find bugs or have suggestions:
-1. Open a [GitHub Issue](https://github.com/patitokun03-spec/TBC-Duck-Analyzer/issues)
-2. Or use the **📝 Feedback** button on the web
-
-Include:
-- What version you're using
-- What you expected to happen
-- What happened instead
-- Steps to reproduce
+- **PATCH** - Bugs and fixes

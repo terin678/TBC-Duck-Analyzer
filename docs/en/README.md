@@ -1,148 +1,106 @@
-# 🔍 TBC Duck Analyzer - WoW Log Analyzer
+# 🔍 TBC Duck Analyzer - WoW TBC Log Analyzer
 
-A professional tool to analyze **World of Warcraft TBC** combat logs from **WarcraftLogs**, displaying consumables, buffs, interrupt abilities, and racial abilities per player.
+A professional tool to analyze **World of Warcraft TBC** combat logs from **WarcraftLogs**. It provides a comprehensive, interactive view of consumables, buffs, interrupts, debuff uptimes, and abilities per player.
 
-![Version](https://img.shields.io/badge/Version-1.1.0-blue)
+![Version](https://img.shields.io/badge/Version-2.0.0-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## ✨ Features
 
-- 📊 **Detailed log analysis** - View consumables, buffs, and weapon enchants
-- ⚡ **Interrupt tracking** - Automatically detect when each player interrupted casts
-- 🏁 **Racial abilities** - Track the use of racial abilities (Arcane Torrent, Stoneform, etc.)
-- 🎯 **Auto spec detection** - Automatically identify each player's specialization
-- 💾 **Local storage** - Securely save your API keys in the browser
-- 🔗 **Discord integration** - Export results to Discord webhooks (optional)
+- 📊 **Detailed Log Analysis** - View consumables, buffs, and weapon enchants.
+- ⏱️ **Interactive Timelines** - See exactly when players used their major cooldowns, trinkets, racials, and consumables.
+- 🎯 **Uptime Tracking** - Precise tracking of vital raid buffs (Totems, Battle Shout) and debuffs (Sunder Armor, Faerie Fire, Judgements).
+- ⚡ **Interrupts Tracking** - Automatically detects when players interrupted enemy spellcasts.
+- 🔍 **Gear Inspector** - View the exact gear, enchants, and gems equipped by a player during a specific fight.
+- 💾 **Backend Caching** - Utilizes a Node.js/Express backend with SQLite caching, meaning logs are processed instantly and API limits are respected.
+- 🎨 **Premium UI** - Sleek dark mode aesthetics with seamless animations and filtering by encounters or trash fights.
 
 ## 🚀 Quick Start
 
-### 1. Get Your API Keys from WarcraftLogs
+### 1. Get your WarcraftLogs API Keys
 
-1. Go to [WarcraftLogs API Console](https://www.warcraftlogs.com/api/clients)
+1. Go to the [WarcraftLogs API Console](https://www.warcraftlogs.com/api/clients)
 2. Create a new client (API v2) called "TBC Duck Analyzer"
-3. Copy the **Client ID** (36 characters) and **Client Secret** (40 characters)
+3. Copy the **Client ID** and **Client Secret**
 
-### 2. Configure the Tool
+### 2. Configure and Run the Backend
 
-1. Open the web page
-2. Click ⚙️ **Settings**
-3. Paste your Client ID and Client Secret
-4. The ❓ **Help** button will show step-by-step instructions
+1. Ensure you have [Node.js](https://nodejs.org/) installed.
+2. Clone this repository and run `npm install` in the root folder.
+3. Rename `.env.example` to `.env` (or create it) and insert your keys:
+   ```env
+   WCL_CLIENT_ID=your_client_id_here
+   WCL_CLIENT_SECRET=your_client_secret_here
+   PORT=3000
+   ```
+4. Start the server by running `node server.js` or `npm start`.
+5. Open `http://localhost:3000` in your web browser.
 
 ### 3. Analyze a Log
 
-1. Copy the full URL of your WarcraftLogs report (e.g., `https://www.warcraftlogs.com/reports/...`)
-2. Paste it in the input field
-3. Click **LOG CHECK**
-4. Done! You'll see the complete analysis
+1. Copy the full URL of your WarcraftLogs report (e.g. `https://www.warcraftlogs.com/reports/...`).
+2. Paste it into the search bar in the app.
+3. Click **LOG CHECK**.
+4. Enjoy the detailed breakdown!
 
 ## 📋 Project Structure
 
-```
-Analyzer/
-├── index.html              # Main page
-├── README.md               # This file (English)
-├── CHANGELOG.md            # Change history
-├── LICENSE                 # MIT License
-│
-├── css/
-│   └── styles.css          # Page styles
-│
-├── js/
-│   ├── script.js           # Main logic
-│   └── data.js             # Database of spells, buffs, etc.
-│
-├── assets/
-│   └── icons/              # WoW icons (145+ files)
-│
-└── docs/
-    ├── en/
-    │   ├── SETUP.md        # Detailed setup guide
-    │   ├── CONTRIBUTING.md # How to contribute
-    │   └── README.md       # English documentation
-    └── es/
-        ├── SETUP.md        # Guía de configuración
-        ├── CONTRIBUTING.md # Cómo contribuir
-        └── README.md       # Documentación en español
+```text
+TBC-Duck-Analyzer/
+├── server.js               # Express backend & GraphQL proxy
+├── database.sqlite         # Local SQLite cache for WCL data
+├── public/                 # Frontend Application
+│   ├── index.html          # Main HTML
+│   ├── css/                # Styling
+│   ├── js/                 # Client logic (processor, app, modals)
+│   └── assets/             # Icons and images
+├── docs/                   # Documentation (EN/ES)
+├── .env                    # API keys configuration
+└── README.md               # This file
 ```
 
-## 🔧 Supported Data
+## 🔧 Tracked Data
 
-### Tracked Consumables
+### Consumables
+- Flasks & Elixirs
 - Potions (Haste, Destruction, Mana, Healing)
-- Sharpening Stones
-- Sappers (Explosives)
-- Food & Drink Buffs
-- Enchanting Materials
+- Weapon Enchants & Sharpening Stones
+- Engineering Items (Sappers, Adamantite Grenades, Dense Dynamite, etc.)
 
-### Interrupt Abilities
-- **Rogue**: Kick (38768)
-- **Warrior**: Pummel (6554), Shield Bash (29704)
-- **Mage**: Counterspell (2139)
-- **Shaman**: Earth Shock (25454)
+### Class specific Tracking
+- Tracks major cooldowns, Bloodlust/Heroism, and specific buffs/debuffs for every class and spec.
+- Advanced metrics like **Windfury Totem** uptime, **Sunder Armor / Devastate** cast counts, **Improved Scorch** tracking, and more.
 
-### Racial Abilities
+### Interrupts
+- **Rogue**: Kick
+- **Warrior**: Pummel, Shield Bash
+- **Mage**: Counterspell
+- **Shaman**: Earth Shock
+
+### Racials
 - **Blood Elf**: Arcane Torrent
 - **Undead**: Will of the Forsaken
 - **Dwarf**: Stoneform
 - **Tauren**: War Stomp
+- **Orc/Troll**: Blood Fury, Berserking
 
-## 🐛 Report Issues
+## 🐛 Bug Reports
 
-Found a bug or have a suggestion?
-
-- Use the **📝 Feedback** button on the page
-- Or create an issue on [GitHub Issues](https://github.com/patitokun03-spec/TBC-Duck-Analyzer/issues)
-
-### Report Types
-- 🔴 **Bug**: Something isn't working correctly
-- ✨ **Feature**: New feature or improvement request
-- 📊 **Data**: Missing spell, buff, or consumable
+Found a bug or have a suggestion? Open an issue on [GitHub Issues](https://github.com/patitokun03-spec/TBC-Duck-Analyzer/issues).
 
 ## 📚 Documentation
 
-- [SETUP.md](docs/en/SETUP.md) - Detailed setup guide
-- [CONTRIBUTING.md](docs/en/CONTRIBUTING.md) - How to contribute
-- [Spanish Docs](docs/es/) - Documentation en español
+- [SETUP.md](SETUP.md) - Detailed setup guide.
+- [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute code or data.
 
 ## 📝 Changelog
 
-View [CHANGELOG.md](CHANGELOG.md) for the full change history.
+See [CHANGELOG.md](../../CHANGELOG.md) for version history.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please:
-
-1. Read [CONTRIBUTING.md](docs/en/CONTRIBUTING.md)
-2. Fork the project
-3. Create a branch for your feature
-4. Commit and push your changes
-5. Open a Pull Request
+Contributions are welcome! Please read `CONTRIBUTING.md` before submitting a Pull Request.
 
 ## 📄 License
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
-
-## 🙏 Credits
-
-- **WarcraftLogs API** - For providing access to log data
-- **WoW Icons** - From wow.zamimg.com
-- **TBC Community** - For suggestions and feedback
-
-## 📞 Contact & Links
-
-- 📧 Email: contact@patochivato.com (coming soon)
-- 🌐 Web: www.patochivato.com (coming soon)
-- 💬 Discord: [Community](https://discord.gg/patochivato) (coming soon)
-
----
-
-**Known Issues:**
-- If you don't see a specific specialization, it's because WarcraftLogs didn't send that information
-- Some rare consumable icons may show as question marks (we're adding them)
-
-**Roadmap v1.1:**
-- ✅ Equipment scanner
-- ✅ Suboptimal consumables detection
-- ✅ Per-boss statistics
-- ✅ Cached log analysis
+Distributed under the MIT License. See `LICENSE` for more information.

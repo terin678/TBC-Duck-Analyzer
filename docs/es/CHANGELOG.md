@@ -1,154 +1,61 @@
-# Changelog
+# Historial de Cambios (Changelog)
 
-Todos los cambios importantes en este proyecto serán documentados en este archivo.
+Todos los cambios notables de TBC Duck Analyzer se documentan aquí.
+
+## [2.0.0] - 2026-05-30
+
+### ✨ Migración Full-Stack y Arquitectura
+- **Backend en Node.js y Express** - Migración completa a un entorno backend con Node.js (`server.js`), reemplazando la estructura original de solo HTML estático.
+- **Caché en SQLite** - Integración de base de datos local SQLite para guardar de forma segura y rápida las peticiones a WarcraftLogs. Esto reduce los tiempos de carga a cero y ahorra cuota de la API.
+- **Variables de Entorno** - Las credenciales de WCL ahora se guardan de forma segura en el archivo `.env` del servidor en lugar de en el navegador del usuario.
+
+### 🎨 Nuevas Funcionalidades e Interfaz
+- **Uptime y Líneas de Tiempo (Timelines)** - Añadido un nuevo módulo altamente interactivo para trackear "Casts y Uptime".
+- **Buffs Previos al Combate** - Nuevo analizador personalizado para el evento `combatantinfo` que inyecta los buffs previos al combate (ej. Battle Shout, Tótems) directamente en la línea de tiempo.
+- **Sunder Armor y Devastate** - Implementado seguimiento detallado del debuff de armadura rota de los Guerreros y su recuento de casteos.
+- **Windfury y Tótems** - Seguimiento optimizado para todos los rangos del Windfury Totem y contabilización exacta del uso del Rango 1.
+- **Ingeniería** - Añadido seguimiento robusto para Dense Dynamite, Fel Iron Bombs, Sappers y Adamantite Grenades.
+- **Limpieza Inteligente de Datos** - El sistema ahora borra los segmentos genéricos de "Raid" o "Environment" en la línea de tiempo cuando detecta objetivos reales, haciendo que la gráfica sea súper limpia.
+
+---
 
 ## [1.2.1] - 2026-05-23
 
-### 🐛 Soluciones y Mejoras
-- **Rastreo de Buffs en Encounters con RP** - Se amplió la ventana de búsqueda de `combatantinfo` hasta 3 minutos antes del inicio del combate. Esto soluciona un error crítico donde peleas con RP largo (ej. Kael'thas) descartaban todos los buffs y gear iniciales en los wipes.
-- **Rastreo de Consumibles de Combate** - Se añadió rastreo para Pociones de Maná y Vida Superiores, Inyectores y todos los tipos de Tambores (Battle, Restoration, Speed, War, Panic) para asegurar que aparezcan en Consumibles y Buffs si se usan a mitad del combate (especialmente post-resurrección).
-- **Lógica de Ordenación de Jugadores** - Se mejoró el algoritmo de ordenación en la interfaz. Los personajes ahora se agrupan limpiamente por **Clase**, luego por **Especialización**, y finalmente de forma **Alfabética**.
+### 🐛 Solución de Errores y Mejoras
+- **Seguimiento en encuentros con RP** - Ampliada la ventana de búsqueda de buffs iniciales hasta 3 minutos antes del comienzo. Soluciona un error crítico en peleas con mucho "Roleplay" inicial (ej. Kael'thas) donde se perdían los buffs.
+- **Consumibles en Medio del Combate** - Ahora se trackean las Super Pociones de Maná, Sanación, Inyectores y todos los Tambores (Battle, Restoration, Speed, etc.) para asegurar que aparecen en la lista si se usan a mitad del boss.
+- **Ordenación de Jugadores** - Mejorado el algoritmo que ordena a los jugadores en la interfaz: Primero por **Clase**, luego por **Especialización**, y finalmente de forma **Alfabética**.
 
 ---
 
 ## [1.2.0] - 2026-04-14
 
-### ✨ Migración Full-Stack y Arquitectura
-- **Integración Node.js** - Migración a un entorno backend Node.js (`server.js`) sustituyendo la mera lógica de configuración estática.
-- **Proxy Local para Iconos** - El servidor ahora intercepta, cachea y sirve de forma limpia los iconos de Wowhead a través de puntos `/api/icon/`, reduciendo drásticamente los tiempos de carga.
-- **Integración con Base de Datos SQLite** - Integración directa del sistema `logs_cache` en el backend para una consulta persistente e independiente.
-- **Soporte Docker** - La aplicación se puede lanzar unificadamente en entornos locales y cloud mediante `Dockerfile` y `docker-compose.yml`.
+### ✨ Migración y Arquitectura
+- **Proxy Local de Iconos** - El servidor ahora intercepta, descarga y guarda en caché los iconos de Wowhead para reducir drásticamente los tiempos de carga y el ancho de banda.
+- **Soporte Docker** - Añadido `Dockerfile` y `docker-compose.yml` para poder desplegar fácilmente el proyecto en la nube o en red local.
 
-### 🐛 Soluciones Lógicas y del Inspector de Equipo
-- **Matriz Estricta de Encantamientos** - Reescritura del código `isEnchantable` priorizando los SlotIDs 1-19 reales mapeados de la API de WoW. Elimina falsos negativos de falta de enchants en Collar, Cintura, Camisas, Tabardo, y Ranged.
-- **Lógica de Prioridad de Encantamiento** - El aviso "❌ Slacking" respeta ahora estrictamente la omisión de enchants temporales como aceites y piedras si carece de encantamiento permanente.
-- **Validación de Armas Off-hand** - Añadida regla de refinamiento sobre armas off-hand (Slot 17). Los encantamientos exigen ahora que el ítem sea escudo o arma, eximiendo a los simples objetos de clase "held in off-hand".
-- **Perfección del Grid UI** - Desincronización de márgenes flexbox superada; el marco del paperdoll y la etiqueta "ARMOR" gozan de una sincronización vertical limpia.
-- **Debugs de Consola** - Añadidos de logs para desarrolladores embebidos sobre un ciclo mapping the exact equipment state into array.
+### 🐛 Inspector de Equipo y Lógica
+- **Validación Estricta de Encantamientos** - Reescrito el sistema que comprueba encantamientos para evitar falsos positivos de advertencia en cuello, camisa, cintura, anillos, abalorios y armas a distancia.
+- **Prioridad de Encantamientos** - Ahora el cartel de "❌ Slacking" respeta si tienes un enchant permanente y no te obliga a tener piedras de afilar o aceites.
 
 ---
 
 ## [1.1.0] - 2026-04-06
 
-### ✨ Rediseño del Inspector de Equipo (Gear Inspector)
-- **Overhaul Completo del Inspector** - Diseño expandido en un grid limpio de 2 columnas.
-- **Detalles de Encantamientos TBC** - Mapeo automático de IDs de encantamiento a nombres legibles y estadísticas exactas de The Burning Crusade.
-- **Agrupación de Encantamientos de Arma** - Exclusión estricta de encantamientos permanentes del rastreador de consumibles (ej: cruzado o mangosta no saldrán como elixires).
-- **Tooltips Optimizados** - Carga diferida de los tooltips de Wowhead (0 picos de lag al inspeccionar), superposición de gemas mejorada y sistema anti-hover ciego.
-- **Paperdoll Refinado** - Silueta 2D matemáticamente acoplada a las coordenadas exactas de las casillas del juego real.
-- **Atajos de Teclado** - Añadida pulsación de la tecla `Escape` para cerrar limpiamente todas las ventanas superpuestas.
+### ✨ Rediseño de la Interfaz y del Inspector
+- **Rediseño Completo del Inspector de Equipo** - Nuevo layout con un formato limpio de 2 columnas.
+- **Traducción de Encantamientos** - Ahora los IDs de enchant se traducen al nombre real del encantamiento y se muestran sus estadísticas locales.
+- **Optimización de Tooltips** - Los tooltips de Wowhead ya no bloquean la página al cargar.
+- **Atajos de Teclado** - Añadido atajo con la tecla `Escape` para cerrar cualquier ventana emergente (modal) de forma rápida.
 
 ---
 
-## [1.0.0] - 2026-04-05 - LANZAMIENTO OFICIAL
+## [1.0.0] - 2026-04-05 - Lanzamiento Oficial
 
-### ✨ Características Nuevas
-- Sistema de análisis de logs de WarcraftLogs
-- Rastreo de consumibles (pociones, sappers, piedras de afilado)
-- Detección automática de buffs y encantamientos de arma
-- Panel de especialización automática
-- Soporte para Discord Webhooks
-
-### 🎯 Habilidades de Interrupción Agregadas
-- **Rogue**: Kick (38768)
-- **Warrior**: Pummel (6554), Shield Bash (29704)
-- **Mage**: Counterspell (2139)
-- **Shaman**: Earth Shock (25454)
-
-Solo se muestran cuando realmente interrumpen un casteo.
-
-### 🏁 Habilidades Raciales Agregadas
-- **Blood Elf**: Arcane Torrent (28730)
-- **Undead**: Will of the Forsaken (7744)
-- **Dwarf**: Stoneform (20594)
-- **Tauren**: War Stomp (20549)
-
-### 📁 Mejoras de Infraestructura
-- Estructura de carpetas reorganizada (css/, js/, assets/, docs/)
-- Sistema de feedback integrado (GitHub Issues)
-- Tutorial inicial para nuevos usuarios
-- Documentación completa
-
-### 🔧 Cambios Técnicos
-- 145+ iconos descargados localmente (mejor rendimiento)
-- Migración de iconos a assets/icons
-- Detección mejorada de especialización
-- Lógica de display condicional para interrupts
-
-### ✅ Cumplidos
-- Analizar consumibles por jugador
-- Mostrar buffs y encantamientos
-- Tracking de interrupts por evento
-- Detección de specs TBC
-- Sistema de almacenamiento local de API keys
-
-### 🚧 Conocidos/Limitaciones
-- WarcraftLogs no siempre envía especialización específica (solo clase)
-- Algunos iconos de consumibles raros pueden no disponerse
-- No se rastrea daño en consumibles innecesarios (planeado v1.1)
-
-### 📊 Estadísticas
-- 145 iconos en repositorio
-- 26 consumibles soportados
-- 4 interrupts+1 shield bash
-- 4 habilidades raciales
-- 9 clases de WoW TBC
-
----
-
-## [0.9.0] - 2026-04-01 - Beta
-
-### ✨ Características Beta
-- Prototipo inicial de análisis
-- Rastreo básico de especializaciones
-- Primeras 10 consumibles
-
-### 🐛 Bugs Solucionados  
-- Problema de iconos pixelados (resuelto con calidad media)
-- Error en detección de Paladines Protection
-
----
-
-## Próximas Mejoras (v1.1+)
-
-### Fase 1: Equipamiento (v1.1)
-- [ ] Scanner automático de equipo
-- [ ] Marcar consumibles no óptimos
-- [ ] Sugerir mejoras de enchants
-- [ ] Caché de logs analizados
-
-### Fase 2: Análisis (v1.2)
-- [ ] Estadísticas por encuentro
-- [ ] Comparativa entre jugadores
-- [ ] Ranking de consumibles
-- [ ] Export a CSV/JSON
-
-### Fase 3: Comunidad (v1.3)
-- [ ] Sistema de comentarios
-- [ ] Compartir análisis
-- [ ] Integración con Discord bot
-- [ ] Base de datos de logs públicos
-
----
-
-## Formato de Versionado
-
-Este proyecto sigue [Semantic Versioning](https://semver.org/)
-
-- **MAJOR** - Cambios incompatibles (nueva API, estrutura)
-- **MINOR** - Nuevas características (retrocompatible)
-- **PATCH** - Bugs y fixes
-
----
-
-## Cómo Reportar Cambios
-
-Si encuentras bugs o tienes sugerencias:
-1. Abre un [GitHub Issue](https://github.com/patitokun03-spec/TBC-Duck-Analyzer/issues)
-2. O usa el botón **📝 Feedback** en la web
-
-Incluye:
-- Qué versión usas
-- Qué esperabas que pasara
-- Qué pasó en su lugar
-- Steps to reproduce
+### ✨ Funciones iniciales
+- **Análisis de Logs** - Analiza logs de combate de Warcraft Logs (TBC).
+- **Consumibles** - Seguimiento de pociones, sappers, comida y encantamientos de armas.
+- **Interrupciones** - Detección automática de cortes en combate.
+- **Habilidades Raciales** - Rastrea usos de Arcane Torrent, Stoneform, War Stomp, etc.
+- **Detección Automática de Specs** - Identifica la especialización de cada jugador.
+- **Diseño Oscuro** - Interfaz moderna y adaptable.
