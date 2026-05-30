@@ -1,7 +1,7 @@
-import { state } from './state.js?v=1.2.7';
-import { parseLogId } from './utils.js?v=1.2.7';
-import { detectPlayerSpec } from './utils.js?v=1.2.7';
-import { renderFightsSidebar, renderPlayersSidebar } from './ui/sidebar.js?v=1.2.7';
+import { state } from './state.js?v=1.3.5';
+import { parseLogId } from './utils.js?v=1.3.5';
+import { detectPlayerSpec } from './utils.js?v=1.3.5';
+import { renderFightsSidebar, renderPlayersSidebar } from './ui/sidebar.js?v=1.3.5';
 
 export async function auditarLog() {
     const rawInput = document.getElementById('logInput').value.trim();
@@ -45,6 +45,7 @@ export async function auditarLog() {
         state.currentReport = report;
         state.currentEvents = allEvents;
         state.currentActors = raidActors;
+        state.allActors = allActors;        // all actors including NPCs/bosses for name resolution
         state.currentLogTitle = report.title;
 
         // Pre-process: detect specs and store gear from combatantinfo events

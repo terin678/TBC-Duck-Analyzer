@@ -1,5 +1,5 @@
-import { state } from '../state.js?v=1.2.7';
-import { formatDuration, escapeHtml } from '../utils.js?v=1.2.7';
+import { state } from '../state.js?v=1.3.5';
+import { formatDuration, escapeHtml } from '../utils.js?v=1.3.5';
 
 // =============================================
 // GEAR INSPECTOR 
@@ -12,9 +12,10 @@ export function toggleGearInline(playerName, encounterId, className, specName) {
         return;
     }
     
-    // Hide timeline if open
+    // Hide timeline if open (gear is exclusive with timeline)
     const timelineContainer = document.getElementById('inlineTimelineContainer');
     if (timelineContainer) timelineContainer.style.display = 'none';
+    // Note: Casts/Debuff panel stays open — both Gear and Casts/Debuff can be open at the same time
 
     container.style.display = 'flex';
     container.innerHTML = '<p style="color:#aaa;">Loading gear...</p>';
@@ -180,6 +181,183 @@ export function closeGearModal() {
     document.getElementById('gearOverlay').classList.remove('is-open');
 }
 
+// === CASTS / DEBUFF INLINE ===
+export function toggleCastsDebuffInline(playerName, fightId) {
+    const container = document.getElementById('inlineCastsContainer');
+    if (container.style.display === 'block') {
+        container.style.display = 'none';
+        return;
+    }
+
+    // Note: timeline stays open — both casts and timeline can be open at the same time
+    // Note: gear inspector stays open — both casts/debuff and gear can be open at the same time
+
+    // Retrieve data stored by mainContent
+    const castData = (state.castsDebuffDB && state.castsDebuffDB[fightId] && state.castsDebuffDB[fightId][playerName])
+        ? state.castsDebuffDB[fightId][playerName]
+        : null;
+
+    if (!castData || (Object.keys(castData.castCounts).length === 0 && Object.keys(castData.debuffTimeline).length === 0)) {
+        container.innerHTML = '<div class="cd-empty">No cast/debuff data available for this spec.</div>';
+        container.style.display = 'block';
+        return;
+    }
+
+    const isOverall = (fightId === 'overall' || fightId == null);
+    const fightInfo = (!isOverall && state.currentReport && state.currentReport.fights)
+        ? state.currentReport.fights.find(f => f.id == fightId || f.id == parseInt(fightId))
+        : null;
+    const durationMs = fightInfo ? (fightInfo.endTime - fightInfo.startTime) : 0;
+
+    let html = '<div class="cd-wrapper">';
+
+    // ── Section 1: Cast Counts (always shown) ────────────────────────────────
+    const castEntries = Object.entries(castData.castCounts);
+    if (castEntries.length > 0) {
+        html += '<div class="cd-section">';
+        html += `<div class="cd-section-title">⚔️ Cast Counts${isOverall ? ' <span class="cd-overall-label">(Overall)</span>' : ''}</div>`;
+        html += '<div class="cd-spells-list">';
+        // Sort by count descending
+        castEntries.sort((a, b) => b[1].count - a[1].count).forEach(([name, data]) => {
+            const lowRank = data.lowRankCount && data.lowRankCount > 0;
+            const lowRankBadge = lowRank
+                ? `<span class="cd-lowrank-badge" title="⚠️ ${data.lowRankCount} cast${data.lowRankCount > 1 ? 's' : ''} were sub-optimal rank!">⚠️ ${data.lowRankCount}x low rank</span>`
+                : '';
+            html += `
+                <div class="spell-item${lowRank ? ' cd-cast-warn' : ''}">
+                    <img class="spell-icon" src="/api/icon/${data.icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'" title="${name}">
+                    <span class="spell-name">${name}</span>
+                    <span class="spell-count">×${data.count}</span>
+                    ${lowRankBadge}
+                </div>`;
+        });
+
+        html += '</div></div>';
+    }
+
+
+    // ── Section 2: Debuff Timeline (per-fight only) ──────────────────────────
+    const debuffEntries = Object.entries(castData.debuffTimeline);
+
+    if (isOverall) {
+        // In overall, just show a note — timeline needs a fight reference
+        if (debuffEntries.length > 0) {
+            html += '<div class="cd-section">';
+            html += '<div class="cd-section-title">🩸 Debuff Uptime</div>';
+            html += '<div class="cd-empty">Select a specific fight to see the debuff timeline.</div>';
+            html += '</div>';
+        }
+    } else if (debuffEntries.length > 0 && durationMs > 0) {
+        html += '<div class="cd-section">';
+        html += '<div class="cd-section-title">🩸 Debuff Uptime</div>';
+        html += '<div class="cd-debuff-block">';
+
+        debuffEntries
+            .sort((a, b) => {
+                // alwaysOnTop entries come first, sorted by sortOrder (lower = higher position)
+                const aTop = a[1].alwaysOnTop ? 0 : 1;
+                const bTop = b[1].alwaysOnTop ? 0 : 1;
+                if (aTop !== bTop) return aTop - bTop;
+                // Within the same tier, sort by sortOrder
+                const aOrder = a[1].sortOrder != null ? a[1].sortOrder : 999;
+                const bOrder = b[1].sortOrder != null ? b[1].sortOrder : 999;
+                return aOrder - bOrder;
+            })
+            .forEach(([debuffName, dlData]) => {
+            const color = dlData.color || '#f4b400';
+            const isPoint = dlData.isCastPoint;
+            // Only show targets with at least one segment
+            const targets = Object.entries(dlData.targets).filter(([, segs]) => segs.length > 0);
+            if (targets.length === 0) return;
+
+            // For cast-point entries: show total cast count instead of uptime %
+            let headerLabel = '';
+            if (isPoint) {
+                const totalCasts = targets.reduce((sum, [, segs]) => sum + segs.length, 0);
+                headerLabel = `${totalCasts}×`;
+            } else {
+                // Compute per-target uptime and pick the one with most coverage for the header %
+                let bestUptime = 0;
+                targets.forEach(([, segs]) => {
+                    let covered = 0;
+                    segs.forEach(s => {
+                        const relS = Math.max(0, s.start - fightInfo.startTime);
+                        const relE = Math.min(durationMs, s.end - fightInfo.startTime);
+                        if (relE > relS) covered += (relE - relS);
+                    });
+                    const pct = Math.round((covered / durationMs) * 100);
+                    if (pct > bestUptime) bestUptime = pct;
+                });
+                headerLabel = `${bestUptime}%`;
+            }
+
+            html += `
+            <div class="cd-debuff-row">
+                <div class="cd-debuff-header">
+                    <img class="cd-debuff-icon" src="/api/icon/${dlData.icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+                    <span class="cd-debuff-name" style="color: ${color};">${debuffName}</span>
+                    <span class="cd-debuff-uptime" title="${isPoint ? 'Total casts' : 'Best uptime across targets'}">${headerLabel}</span>
+                </div>`;
+
+            targets.forEach(([targetName, segs]) => {
+                let rightLabel = '';
+                if (isPoint) {
+                    rightLabel = `${segs.length}×`;
+                } else {
+                    // Compute per-target uptime
+                    let covered = 0;
+                    segs.forEach(s => {
+                        const relS = Math.max(0, s.start - fightInfo.startTime);
+                        const relE = Math.min(durationMs, s.end - fightInfo.startTime);
+                        if (relE > relS) covered += (relE - relS);
+                    });
+                    rightLabel = `${Math.round((covered / durationMs) * 100)}%`;
+                }
+
+                html += `
+                <div class="cd-debuff-target-row">
+                    <div class="cd-debuff-target-name" title="${targetName}">${targetName}</div>
+                    <div class="cd-debuff-track">`;
+                segs.forEach(s => {
+                    const relStart = Math.max(0, s.start - fightInfo.startTime);
+                    const relEnd   = Math.min(durationMs, s.end - fightInfo.startTime);
+                    if (isPoint || s.isPoint) {
+                        // Render as a thin vertical marker line at the cast moment
+                        const leftPct = (relStart / durationMs) * 100;
+                        html += `<div class="cd-debuff-marker" title="${formatDuration(relStart)}" style="left:${leftPct.toFixed(2)}%; background:${color}; box-shadow: 0 0 4px ${color};"></div>`;
+                    } else if (relEnd > relStart) {
+                        const leftPct  = (relStart / durationMs) * 100;
+                        const widthPct = ((relEnd - relStart) / durationMs) * 100;
+                        html += `<div class="cd-debuff-bar" title="${formatDuration(relEnd - relStart)}" style="left:${leftPct.toFixed(2)}%; width:${widthPct.toFixed(2)}%; background:${color}; box-shadow: 0 0 6px ${color};"></div>`;
+                    }
+                });
+                html += `</div>
+                    <div class="cd-debuff-tpct">${rightLabel}</div>
+                </div>`;
+            });
+
+            html += '</div>';
+        });
+
+        // Time axis
+        html += `
+        <div class="cd-time-axis">
+            <span>0:00</span>
+            <span>${formatDuration(durationMs / 4)}</span>
+            <span>${formatDuration(durationMs / 2)}</span>
+            <span>${formatDuration(durationMs * 0.75)}</span>
+            <span>${formatDuration(durationMs)}</span>
+        </div>`;
+
+        html += '</div></div>';
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+    container.style.display = 'block';
+}
+
+
 // === TIMELINE INLINE ===
 export function toggleTimelineInline(playerName, fightId) {
     const container = document.getElementById('inlineTimelineContainer');
@@ -188,9 +366,7 @@ export function toggleTimelineInline(playerName, fightId) {
         return;
     }
     
-    // Hide gear if open
-    const gearContainer = document.getElementById('inlineGearContainer');
-    if (gearContainer) gearContainer.style.display = 'none';
+    // Note: all panels (gear, timeline, casts/debuff) can be open simultaneously in any combination
 
     if (!state.timelineDB || !state.timelineDB[fightId] || !state.timelineDB[fightId][playerName]) {
         container.innerHTML = '<div class="timeline-empty">No timeline data available.</div>';
@@ -210,12 +386,17 @@ export function toggleTimelineInline(playerName, fightId) {
     if (usedSpells.length === 0) {
         html += '<div class="timeline-empty">No tracked cooldowns or procs used.</div>';
     } else {
-        usedSpells.forEach(spellId => {
-            let spellInfo = window.TIMELINE_SPELLS[spellId];
+        usedSpells.forEach(spellIdStr => {
+            const baseSpellId = spellIdStr.split('-')[0];
+            let spellInfo = window.TIMELINE_SPELLS[baseSpellId];
             if (!spellInfo) return;
             spellInfo = { ...spellInfo };
 
-            if (spellId == 33370) {
+            if (spellIdStr.includes('-')) {
+                spellInfo.name = `Innervate (${spellIdStr.split('-')[1]})`;
+            }
+
+            if (baseSpellId == 33370) {
                 let hasScarab = false;
                 if (fightId === 'overall') {
                     if (state.playerGearDB) {
@@ -243,7 +424,7 @@ export function toggleTimelineInline(playerName, fightId) {
                 <div class="timeline-spell-name" style="color: ${color};">${spellInfo.name}</div>
                 <div class="timeline-track">`;
                 
-            events[spellId].forEach(ev => {
+            events[spellIdStr].forEach(ev => {
                 let relStart = ev.start - fightInfo.startTime;
                 let relEnd = ev.end - fightInfo.startTime;
                 relStart = Math.max(0, relStart);

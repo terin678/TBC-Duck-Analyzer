@@ -10,7 +10,9 @@ export const state = {
     playerGearDB: {},
     playerEnchantsForConsole: {},
     allViewClassFilter: null,
-    timelineDB: {}
+    timelineDB: {},
+    castsDebuffDB: {},
+    allActors: []
 };
 
 export function resetStateForAudit(logId) {
@@ -19,6 +21,8 @@ export function resetStateForAudit(logId) {
     state.playerGearDB = {};
     state.playerEnchantsForConsole = {};
     state.timelineDB = {};
+    state.castsDebuffDB = {};
+    state.allActors = [];
 }
 
 export function resetStateForLanding() {

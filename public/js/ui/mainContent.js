@@ -1,7 +1,7 @@
-import { state } from '../state.js?v=1.2.7';
-import { formatDuration } from '../utils.js?v=1.2.7';
-import { processPlayerData } from '../processor.js?v=1.2.7';
-import { fetchDps } from '../api.js?v=1.2.7';
+import { state } from '../state.js?v=1.3.5';
+import { formatDuration } from '../utils.js?v=1.3.5';
+import { processPlayerData } from '../processor.js?v=1.3.5';
+import { fetchDps } from '../api.js?v=1.3.5';
 
 export function renderMainContent() {
     const contentArea = document.getElementById('contentArea');
@@ -158,7 +158,8 @@ export function renderPlayerView(data, player, fightInfo) {
         .filter(([spellId]) => window.SPELL_DB && window.SPELL_DB[spellId])
         .forEach(([spellId, sData]) => {
             const sInfo = window.SPELL_DB[spellId];
-            const name = sInfo.name;
+            // Interrupts shown in Abilities get "(kick)" appended so they're clearly labeled
+            const name = sInfo.isInterrupt ? sInfo.name + ' (kick)' : sInfo.name;
             if (!groupedSpells[name]) {
                 groupedSpells[name] = {
                     name: name,
@@ -196,6 +197,18 @@ export function renderPlayerView(data, player, fightInfo) {
     let timelineBtnHtml = '';
     if (!isOverall) {
         timelineBtnHtml = `<button class="inspect-btn timeline-btn" onclick="window.toggleTimelineInline('${safeName}', '${fightId}')">⏱️ Timeline</button>`;
+    }
+
+    // === CASTS/DEBUFF BUTTON ===
+    if (!state.castsDebuffDB) state.castsDebuffDB = {};
+    if (!state.castsDebuffDB[fightId]) state.castsDebuffDB[fightId] = {};
+    state.castsDebuffDB[fightId][player.name] = { castCounts: data.castCounts, debuffTimeline: data.debuffTimeline };
+
+    const hasCastData = data.castCounts && Object.keys(data.castCounts).length > 0;
+    const hasDebuffData = data.debuffTimeline && Object.keys(data.debuffTimeline).length > 0;
+    let castsBtnHtml = '';
+    if (hasCastData || hasDebuffData) {
+        castsBtnHtml = `<button class="inspect-btn casts-btn" onclick="window.toggleCastsDebuffInline('${safeName}', '${fightId}')">🎯 Casts/Debuff</button>`;
     }
 
     // === DEATHS & RESS (chronological) ===
@@ -268,9 +281,11 @@ export function renderPlayerView(data, player, fightInfo) {
             <div class="player-view-actions">
                 ${gearBtnHtml}
                 ${timelineBtnHtml}
+                ${castsBtnHtml}
             </div>
             <div id="inlineGearContainer" style="display:none; margin-top: 10px;"></div>
             <div id="inlineTimelineContainer" style="display:none; margin-top: 10px;"></div>
+            <div id="inlineCastsContainer" style="display:none; margin-top: 10px;"></div>
         </div>
     `;
 }

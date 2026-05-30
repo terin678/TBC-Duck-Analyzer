@@ -89,11 +89,29 @@ app.post('/api/audit', async (req, res) => {
                     return matches.map(m => m[1]).join(',');
                 };
 
+                // Parse CLASS_ABILITY_TRACKING to get all cast+debuff IDs from the array entries
+                const parseTrackingIds = () => {
+                    const idx = dataJs.indexOf('const CLASS_ABILITY_TRACKING =');
+                    if (idx === -1) return '';
+                    const endIdx = dataJs.indexOf('if (typeof window', idx);
+                    const block = endIdx !== -1 ? dataJs.substring(idx, endIdx) : dataJs.substring(idx);
+                    const matches = [...block.matchAll(/ids:\s*\[([^\]]+)\]/g)];
+                    const ids = new Set();
+                    matches.forEach(m => {
+                        m[1].split(',').forEach(id => {
+                            const n = parseInt(id.trim());
+                            if (!isNaN(n)) ids.add(n);
+                        });
+                    });
+                    return [...ids].join(',');
+                };
+
                 let castIds = parseIds('SPELL_DB');
                 if (!castIds) return res.status(500).json({ error: "No se pudo leer SPELL_DB desde data.js" });
 
                 let buffIds = parseIds('BUFF_DB');
                 let timelineIds = parseIds('TIMELINE_SPELLS');
+                let trackingIds = parseTrackingIds();
 
                 // Petición a WarcraftLogs para obtener token
                 const responseToken = await axios.post(
@@ -106,8 +124,20 @@ app.post('/api/audit', async (req, res) => {
                 if (!token) throw new Error("Invalid or expired API Keys.");
 
                 const resAbilityIds = [20608, 20707, 20748, 20749, 20750, 20758, 27239, 20484, 21849, 21850, 26993, 26994].join(',');
-                // Query y filtro
-                const filterExp = `(type = 'cast' AND ability.id IN (${castIds},${timelineIds})) OR (type = 'damage' AND ability.id IN (13241, 30486, 33671, 30216, 30217)) OR type = 'interrupt' OR type = 'combatantinfo' OR type = 'resurrect' OR (type IN ('applybuff', 'applybuffstack', 'refreshbuff', 'removebuff', 'cast') AND ability.id IN (${buffIds},${timelineIds},${resAbilityIds}))`;
+                
+                const allUniqueIdsSet = new Set();
+                [castIds, buffIds, timelineIds, trackingIds, '13241,30486,33671,30216,30217', resAbilityIds].forEach(str => {
+                    if (str) {
+                        str.split(',').forEach(id => {
+                            const n = parseInt(id.trim());
+                            if (!isNaN(n)) allUniqueIdsSet.add(n);
+                        });
+                    }
+                });
+                const allUniqueIds = [...allUniqueIdsSet].join(',');
+
+                // Compact filter expression to avoid WCL length limits
+                const filterExp = `type = 'combatantinfo' OR (type IN ('cast', 'damage', 'interrupt', 'resurrect', 'applybuff', 'applybuffstack', 'refreshbuff', 'removebuff', 'applydebuff', 'refreshdebuff', 'removedebuff') AND ability.id IN (${allUniqueIds}))`;
                 // Función para obtener todas las páginas de eventos
                 const fetchEventsPaginated = async (startEvent, startDeath) => {
                     const evStr = startEvent !== null ? `events(startTime: ${startEvent}, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp }` : '';
@@ -123,7 +153,7 @@ app.post('/api/audit', async (req, res) => {
 
                 // Petición Inicial
                 const query = JSON.stringify({
-                    query: `{reportData {report(code: "${logId}") {title fights { id name startTime endTime kill difficulty } masterData { actors(type: "Player") { id name subType icon } } events(startTime: 0, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp } deaths: events(startTime: 0, endTime: 999999999999, dataType: Deaths) { data nextPageTimestamp }}}}`
+                    query: `{reportData {report(code: "${logId}") {title fights { id name startTime endTime kill difficulty } masterData { actors { id name subType icon type } } events(startTime: 0, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp } deaths: events(startTime: 0, endTime: 999999999999, dataType: Deaths) { data nextPageTimestamp }}}}`
                 });
 
                 const responseData = await axios.post(
@@ -138,24 +168,29 @@ app.post('/api/audit', async (req, res) => {
 
                 // Manejar la paginación (si el log es muy largo, WCL corta a los 10k eventos)
                 let report = responseData.data.data.reportData.report;
-                let nextEvent = report.events?.nextPageTimestamp || null;
-                let nextDeath = report.deaths?.nextPageTimestamp || null;
+                
+                // Asegurar que events y deaths sean al menos un objeto vacío con data: []
+                if (!report.events) report.events = { data: [] };
+                if (!report.deaths) report.deaths = { data: [] };
+
+                let nextEvent = report.events.nextPageTimestamp || null;
+                let nextDeath = report.deaths.nextPageTimestamp || null;
 
                 while (nextEvent !== null || nextDeath !== null) {
                     const page = await fetchEventsPaginated(nextEvent, nextDeath);
                     if (!page) break;
-                    if (nextEvent !== null && page.events) {
+                    if (nextEvent !== null && page.events && page.events.data) {
                         report.events.data = report.events.data.concat(page.events.data);
                         nextEvent = page.events.nextPageTimestamp || null;
                     }
-                    if (nextDeath !== null && page.deaths) {
+                    if (nextDeath !== null && page.deaths && page.deaths.data) {
                         report.deaths.data = report.deaths.data.concat(page.deaths.data);
                         nextDeath = page.deaths.nextPageTimestamp || null;
                     }
                 }
 
                 // Mezclar muertes con el array principal de eventos para que el frontend lo lea igual
-                if (report.deaths && report.deaths.data) {
+                if (report.deaths && report.deaths.data && report.deaths.data.length > 0) {
                     report.events.data = report.events.data.concat(report.deaths.data);
                 }
 

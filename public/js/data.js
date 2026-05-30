@@ -301,6 +301,13 @@ const SPELL_DB = {
     12042: {name:"Arcane Power",icon:"spell_nature_lightning",category:1},
     12292: {name:"Death Wish",icon:"spell_shadow_deathpact",category:1},
     12328: {name:"Sweeping Strikes",icon:"ability_rogue_slicedice",category:2},
+    1680: {name:"Whirlwind",icon:"ability_whirlwind",category:2},
+    30335: {name:"Bloodthirst",icon:"spell_nature_bloodlust",category:2},
+    25375: {name:"Mind Blast",icon:"spell_shadow_unholyfrenzy",category:2},
+    10057: {name:"Mana Citrine",icon:"inv_misc_gem_opal_01",category:5},
+    10058: {name:"Mana Ruby",icon:"inv_misc_gem_ruby_01",category:5},
+    27103: {name:"Mana Emerald",icon:"inv_misc_gem_stone_01",category:5},
+    37447: {name:"Serpent-Coil Braid",icon:"spell_nature_poisoncleansingtotem",category:3},
     12472: {name:"Icy Veins",icon:"spell_frost_coldhearted",category:1},
     13241: {name:"Goblin Sapper",icon:"spell_fire_selfdestruct",category:5},
     13750: {name:"Adrenaline Rush",icon:"spell_shadow_shadowworddominate",category:1},
@@ -308,6 +315,7 @@ const SPELL_DB = {
     14751: {name:"Inner Focus",icon:"spell_frost_windwalkon",category:2},
     16166: {name:"Elemental Mastery",icon:"spell_nature_wispheal",category:2},
     16188: {name:"Nature's Swiftness",icon:"spell_nature_ravenform",category:2},
+    17116: {name:"Nature's Swiftness",icon:"spell_nature_ravenform",category:2},
     16190: {name:"Mana Tide Totem",icon:"spell_frost_summonwaterelemental",category:1},
     16666: {name:"Demonic Rune",icon:"inv_misc_rune_04",category:5},
     17531: {name:"Super Mana Potion",icon:"inv_potion_137",category:5},
@@ -395,6 +403,9 @@ const SPELL_DB = {
     27238: {name:"Healthstone",icon:"inv_stone_04",category:5},
     27239: {name:"Healthstone",icon:"inv_stone_04",category:5},
     27263: {name:"Shadowburn",icon:"spell_shadow_scourgebuild",category:2},
+    29341: {name:"Shadowburn",icon:"spell_shadow_scourgebuild",category:2},
+    30546: {name:"Shadowburn",icon:"spell_shadow_scourgebuild",category:2},
+    27223: {name:"Death Coil",icon:"spell_shadow_deathcoil",category:2},
     27619: {name:"Ice Block",icon:"spell_frost_frost",category:1},
     27869: {name:"Dark Rune",icon:"spell_shadow_sealofkings",category:5},
     28093: {name:"Lightning Speed",icon:"inv_misc_ahnqirajtrinket_04",category:3},
@@ -418,6 +429,8 @@ const SPELL_DB = {
     34653: {name:"LC Prayerbook",icon:"inv_relics_libramoftruth",category:3},
     33702: {name:"Blood Fury",icon:"racial_orc_berserkerstrength",category:1},
     29704: {name:"Shield Bash",icon:"ability_warrior_shieldbash",isInterrupt:true,category:2},
+    30330: {name:"Mortal Strike",icon:"ability_warrior_savageblow",category:2},
+    25248: {name:"Mortal Strike",icon:"ability_warrior_savageblow",category:2},
     29858: {name:"Soulshatter",icon:"spell_arcane_arcane01",category:2},
     30449: {name:"Spellsteal",icon:"spell_arcane_arcane02",category:2},
     30486: {name:"TBC Sapper",icon:"inv_gizmo_supersappercharge",category:5},
@@ -522,6 +535,8 @@ const TIMELINE_SPELLS = {
     34477: { name: "Misdirection", icon: "ability_hunter_misdirection", color: "#ABD473", duration: 1000 },
     33807: { name: "Abacus of Violent Odds", icon: "inv_misc_enggizmos_18", color: "#179299" },
     42084: { name: "Tsunami", icon: "inv_jewelry_talisman_04", color: "#8a2be2" },
+    37447: { name: "Serpent-Coil Braid", icon: "spell_nature_poisoncleansingtotem", color: "#179299" },
+    9512: { name: "Thistle Tea", icon: "inv_drink_milk_0", color: "#f1c40f", duration: 1000 },
 
     // Potions & Consumables
     28507: { name: "Haste Potion", icon: "inv_potion_108", color: "#e83e8c" },
@@ -540,6 +555,9 @@ const TIMELINE_SPELLS = {
     43183: { name: "Cenarion Mana Salve", icon: "inv_potion_137", color: "#5bc0de", duration: 1000 },
     41029: { name: "Cenarion Healing Salve", icon: "inv_potion_153", color: "#e83e8c", duration: 1000 },
     41030: { name: "Cenarion Mana Salve", icon: "inv_potion_137", color: "#5bc0de", duration: 1000 },
+    27103: { name: "Mana Emerald", icon: "inv_misc_gem_stone_01", color: "#5bc0de", duration: 1000 },
+    10058: { name: "Mana Ruby", icon: "inv_misc_gem_ruby_01", color: "#5bc0de", duration: 1000 },
+    10057: { name: "Mana Citrine", icon: "inv_misc_gem_opal_01", color: "#5bc0de", duration: 1000 },
     27089: { name: "Mana Emerald", icon: "inv_misc_gem_sapphire_02", color: "#5bc0de", duration: 1000 },
     11932: { name: "Mana Emerald", icon: "inv_misc_gem_sapphire_02", color: "#5bc0de", duration: 1000 },
     33066: { name: "Mana Emerald", icon: "inv_misc_gem_sapphire_02", color: "#5bc0de", duration: 1000 },
@@ -567,7 +585,7 @@ const TIMELINE_SPELLS = {
     1719: { name: "Recklessness", icon: "ability_criticalstrike", color: "#c9302c" },
     3045: { name: "Rapid Fire", icon: "ability_hunter_runningshot", color: "#5cb85c" },
     10060: { name: "Power Infusion", icon: "spell_holy_powerinfusion", color: "#fff" },
-    29166: { name: "Innervate", icon: "spell_nature_lightning", color: "#5bc0de" },
+    29166: { name: "Innervate", icon: "spell_nature_lightning", color: "#ff7d0a" },
     31884: { name: "Avenging Wrath", icon: "spell_holy_avenginwrath", color: "#f4b400" },
     20572: { name: "Blood Fury", icon: "racial_orc_berserkerstrength", color: "#d9534f" },
     20554: { name: "Berserking", icon: "racial_troll_berserk", color: "#d9534f", duration: 10000 },
@@ -579,6 +597,396 @@ const TIMELINE_SPELLS = {
     5171: { name: "Slice and Dice", icon: "ability_rogue_slicedice", color: "#ffff00" },
     1044: { name: "Blessing of Freedom", icon: "spell_holy_sealofvalor", color: "#f58cba", duration: 14000 },
     10278: { name: "Blessing of Protection", icon: "spell_holy_sealofprotection", color: "#f58cba", duration: 10000 },
+    17116: { name: "Nature's Swiftness", icon: "spell_nature_ravenform", color: "#2ecc71" },
+    16188: { name: "Nature's Swiftness", icon: "spell_nature_ravenform", color: "#2ecc71" },
+};
+
+// ── CLASS ABILITY TRACKING (Casts/Debuff panel) ────────────────────────────
+// casts: habilidades cuyo nº de casteos se contabiliza
+// debuffs: buffs/debuffs de los que se muestra timeline de uptime (en targets de boss)
+const CLASS_ABILITY_TRACKING = {
+
+    // ── WARLOCK ─────────────────────────────────────────────────────────────
+    "Warlock-Destruction": {
+        casts: [
+            // Shadow Bolt: TBC max rank 11 = 25307; also 27209 on some servers
+            { ids: [25307, 25306, 25305, 27209, 686, 695, 705, 1088, 1106, 7617, 7618, 7619], topIds: [25307, 27209], name: "Shadow Bolt", icon: "spell_shadow_shadowbolt" },
+            // Searing Pain: TBC max rank 8 = 27210
+            { ids: [27210, 6262, 11394, 11395], topIds: [27210], name: "Searing Pain", icon: "spell_fire_soulburn" },
+            // Soul Fire: TBC max rank 4 = 27211
+            { ids: [27211, 6353, 17924], topIds: [27211], name: "Soul Fire", icon: "spell_fire_fireball" },
+            // Immolate: TBC max rank 9 = 27215
+            { ids: [27215, 348, 707, 1094, 2941, 11665, 11667, 11668], topIds: [27215], name: "Immolate", icon: "spell_fire_immolation" },
+            // Corruption: TBC max rank 8 = 27216
+            { ids: [27216, 172, 6222, 6223, 7648, 11671, 11672], topIds: [27216], name: "Corruption", icon: "spell_shadow_abominationexplosion" },
+            // Life Tap: TBC max rank 7 = 27222
+            { ids: [27222, 1454, 1455, 1456, 11687, 11688], topIds: [27222], name: "Life Tap", icon: "spell_shadow_burningspirit" },
+        ],
+        debuffs: [
+            { ids: [27216, 172, 6222, 6223, 7648, 11671, 11672], name: "Corruption",             icon: "spell_shadow_abominationexplosion", color: "#8e44ad" },
+            { ids: [27215, 348, 707, 1094, 2941, 11665, 11667, 11668], name: "Immolate",             icon: "spell_fire_immolation",        color: "#e74c3c" },
+            { ids: [27218, 980, 1014, 6217, 11711, 11712],              name: "Curse of Agony",       icon: "spell_shadow_curseofsargeras",  color: "#9b59b6" },
+            { ids: [27228, 1490, 11721, 11722],                         name: "Curse of Elements",    icon: "spell_shadow_chilltouch",       color: "#3498db" },
+            { ids: [27226, 11717, 704, 7658, 7659],                     name: "Curse of Recklessness",icon: "spell_shadow_unholystrength",   color: "#e67e22" },
+            { ids: [603, 30910],                                         name: "Curse of Doom",        icon: "spell_shadow_auraofdarkness",   color: "#c0392b" },
+        ]
+    },
+    "Warlock-Affliction": {
+        casts: [
+            { ids: [25307, 25306, 25305, 27209, 686, 695, 705, 1088, 1106, 7617, 7618, 7619], topIds: [25307, 27209], name: "Shadow Bolt",    icon: "spell_shadow_shadowbolt" },
+            { ids: [27216, 172, 6222, 6223, 7648, 11671, 11672],                               topIds: [27216],         name: "Corruption",     icon: "spell_shadow_abominationexplosion" },
+            { ids: [27218, 980, 1014, 6217, 11711, 11712],                                     topIds: [27218],         name: "Curse of Agony", icon: "spell_shadow_curseofsargeras" },
+            { ids: [27228, 1490, 11721, 11722],                                                topIds: [27228],         name: "Curse of Elements", icon: "spell_shadow_chilltouch" },
+            { ids: [27226, 11717, 704, 7658, 7659],                                            topIds: [27226, 11717],  name: "Curse of Recklessness", icon: "spell_shadow_unholystrength" },
+            { ids: [603, 30910],                                                                topIds: [30910],         name: "Curse of Doom",  icon: "spell_shadow_auraofdarkness" },
+            { ids: [27222, 1454, 1455, 1456, 11687, 11688],                                    topIds: [27222],         name: "Life Tap",       icon: "spell_shadow_burningspirit" },
+            { ids: [27261, 5500, 11094, 17941],                                                 topIds: [27261],         name: "Dark Pact",      icon: "spell_shadow_darkpact" },
+        ],
+        debuffs: [
+            { ids: [27216, 172, 6222, 6223, 7648, 11671, 11672],   name: "Corruption",           icon: "spell_shadow_abominationexplosion", color: "#9b59b6" },
+            { ids: [27218, 980, 1014, 6217, 11711, 11712],          name: "Curse of Agony",       icon: "spell_shadow_curseofsargeras",      color: "#8e44ad" },
+            { ids: [27228, 1490, 11721, 11722],                     name: "Curse of Elements",    icon: "spell_shadow_chilltouch",           color: "#3498db" },
+            { ids: [27226, 11717, 704, 7658, 7659],                 name: "Curse of Recklessness",icon: "spell_shadow_unholystrength",       color: "#e67e22" },
+            { ids: [603, 30910],                                     name: "Curse of Doom",        icon: "spell_shadow_auraofdarkness",       color: "#c0392b" },
+        ]
+    },
+    "Warlock-Demonology": {
+        casts: [
+            { ids: [25307, 25306, 25305, 27209, 686, 695, 705, 1088, 1106, 7617, 7618, 7619], topIds: [25307, 27209], name: "Shadow Bolt", icon: "spell_shadow_shadowbolt" },
+            { ids: [27216, 172, 6222, 6223, 7648, 11671, 11672],                               topIds: [27216],        name: "Corruption", icon: "spell_shadow_abominationexplosion" },
+            { ids: [27218, 980, 1014, 6217, 11711, 11712],                                     topIds: [27218],        name: "Curse of Agony", icon: "spell_shadow_curseofsargeras" },
+            { ids: [27222, 1454, 1455, 1456, 11687, 11688],                                    topIds: [27222],        name: "Life Tap", icon: "spell_shadow_burningspirit" },
+            { ids: [27261, 5500, 11094, 17941],                                                 topIds: [27261],        name: "Dark Pact", icon: "spell_shadow_darkpact" },
+        ],
+        debuffs: [
+            { ids: [27216, 172, 6222, 6223, 7648, 11671, 11672], name: "Corruption",        icon: "spell_shadow_abominationexplosion", color: "#9b59b6" },
+            { ids: [27218, 980, 1014, 6217, 11711, 11712],        name: "Curse of Agony",   icon: "spell_shadow_curseofsargeras",      color: "#8e44ad" },
+            { ids: [27228, 1490, 11721, 11722],                   name: "Curse of Elements",icon: "spell_shadow_chilltouch",           color: "#3498db" },
+            { ids: [27226, 11717, 704, 7658, 7659],                 name: "Curse of Recklessness",icon: "spell_shadow_unholystrength",       color: "#e67e22" },
+            { ids: [603, 30910],                                     name: "Curse of Doom",        icon: "spell_shadow_auraofdarkness",       color: "#c0392b" },
+        ]
+    },
+
+    // ── SHAMAN ──────────────────────────────────────────────────────────────
+    "Shaman-Enhancement": {
+        casts: [
+            { ids: [17364], name: "Stormstrike",          icon: "ability_shaman_stormstrike" },
+            { ids: [25454, 10414, 10413, 10412, 8046, 8045, 8044], name: "Earth Shock",          icon: "spell_nature_earthshock", trackAllCasts: true },
+            { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock",          icon: "spell_frost_frostshock" },
+            { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock",          icon: "spell_fire_flameshock" },
+            { ids: [8498, 8499, 11314, 11315, 25546, 25547], name: "Fire Nova Totem", icon: "spell_fire_sealoffire" },
+            { ids: [25449, 25448, 10392, 10391], name: "Lightning Bolt",       icon: "spell_nature_lightning" },
+            { ids: [30823], name: "Shamanistic Rage",     icon: "spell_nature_shamanrage" },
+            { ids: [25587, 8512], name: "Windfury Totem",      icon: "spell_nature_windfury", maxRank: 5 },
+            { ids: [25359], name: "Grace of Air Totem",   icon: "spell_nature_invisibilitytotem" },
+        ],
+        debuffs: [
+            { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock", icon: "spell_frost_frostshock", color: "#3498db" },
+            { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock", icon: "spell_fire_flameshock", color: "#e74c3c" },
+            { ids: [25454, 10414, 10413, 10412, 8046, 8045, 8044], name: "Earth Shock", icon: "spell_nature_earthshock", color: "#8e44ad", isCastPoint: true },
+            { ids: [25587, 8512], name: "Windfury Totem", icon: "spell_nature_windfury", color: "#3498db", alwaysOnTop: true, sortOrder: 0, group: "air-totem" },
+            { ids: [25359], name: "Grace of Air Totem", icon: "spell_nature_invisibilitytotem", color: "#2ecc71", alwaysOnTop: true, sortOrder: 1, group: "air-totem" },
+        ]
+    },
+    "Shaman-Elemental": {
+        casts: [
+            { ids: [25449, 25448, 10392, 10391], name: "Lightning Bolt",       icon: "spell_nature_lightning" },
+            { ids: [25442], name: "Chain Lightning",      icon: "spell_nature_chainlightning" },
+            { ids: [25454, 10414, 10413, 10412], name: "Earth Shock",          icon: "spell_nature_earthshock", trackAllCasts: true },
+            { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock",          icon: "spell_frost_frostshock" },
+            { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock",          icon: "spell_fire_flameshock" },
+            { ids: [25547], name: "Fire Nova Totem",      icon: "spell_fire_sealoffire" },
+            { ids: [16166], name: "Elemental Mastery",    icon: "spell_nature_wispheal" },
+        ],
+        debuffs: [
+            { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock", icon: "spell_frost_frostshock", color: "#3498db" },
+            { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock", icon: "spell_fire_flameshock", color: "#e74c3c" },
+            { ids: [25454, 10414, 10413, 10412], name: "Earth Shock", icon: "spell_nature_earthshock", color: "#8e44ad", isCastPoint: true },
+        ]
+    },
+    "Shaman-Restoration": {
+        casts: [
+            { ids: [25423, 25422, 10605, 10604, 1064], name: "Chain Heal",           icon: "spell_nature_healingwavegreater", maxRank: 5 },
+            { ids: [25391, 10468, 10467, 8010, 8008, 8004], name: "Lesser Healing Wave",  icon: "spell_nature_healingwavelesser", maxRank: 6 },
+            { ids: [25396, 25395, 10466, 10465, 10464, 10463, 10462, 10461, 10460, 10459, 10458, 331], name: "Healing Wave", icon: "spell_nature_magicimmunity", maxRank: 12 },
+            { ids: [32594, 32593, 33201], name: "Earth Shield",         icon: "spell_nature_skinofearth", maxRank: 3 },
+            { ids: [16190], name: "Mana Tide Totem",      icon: "spell_frost_summonwaterelemental" },
+        ],
+        debuffs: [
+            { ids: [32594, 32593, 33201], name: "Earth Shield", icon: "spell_nature_skinofearth", color: "#f1c40f" },
+        ]
+    },
+
+    // ── MAGE ────────────────────────────────────────────────────────────────
+    "Mage-Frost": {
+        casts: [
+            { ids: [27072], name: "Frostbolt",            icon: "spell_frost_frostbolt02" },
+            { ids: [27131], name: "Ice Lance",            icon: "spell_frost_frostbolttroll01" },
+            { ids: [27087], name: "Cone of Cold",         icon: "spell_frost_glacier" },
+            { ids: [27082], name: "Arcane Explosion",     icon: "spell_nature_wispsplode" },
+            { ids: [12472], name: "Icy Veins",            icon: "spell_frost_coldhearted" },
+            { ids: [11958], name: "Cold Snap",            icon: "spell_frost_wizardmark" },
+        ],
+        debuffs: []
+    },
+    "Mage-Fire": {
+        casts: [
+            { ids: [27070], name: "Fireball",             icon: "spell_fire_fireball02" },
+            { ids: [27079], name: "Fire Blast",           icon: "spell_fire_fireball" },
+            { ids: [27074], name: "Scorch",               icon: "spell_fire_soulburn" },
+            { ids: [33938], name: "Pyroblast",            icon: "spell_fire_fireball01" },
+            { ids: [27087], name: "Cone of Cold",         icon: "spell_frost_glacier" },
+            { ids: [27082], name: "Arcane Explosion",     icon: "spell_nature_wispsplode" },
+            { ids: [12042], name: "Arcane Power",         icon: "spell_nature_lightning" },
+        ],
+        debuffs: []
+    },
+    "Mage-Arcane": {
+        casts: [
+            { ids: [30451], name: "Arcane Blast",         icon: "spell_arcane_blast" },
+            { ids: [25345], name: "Arcane Missiles",      icon: "spell_nature_starfall" },
+            { ids: [27070], name: "Fireball",             icon: "spell_fire_fireball02" },
+            { ids: [27087], name: "Cone of Cold",         icon: "spell_frost_glacier" },
+            { ids: [27082], name: "Arcane Explosion",     icon: "spell_nature_wispsplode" },
+            { ids: [12042], name: "Arcane Power",         icon: "spell_nature_lightning" },
+            { ids: [12472], name: "Icy Veins",            icon: "spell_frost_coldhearted" },
+        ],
+        debuffs: []
+    },
+
+    // ── ROGUE ───────────────────────────────────────────────────────────────
+    "Rogue-Combat": {
+        casts: [
+            { ids: [26862], name: "Sinister Strike",      icon: "spell_shadow_ritualofsacrifice" },
+            { ids: [26865], name: "Eviscerate",           icon: "ability_rogue_eviscerate" },
+            { ids: [26867], name: "Rupture",              icon: "ability_rogue_rupture" },
+            { ids: [26866], name: "Expose Armor",         icon: "ability_warrior_riposte" },
+            { ids: [6774],  name: "Slice and Dice",       icon: "ability_rogue_slicedice" },
+        ],
+        debuffs: [
+            { ids: [26867], name: "Rupture",              icon: "ability_rogue_rupture",          color: "#e74c3c" },
+            { ids: [14169, 26866], name: "Expose Armor",  icon: "ability_warrior_riposte",        color: "#95a5a6" },
+        ]
+    },
+    "Rogue-Assassination": {
+        casts: [
+            { ids: [26863], name: "Backstab",             icon: "ability_backstab" },
+            { ids: [26865], name: "Eviscerate",           icon: "ability_rogue_eviscerate" },
+            { ids: [26867], name: "Rupture",              icon: "ability_rogue_rupture" },
+            { ids: [6774],  name: "Slice and Dice",       icon: "ability_rogue_slicedice" },
+        ],
+        debuffs: [
+            { ids: [26867], name: "Rupture",              icon: "ability_rogue_rupture",          color: "#e74c3c" },
+            { ids: [14169, 26866], name: "Expose Armor",  icon: "ability_warrior_riposte",        color: "#95a5a6" },
+        ]
+    },
+    "Rogue-Subtlety": {
+        casts: [
+            { ids: [26863], name: "Backstab",             icon: "ability_backstab" },
+            { ids: [26864], name: "Hemorrhage",           icon: "spell_shadow_lifedrain" },
+            { ids: [26865], name: "Eviscerate",           icon: "ability_rogue_eviscerate" },
+            { ids: [6774],  name: "Slice and Dice",       icon: "ability_rogue_slicedice" },
+        ],
+        debuffs: [
+            { ids: [26867], name: "Rupture",              icon: "ability_rogue_rupture",          color: "#e74c3c" },
+            { ids: [14169, 26866], name: "Expose Armor",  icon: "ability_warrior_riposte",        color: "#95a5a6" },
+        ]
+    },
+
+    // ── WARRIOR ─────────────────────────────────────────────────────────────
+    "Warrior-Fury": {
+        casts: [
+            { ids: [25231, 20569, 11609, 11608, 845], name: "Cleave",             icon: "ability_warrior_cleave", trackOnDamage: true },
+            { ids: [29707, 30324, 25286, 11567, 11566, 11565], name: "Heroic Strike",    icon: "ability_rogue_ambush", trackOnDamage: true },
+            { ids: [25236], name: "Execute",              icon: "inv_sword_48" },
+        ],
+        debuffs: [
+            { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
+        ]
+    },
+    "Warrior-Arms": {
+        casts: [
+            { ids: [25231, 20569, 11609, 11608, 845], name: "Cleave",             icon: "ability_warrior_cleave", trackOnDamage: true },
+            { ids: [29707, 30324, 25286, 11567, 11566, 11565], name: "Heroic Strike",    icon: "ability_rogue_ambush", trackOnDamage: true },
+            { ids: [25236], name: "Execute",              icon: "inv_sword_48" },
+            { ids: [25241], name: "Slam",                 icon: "ability_warrior_decisivestrike" },
+        ],
+        debuffs: [
+            { ids: [29859], name: "Blood Frenzy",         icon: "ability_warrior_bloodfrenzy", color: "#c0392b" },
+            { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
+        ]
+    },
+    "Warrior-Protection": {
+        casts: [
+            { ids: [23922], name: "Shield Slam",          icon: "ability_warrior_shieldslam" },
+            { ids: [25258], name: "Revenge",              icon: "ability_warrior_revenge" },
+            { ids: [25231, 20569, 11609, 11608, 845], name: "Cleave",             icon: "ability_warrior_cleave", trackOnDamage: true },
+            { ids: [30324, 25286, 11567, 11566, 11565], name: "Heroic Strike",    icon: "ability_rogue_ambush", trackOnDamage: true },
+        ],
+        debuffs: [
+            { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
+        ]
+    },
+
+    // ── PRIEST ──────────────────────────────────────────────────────────────
+    "Priest-Shadow": {
+        casts: [
+            { ids: [25368], name: "Shadow Word: Pain",    icon: "spell_shadow_shadowwordpain" },
+            { ids: [25387], name: "Mind Flay",            icon: "spell_shadow_siphonmana" },
+            { ids: [34914, 34916, 34917], topIds: [34917], name: "Vampiric Touch", icon: "spell_holy_stoicism" },
+            { ids: [34433], name: "Shadowfiend",          icon: "spell_shadow_shadowfiend" },
+            { ids: [32996], name: "Shadow Word: Death",   icon: "spell_shadow_demonicfortitude" },
+        ],
+        debuffs: [
+            { ids: [25368], name: "Shadow Word: Pain",    icon: "spell_shadow_shadowwordpain",   color: "#9b59b6" },
+            { ids: [34914, 34916, 34917], name: "Vampiric Touch", icon: "spell_holy_stoicism",   color: "#8e44ad" },
+        ]
+    },
+    "Priest-Holy": {
+        casts: [
+            { ids: [25235, 25233, 10917, 10916, 10915, 9474, 9473, 9472, 9471], name: "Flash Heal", icon: "spell_holy_flashheal", maxRank: 9 },
+            { ids: [25213, 25210, 22009, 10965, 10964, 10963, 2060], name: "Greater Heal", icon: "spell_holy_greaterheal", maxRank: 7 },
+            { ids: [25316, 25314, 10961, 10960, 10960], name: "Prayer of Healing", icon: "spell_holy_prayerofhealing02", maxRank: 6 },
+            { ids: [25218, 25217, 10901], name: "Power Word: Shield", icon: "spell_holy_powerwordshield" },
+            { ids: [33076], name: "Prayer of Mending",    icon: "spell_holy_prayerofmendingtbc" },
+            { ids: [34861, 34863, 34864, 34865, 34866], name: "Circle of Healing", icon: "spell_holy_circleofrenewal" },
+            { ids: [25222, 25221, 25220, 25219, 10928, 10927, 10926, 10925, 9049, 9048, 9047, 774], name: "Renew", icon: "spell_holy_renew", maxRank: 12 },
+            { ids: [29429, 25429], name: "Fade",                    icon: "spell_magic_lesserinvisibilty" },
+        ],
+        debuffs: []
+    },
+    "Priest-Discipline": {
+        casts: [
+            { ids: [25235, 25233, 10917, 10916, 10915, 9474, 9473, 9472, 9471], name: "Flash Heal", icon: "spell_holy_flashheal", maxRank: 9 },
+            { ids: [25213, 25210, 22009, 10965, 10964, 10963, 2060], name: "Greater Heal", icon: "spell_holy_greaterheal", maxRank: 7 },
+            { ids: [25218, 25217, 10901], name: "Power Word: Shield", icon: "spell_holy_powerwordshield" },
+            { ids: [33076], name: "Prayer of Mending",    icon: "spell_holy_prayerofmendingtbc" },
+            { ids: [29429, 25429], name: "Fade",                    icon: "spell_magic_lesserinvisibilty" },
+        ],
+        debuffs: []
+    },
+
+    // ── HUNTER ──────────────────────────────────────────────────────────────
+    "Hunter-BeastMastery": {
+        casts: [
+            { ids: [75], name: "Auto Shot",             icon: "ability_whirlwind" },
+            { ids: [34120], name: "Steady Shot",          icon: "ability_hunter_steadyshot" },
+            { ids: [27019], name: "Arcane Shot",          icon: "ability_impalingbolt" },
+            { ids: [27021], name: "Multi-Shot",           icon: "ability_upgrademoonglaive" },
+            { ids: [27016], name: "Serpent Sting",        icon: "ability_hunter_quickshot" },
+            { ids: [19574], name: "Bestial Wrath",        icon: "ability_druid_ferociousbite" },
+        ],
+        debuffs: [
+            { ids: [27016], name: "Serpent Sting",        icon: "ability_hunter_quickshot", color: "#27ae60" },
+            { ids: [14325, 19425], name: "Hunter's Mark", icon: "ability_hunter_snipershot", color: "#c0392b" },
+        ]
+    },
+    "Hunter-Marksmanship": {
+        casts: [
+            { ids: [75], name: "Auto Shot",             icon: "ability_whirlwind" },
+            { ids: [34120], name: "Steady Shot",          icon: "ability_hunter_steadyshot" },
+            { ids: [27019], name: "Arcane Shot",          icon: "ability_impalingbolt" },
+            { ids: [27065], name: "Aimed Shot",           icon: "ability_hunter_focusedaim" },
+            { ids: [27021], name: "Multi-Shot",           icon: "ability_upgrademoonglaive" },
+            { ids: [27016], name: "Serpent Sting",        icon: "ability_hunter_quickshot" },
+        ],
+        debuffs: [
+            { ids: [27016], name: "Serpent Sting",        icon: "ability_hunter_quickshot", color: "#27ae60" },
+            { ids: [14325, 19425], name: "Hunter's Mark", icon: "ability_hunter_snipershot", color: "#c0392b" },
+        ]
+    },
+    "Hunter-Survival": {
+        casts: [
+            { ids: [75], name: "Auto Shot",             icon: "ability_whirlwind" },
+            { ids: [34120], name: "Steady Shot",          icon: "ability_hunter_steadyshot" },
+            { ids: [27019], name: "Arcane Shot",          icon: "ability_impalingbolt" },
+            { ids: [27016], name: "Serpent Sting",        icon: "ability_hunter_quickshot" },
+            { ids: [27021], name: "Multi-Shot",           icon: "ability_upgrademoonglaive" },
+        ],
+        debuffs: [
+            { ids: [27016], name: "Serpent Sting",        icon: "ability_hunter_quickshot", color: "#27ae60" },
+            { ids: [14325, 19425], name: "Hunter's Mark", icon: "ability_hunter_snipershot", color: "#c0392b" },
+        ]
+    },
+
+    // ── PALADIN ─────────────────────────────────────────────────────────────
+    "Paladin-Retribution": {
+        casts: [
+            { ids: [35395], name: "Crusader Strike",      icon: "spell_holy_crusaderstrike" },
+            { ids: [27138], name: "Exorcism",             icon: "spell_holy_excorcism_02" },
+            { ids: [27154], name: "Lay on Hands",         icon: "spell_holy_layonhands" },
+            { ids: [10308], name: "Hammer of Justice",    icon: "spell_holy_sealofmight" },
+        ],
+        debuffs: []
+    },
+    "Paladin-Holy": {
+        casts: [
+            { ids: [27137, 27136, 19943, 19942, 19941, 19940, 19939], name: "Flash of Light", icon: "spell_holy_flashheal", maxRank: 7 },
+            { ids: [27136, 27135, 25292, 10456, 10455, 3472, 3471], name: "Holy Light",       icon: "spell_holy_holybolt", maxRank: 11 },
+            { ids: [27174], name: "Holy Shock",           icon: "spell_holy_searinglight" },
+            { ids: [27154], name: "Lay on Hands",         icon: "spell_holy_layonhands" },
+            { ids: [31842], name: "Divine Illumination",  icon: "spell_holy_divineillumination" },
+        ],
+        debuffs: []
+    },
+    "Paladin-Protection": {
+        casts: [
+            { ids: [27174], name: "Holy Shock",           icon: "spell_holy_searinglight" },
+            { ids: [27138], name: "Exorcism",             icon: "spell_holy_excorcism_02" },
+            { ids: [10308], name: "Hammer of Justice",    icon: "spell_holy_sealofmight" },
+        ],
+        debuffs: []
+    },
+
+    // ── DRUID ───────────────────────────────────────────────────────────────
+    "Druid-Feral": {
+        casts: [
+            { ids: [33987, 33986], name: "Mangle (Bear)",         icon: "ability_druid_mangle2" },
+            { ids: [33983, 33982], name: "Mangle (Cat)",          icon: "ability_druid_mangle2" },
+            { ids: [27002], name: "Shred",                icon: "spell_shadow_vampiricaura" },
+            { ids: [24248], name: "Ferocious Bite",       icon: "ability_druid_ferociousbite" },
+            { ids: [27008], name: "Rip",                  icon: "ability_ghoulfrenzy" },
+            { ids: [26996], name: "Maul",                 icon: "ability_druid_maul" },
+            { ids: [26997], name: "Swipe",                icon: "inv_misc_monsterclaw_03" },
+            { ids: [33745], name: "Lacerate",             icon: "ability_druid_lacerate" },
+            { ids: [26998, 9898], name: "Demoralizing Roar", icon: "ability_druid_demoralizingroar" },
+            { ids: [27000], name: "Claw",                 icon: "ability_druid_rake" },
+        ],
+        debuffs: [
+            { ids: [33987, 33986, 33983, 33982], name: "Mangle",  icon: "ability_druid_mangle2", color: "#e67e22" },
+            { ids: [33745], name: "Lacerate",             icon: "ability_druid_lacerate", color: "#c0392b" },
+            { ids: [26998, 9898], name: "Demoralizing Roar", icon: "ability_druid_demoralizingroar", color: "#f39c12" },
+            { ids: [27008], name: "Rip",                  icon: "ability_ghoulfrenzy",      color: "#e74c3c" },
+            { ids: [26993], name: "Faerie Fire (Feral)",  icon: "spell_nature_faeriefire",  color: "#2ecc71" },
+        ]
+    },
+    "Druid-Balance": {
+        casts: [
+            { ids: [25298], name: "Starfire",             icon: "spell_arcane_starfire" },
+            { ids: [26985], name: "Wrath",                icon: "spell_nature_wrathv2" },
+            { ids: [26988], name: "Moonfire",             icon: "spell_nature_starfall" },
+            { ids: [27013], name: "Insect Swarm",         icon: "spell_nature_insectswarm" },
+            { ids: [33831], name: "Force of Nature",      icon: "ability_druid_forceofnature" },
+        ],
+        debuffs: [
+            { ids: [26988], name: "Moonfire",             icon: "spell_nature_starfall",    color: "#3498db" },
+            { ids: [27013], name: "Insect Swarm",         icon: "spell_nature_insectswarm", color: "#8e44ad" },
+            { ids: [26993], name: "Faerie Fire",          icon: "spell_nature_faeriefire",  color: "#2ecc71" },
+        ]
+    },
+    "Druid-Restoration": {
+        casts: [
+            { ids: [26978, 26979, 25297, 9889, 9888, 8903, 5188, 5187], name: "Healing Touch", icon: "spell_nature_healingtouch", maxRank: 13 },
+            { ids: [26981, 26982, 25299, 9841, 9840, 8910, 774], name: "Rejuvenation", icon: "spell_nature_rejuvenation", maxRank: 13 },
+            { ids: [26980, 26982], name: "Regrowth",             icon: "spell_nature_resistnature", maxRank: 10 },
+            { ids: [33763], name: "Lifebloom",            icon: "inv_misc_herb_felblossom" },
+            { ids: [18562], name: "Swiftmend",            icon: "inv_relics_idolofrejuvenation" },
+            { ids: [27013], name: "Insect Swarm",         icon: "spell_nature_insectswarm" },
+        ],
+        debuffs: [
+            { ids: [27013], name: "Insect Swarm",         icon: "spell_nature_insectswarm", color: "#8e44ad" },
+        ]
+    },
 };
 
 if (typeof window !== 'undefined') {
@@ -589,4 +997,5 @@ if (typeof window !== 'undefined') {
     window.SPELL_DB = SPELL_DB;
     window.TIMELINE_SPELLS = TIMELINE_SPELLS;
     window.OPTIMAL_ENCHANTS = OPTIMAL_ENCHANTS;
+    window.CLASS_ABILITY_TRACKING = CLASS_ABILITY_TRACKING;
 }

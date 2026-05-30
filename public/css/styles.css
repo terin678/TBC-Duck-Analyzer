@@ -595,7 +595,7 @@ h1::after {
    BUFF BAR & CONSUMABLES
    ============================================= */
 
-.buff-bar, .spell-grid {
+.buff-bar, .spell-grid, .cd-spells-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 8px;
@@ -2062,3 +2062,259 @@ div.wowhead-tooltip .iconmedium {
     font-size: 0.9rem;
     padding: 10px;
 }
+
+/* =============================================
+   CASTS / DEBUFF PANEL
+   ============================================= */
+
+.casts-btn {
+    background: linear-gradient(to right, rgba(220, 53, 69, 0.1), rgba(120, 20, 30, 0.2)) !important;
+    border-color: rgba(220, 53, 69, 0.35) !important;
+    color: #f87171 !important;
+}
+
+.casts-btn:hover {
+    background: linear-gradient(to right, rgba(220, 53, 69, 0.25), rgba(180, 30, 50, 0.45)) !important;
+    border-color: rgba(220, 53, 69, 0.7) !important;
+    color: #fff !important;
+}
+
+/* Wrapper del panel completo */
+.cd-wrapper {
+    background: #0e0e12;
+    border: 1px solid #1e1e28;
+    border-radius: 10px;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.cd-empty {
+    color: #666;
+    font-style: italic;
+    font-size: 0.9rem;
+    padding: 12px 0;
+}
+
+/* Sección (Cast Counts / Debuff Uptime) */
+.cd-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cd-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1a1a1f;
+}
+
+/* ── Cast Count Grid ──────────────────────── */
+.cd-cast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+}
+
+.cd-cast-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 8px;
+    background: #13131a;
+    border: 1px solid #1e1e2a;
+    border-radius: 6px;
+    transition: border-color 0.15s;
+    flex-wrap: wrap;
+}
+
+.cd-cast-item:hover {
+    border-color: #333;
+}
+
+.cd-cast-item.cd-cast-warn,
+.spell-item.cd-cast-warn {
+    border-color: #e67e2260 !important;
+    background: #1a1508 !important;
+    border-radius: 6px;
+    border: 1px solid #e67e2260;
+}
+
+.cd-cast-item.cd-cast-warn:hover,
+.spell-item.cd-cast-warn:hover {
+    border-color: #e67e22 !important;
+}
+
+.cd-lowrank-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #e67e22;
+    background: #e67e2218;
+    border: 1px solid #e67e2240;
+    border-radius: 4px;
+    padding: 1px 5px;
+    white-space: nowrap;
+    cursor: help;
+}
+
+.cd-cast-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.cd-cast-name {
+    font-size: 0.78rem;
+    color: #ccc;
+    font-weight: 600;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cd-cast-count {
+    font-size: 0.88rem;
+    font-weight: 900;
+    color: #f4b400;
+    flex-shrink: 0;
+}
+
+/* ── Debuff Timeline ──────────────────────── */
+.cd-debuff-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cd-debuff-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cd-debuff-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.cd-debuff-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
+    border: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.cd-debuff-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex: 1;
+}
+
+.cd-debuff-uptime {
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #f4b400;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Row por cada target */
+.cd-debuff-target-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cd-debuff-target-name {
+    width: 160px;
+    font-size: 0.72rem;
+    color: #888;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.cd-debuff-track {
+    flex: 1;
+    position: relative;
+    height: 14px;
+    background: #191920;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.cd-debuff-bar {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 2px;
+    opacity: 0.75;
+    transition: opacity 0.1s;
+}
+
+.cd-debuff-bar:hover {
+    opacity: 1;
+}
+
+/* Cast-point marker: thin vertical line for instant spells (Earth Shock, Windfury, etc.) */
+.cd-debuff-marker {
+    position: absolute;
+    top: -1px;
+    width: 3px;
+    height: calc(100% + 2px);
+    border-radius: 2px;
+    opacity: 0.9;
+    transition: opacity 0.1s, width 0.1s;
+    transform: translateX(-50%);
+}
+
+.cd-debuff-marker:hover {
+    opacity: 1;
+    width: 5px;
+}
+
+/* Time axis (reutiliza el mismo estilo que la timeline principal) */
+.cd-time-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 170px;
+    margin-top: 6px;
+    color: #555;
+    font-size: 0.7rem;
+    border-top: 1px solid #222;
+    padding-top: 5px;
+}
+
+/* Overall label badge */
+.cd-overall-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #64b5f6;
+    margin-left: 6px;
+    vertical-align: middle;
+    opacity: 0.8;
+}
+
+.cd-debuff-tpct {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #888;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: right;
+}
+

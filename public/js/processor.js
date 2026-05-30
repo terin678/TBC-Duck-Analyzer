@@ -1,4 +1,4 @@
-import { state } from './state.js?v=1.2.7';
+import { state } from './state.js?v=1.3.5';
 
 const SEAL_TO_TYPE = {
     // Seal of Righteousness
@@ -40,6 +40,16 @@ export function processPlayerData(fightId, fightEvents, player) {
     let itemCasts = {};
     let prePots = {};
 
+    // Build actorId → name map from ALL actors (players + NPCs/bosses)
+    const actorNameMap = {};
+    const allActorsSrc = state.allActors && state.allActors.length > 0
+        ? state.allActors
+        : (state.currentReport && state.currentReport.masterData && state.currentReport.masterData.actors) || [];
+    allActorsSrc.forEach(a => { actorNameMap[a.id] = a.name; });
+    // Also add raid players as fallback
+    if (state.currentActors) {
+        state.currentActors.forEach(a => { if (!actorNameMap[a.id]) actorNameMap[a.id] = a.name; });
+    }
 
     // Phase 1: combatantinfo + buff events
     fightEvents.forEach(ev => {
@@ -216,15 +226,30 @@ export function processPlayerData(fightId, fightEvents, player) {
         if (typeof window.TIMELINE_SPELLS !== 'undefined' && window.TIMELINE_SPELLS[spellId]) {
             if (!timelineEvents[spellId]) timelineEvents[spellId] = [];
             
+            let timelineKey = spellId;
+            if (spellId === 29166 && ev.sourceID && ev.sourceID !== 0) {
+                const druidName = actorNameMap[ev.sourceID] || 'Unknown';
+                timelineKey = `${spellId}-${druidName}`;
+                if (!timelineEvents[timelineKey]) timelineEvents[timelineKey] = [];
+            }
+
             if (['applybuff', 'applybuffstack', 'refreshbuff'].includes(ev.type)) {
-                let openEv = timelineEvents[spellId].find(t => t.end === null);
+                let openEv = timelineEvents[timelineKey].find(t => t.end === null);
                 if (!openEv) {
-                    timelineEvents[spellId].push({ start: ev.timestamp, end: null });
+                    timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
                 }
             } else if (ev.type === 'removebuff') {
-                let openEv = timelineEvents[spellId].find(t => t.end === null);
-                if (openEv) {
-                    openEv.end = ev.timestamp;
+                if (spellId === 29166) {
+                    const openKey = Object.keys(timelineEvents).find(k => k.startsWith('29166') && timelineEvents[k].some(t => t.end === null));
+                    if (openKey) {
+                        let openEv = timelineEvents[openKey].find(t => t.end === null);
+                        if (openEv) openEv.end = ev.timestamp;
+                    }
+                } else {
+                    let openEv = timelineEvents[spellId].find(t => t.end === null);
+                    if (openEv) {
+                        openEv.end = ev.timestamp;
+                    }
                 }
             } else if (ev.type === 'cast' && window.TIMELINE_SPELLS[spellId].duration) {
                 timelineEvents[spellId].push({ start: ev.timestamp, end: ev.timestamp + window.TIMELINE_SPELLS[spellId].duration });
@@ -233,10 +258,11 @@ export function processPlayerData(fightId, fightEvents, player) {
     });
 
     // Cleanup any open timeline events
+    const fightEndTl = fightEvents.length > 0 ? fightEvents[fightEvents.length - 1].timestamp : 0;
     Object.keys(timelineEvents).forEach(spellId => {
         timelineEvents[spellId].forEach(ev => {
             if (ev.end === null) {
-                ev.end = ev.start + 15000; 
+                ev.end = fightEndTl; 
             }
         });
     });
@@ -274,6 +300,254 @@ export function processPlayerData(fightId, fightEvents, player) {
         });
     }
 
+    // ── Phase 4: Casts/Debuff tracking by class spec ─────────────────────────
+    const spec = state.detectedSpecs[player.name] || player.subType;
+    const castCounts = {};     // { "Shadow Bolt": { count: N, icon: "...", lowRank: bool }, ... }
+    const debuffTimeline = {}; // { "Corruption": { targets: { npcName: [{start,end},...] }, icon, color } }
+
+    // Build actorId → name map from ALL actors (players + NPCs/bosses)
+    // (Moved to the top of processPlayerData for Phase 3 access)
+
+    // Find the tracking config: exact spec match first, then try class-level default
+    let tracking = window.CLASS_ABILITY_TRACKING && window.CLASS_ABILITY_TRACKING[spec];
+    if (!tracking && window.CLASS_ABILITY_TRACKING) {
+        // Fallback: try the player's base class with a default suffix
+        const baseClass = player.subType;
+        const fallbackKey = Object.keys(window.CLASS_ABILITY_TRACKING).find(k => k.startsWith(baseClass + '-'));
+        if (fallbackKey) tracking = window.CLASS_ABILITY_TRACKING[fallbackKey];
+    }
+
+    if (tracking) {
+        // Build lookup maps: spellId (number) → tracking entry
+        const castIdMap = {};
+        if (tracking && tracking.casts) {
+            tracking.casts.forEach(entry => {
+                entry.ids.forEach((id, index) => {
+                    // Create a separate map entry per ID so we can assign specific rankStrings
+                    let mappedEntry = { ...entry };
+                    if (entry.maxRank) {
+                        const currentRank = entry.maxRank - index;
+                        // For max rank, we don't append rankString (or we can if user wants, but user said "Flash heal y punto" for max rank)
+                        if (index > 0) {
+                            mappedEntry.rankString = `(Rank ${currentRank})`;
+                        }
+                    }
+                    castIdMap[id] = mappedEntry;
+                });
+            });
+        }
+        const debuffIdMap = {};
+        tracking.debuffs.forEach(entry => {
+            entry.ids.forEach(id => { debuffIdMap[id] = entry; });
+        });
+
+        // Estimated debuff durations in ms (cast-based fallback)
+        const DEBUFF_DURATION_MS = {
+            27218: 24000, 27216: 18000, 27215: 12000, 27228: 300000,
+            27226: 120000, 11717: 120000, 603: 60000, 30910: 60000,
+            26867: 12000, 26996: 9000, 26997: 12000, 26988: 12000,
+            26993: 300000, 27016: 15000, 25368: 18000, 34914: 15000,
+            // Windfury Totem (rank 1-5) — 2 minutes
+            8512: 120000, 25587: 120000,
+            // Grace of Air Totem — 2 minutes
+            25359: 120000,
+        };
+        const DEFAULT_DEBUFF_MS = 15000;
+
+        // Track which targets have real applydebuff events per debuff name
+        const hasRealEvents = {}; // debuffName -> Set of targetNames
+
+        fightEvents.forEach(ev => {
+            const sid = ev.abilityGameID;
+            if (!sid) return;
+
+            // ── Cast counting (regular 'cast' events) ────────────────────────
+            if (ev.type === 'cast' && ev.sourceID === player.id && castIdMap[sid]) {
+                const entry = castIdMap[sid];
+                // Skip trackOnDamage entries (counted via damage events below)
+                if (!entry.trackOnDamage) {
+                    // Skip if this spell is already in SPELL_DB (shown in Abilities section as a CD)
+                    const inSpellDB = typeof window.SPELL_DB !== 'undefined' && !!window.SPELL_DB[sid];
+                    if (!inSpellDB) {
+                        const spellName = entry.rankString ? `${entry.name} ${entry.rankString}` : entry.name;
+                        if (!castCounts[spellName]) {
+                            castCounts[spellName] = { count: 0, icon: entry.icon, lowRankCount: 0 };
+                        }
+                        castCounts[spellName].count++;
+                        // Detect low rank: if entry has topIds, check if this cast is a lower rank
+                        if (entry.topIds && !entry.topIds.includes(sid)) {
+                            castCounts[spellName].lowRankCount++;
+                        }
+                    }
+                }
+            }
+
+            // ── Cast counting for melee abilities via 'damage' events ─────────
+            // Heroic Strike, Cleave etc. don't generate 'cast' events in WCL
+            if (ev.type === 'damage' && ev.sourceID === player.id && castIdMap[sid]) {
+                const entry = castIdMap[sid];
+                if (entry.trackOnDamage) {
+                    const spellName = entry.name;
+                    if (!castCounts[spellName]) {
+                        castCounts[spellName] = { count: 0, icon: entry.icon, lowRankCount: 0 };
+                    }
+                    castCounts[spellName].count++;
+                }
+            }
+
+            // ── trackAllCasts: count cast events for spells that also track interrupts ──
+            // (e.g. Earth Shock: show all casts, and separately show kicks)
+            // NOTE: Do NOT check inSpellDB here — trackAllCasts entries like Earth Shock ARE
+            // in SPELL_DB as interrupts, but we still want to count all their casts here.
+            if (ev.type === 'cast' && ev.sourceID === player.id) {
+                const castTrackEntry = tracking.casts && tracking.casts.find(e => e.trackAllCasts && e.ids.includes(sid));
+                if (castTrackEntry) {
+                    const spellName = castTrackEntry.name;
+                    if (!castCounts[spellName]) castCounts[spellName] = { count: 0, icon: castTrackEntry.icon, lowRankCount: 0 };
+                    castCounts[spellName].count++;
+                }
+            }
+
+            // ── Interrupt (kick) labeling: only counted in spells/Abilities, NOT in castCounts ──
+            // (Earth Shock kicks appear in Abilities with "(kick)" label, not here)
+
+            // ── Debuff timeline ──────────────────────────────────────────────
+            // ── Debuff timeline ──────────────────────────────────────────────
+            let entry = debuffIdMap[sid];
+            if (!entry) return;
+
+            // Resolve target name from actors map
+            const targetId = ev.targetID;
+            
+            // For isCastPoint entries: allow any target (use 'Raid' as fallback)
+            // For regular debuffs: skip self-buff events (targetID === player.id)
+            // Exception: 'cast' events (e.g. totem drops) always use 'Raid' when there's no real target
+            if (ev.type !== 'cast' && !entry.isCastPoint && targetId === player.id) return;
+
+            let targetName;
+            if (entry.isCastPoint || (ev.type === 'cast' && (!targetId || targetId === player.id))) {
+                targetName = actorNameMap[targetId] || 'Raid';
+            } else {
+                targetName = actorNameMap[targetId] || `#${targetId}`;
+            }
+
+            const isDebuffEv = ['applydebuff', 'refreshdebuff', 'removedebuff'].includes(ev.type);
+            const isPlayerSrc = ev.sourceID === player.id;
+
+            // We accept debuff events from the player, or applydebuff events where source
+            // cannot be confirmed (WCL sometimes omits sourceID on applydebuff)
+
+            // For non-debuff events: must be from player
+            if (!isDebuffEv && !isPlayerSrc) return;
+            // For debuff events with a known sourceID that is NOT the player: skip
+            if (isDebuffEv && ev.sourceID && ev.sourceID !== 0 && !isPlayerSrc) return;
+
+            if (!debuffTimeline[entry.name]) {
+                debuffTimeline[entry.name] = {
+                    icon: entry.icon,
+                    color: entry.color || '#f4b400',
+                    isCastPoint: entry.isCastPoint || false,
+                    alwaysOnTop: entry.alwaysOnTop || false,
+                    sortOrder: entry.sortOrder != null ? entry.sortOrder : 999,
+                    group: entry.group || null,
+                    targets: {}
+                };
+            }
+            const tl = debuffTimeline[entry.name];
+            if (!tl.targets[targetName]) tl.targets[targetName] = [];
+            const segments = tl.targets[targetName];
+
+            if (ev.type === 'applydebuff' || ev.type === 'applybuff') {
+                // isCastPoint: just store the single timestamp, no uptime bar tracking
+                if (entry.isCastPoint) {
+                    segments.push({ start: ev.timestamp, end: ev.timestamp, real: true, isPoint: true });
+                    if (!hasRealEvents[entry.name]) hasRealEvents[entry.name] = new Set();
+                    hasRealEvents[entry.name].add(targetName);
+                // Normal debuff tracking
+                } else {
+                    // Close any open segment (re-application)
+                    const open = segments.find(s => s.end === null);
+                    if (open) open.end = ev.timestamp;
+                    segments.push({ start: ev.timestamp, end: null, real: true });
+                    if (!hasRealEvents[entry.name]) hasRealEvents[entry.name] = new Set();
+                    hasRealEvents[entry.name].add(targetName);
+                }
+
+            } else if (ev.type === 'refreshdebuff' || ev.type === 'refreshbuff') {
+                if (entry.isCastPoint) {
+                    segments.push({ start: ev.timestamp, end: ev.timestamp, real: true, isPoint: true });
+                    if (!hasRealEvents[entry.name]) hasRealEvents[entry.name] = new Set();
+                    hasRealEvents[entry.name].add(targetName);
+                } else {
+                    const open = segments.find(s => s.end === null);
+                    if (open) open.end = ev.timestamp;
+                    segments.push({ start: ev.timestamp, end: null, real: true });
+                    if (!hasRealEvents[entry.name]) hasRealEvents[entry.name] = new Set();
+                    hasRealEvents[entry.name].add(targetName);
+                }
+
+            } else if (ev.type === 'removedebuff' || ev.type === 'removebuff') {
+                if (!entry.isCastPoint) {
+                    const open = segments.find(s => s.end === null);
+                    if (open) open.end = ev.timestamp;
+                }
+
+            } else if (ev.type === 'cast' && isPlayerSrc) {
+                if (entry.isCastPoint) {
+                    // For cast-point debuffs (Earth Shock) — track exact cast moment
+                    segments.push({ start: ev.timestamp, end: ev.timestamp, real: true, isPoint: true });
+                    if (!hasRealEvents[entry.name]) hasRealEvents[entry.name] = new Set();
+                    hasRealEvents[entry.name].add(targetName);
+                } else {
+                    // Cast-based fallback: creates a duration bar
+                    // If this debuff belongs to a group (e.g. air-totem), close sibling debuffs' open bars first
+                    if (entry.group) {
+                        Object.entries(debuffTimeline).forEach(([otherName, otherDl]) => {
+                            if (otherDl.group === entry.group && otherName !== entry.name) {
+                                // Close any open or future-ending bar for this target in the sibling
+                                Object.values(otherDl.targets).forEach(otherSegs => {
+                                    otherSegs.forEach(seg => {
+                                        if (seg.end > ev.timestamp) seg.end = ev.timestamp;
+                                    });
+                                });
+                            }
+                        });
+                    }
+                    const dur = DEBUFF_DURATION_MS[sid] || DEFAULT_DEBUFF_MS;
+                    segments.push({ start: ev.timestamp, end: ev.timestamp + dur, real: false });
+                }
+            }
+        });
+
+        // Post-process: remove cast-based estimates if real events exist; merge overlapping segments
+        const fightEnd = fightEvents.length > 0 ? fightEvents[fightEvents.length - 1].timestamp : 0;
+        Object.entries(debuffTimeline).forEach(([debuffName, dl]) => {
+            const realSet = hasRealEvents[debuffName] || new Set();
+            Object.entries(dl.targets).forEach(([tName, segs]) => {
+                if (realSet.has(tName)) {
+                    // Remove estimated cast-based segments, keep only real ones
+                    dl.targets[tName] = segs.filter(s => s.real !== false);
+                }
+                // Close any still-open segments at fight end
+                dl.targets[tName].forEach(s => { if (s.end === null) s.end = fightEnd; });
+
+                // Merge overlapping segments to prevent uptime > 100%
+                const sorted = dl.targets[tName].slice().sort((a, b) => a.start - b.start);
+                const merged = [];
+                for (const seg of sorted) {
+                    if (!merged.length || seg.start > merged[merged.length - 1].end) {
+                        merged.push({ start: seg.start, end: seg.end });
+                    } else {
+                        // Extend the last merged segment if this one ends later
+                        merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, seg.end);
+                    }
+                }
+                dl.targets[tName] = merged;
+            });
+        });
+
+    }
+
     return {
         combatantInfos,
         tempEnchants,
@@ -283,6 +557,9 @@ export function processPlayerData(fightId, fightEvents, player) {
         rebirths,
         itemCasts,
         prePots,
-        spec: state.detectedSpecs[player.name] || player.subType
+        castCounts,
+        debuffTimeline,
+        spec
     };
 }
+
