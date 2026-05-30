@@ -2317,4 +2317,66 @@ div.wowhead-tooltip .iconmedium {
     width: 32px;
     text-align: right;
 }
+
+/* ── Overall Debuff Uptime % ──────────────────────────── */
+.cd-overall-uptime-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cd-overall-uptime-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 8px;
+    background: #111118;
+    border: 1px solid #1e1e28;
+    border-radius: 7px;
+    transition: border-color 0.15s;
+}
+
+.cd-overall-uptime-row:hover {
+    border-color: #2e2e3a;
+}
+
+.cd-overall-uptime-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 200px;
+    flex-shrink: 0;
+}
+
+.cd-overall-uptime-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.cd-overall-uptime-track {
+    flex: 1;
+    height: 10px;
+    background: #191920;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid #222;
+}
+
+.cd-overall-uptime-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.4s ease;
+    opacity: 0.85;
+}
+
+.cd-overall-uptime-pct {
+    font-size: 0.82rem;
+    font-weight: 900;
+    flex-shrink: 0;
+    width: 38px;
+    text-align: right;
+    font-family: 'Montserrat', sans-serif;
+}
 

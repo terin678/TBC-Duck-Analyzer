@@ -240,12 +240,75 @@ export function toggleCastsDebuffInline(playerName, fightId) {
     const debuffEntries = Object.entries(castData.debuffTimeline);
 
     if (isOverall) {
-        // In overall, just show a note — timeline needs a fight reference
-        if (debuffEntries.length > 0) {
-            html += '<div class="cd-section">';
-            html += '<div class="cd-section-title">🩸 Debuff Uptime</div>';
-            html += '<div class="cd-empty">Select a specific fight to see the debuff timeline.</div>';
-            html += '</div>';
+        if (debuffEntries.length > 0 && state.currentReport && state.currentReport.fights) {
+            const allFights = state.currentReport.fights;
+            const totalCombatMs = allFights.reduce((sum, f) => sum + (f.endTime - f.startTime), 0);
+
+            if (totalCombatMs > 0) {
+                // Filter out point-only debuffs (Earth Shock etc.) — uptime % only makes sense for duration debuffs
+                const durationDebuffs = debuffEntries.filter(([, dl]) => !dl.isCastPoint);
+
+                if (durationDebuffs.length > 0) {
+                    html += '<div class="cd-section">';
+                    html += '<div class="cd-section-title">🩸 Debuff Uptime <span class="cd-overall-label">(Overall — all fights)</span></div>';
+                    html += '<div class="cd-overall-uptime-list">';
+
+                    durationDebuffs
+                        .sort((a, b) => {
+                            const aOrder = a[1].sortOrder != null ? a[1].sortOrder : 999;
+                            const bOrder = b[1].sortOrder != null ? b[1].sortOrder : 999;
+                            return aOrder - bOrder;
+                        })
+                        .forEach(([debuffName, dlData]) => {
+                            // Collect ALL segments from ALL targets and merge overlapping ones
+                            let allSegs = [];
+                            Object.values(dlData.targets).forEach(segs => {
+                                allSegs = allSegs.concat(segs);
+                            });
+                            if (allSegs.length === 0) return;
+
+                            // Sort and merge overlapping segments
+                            allSegs.sort((a, b) => a.start - b.start);
+                            const merged = [];
+                            for (const seg of allSegs) {
+                                if (!merged.length || seg.start > merged[merged.length - 1].end) {
+                                    merged.push({ start: seg.start, end: seg.end });
+                                } else {
+                                    merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, seg.end);
+                                }
+                            }
+
+                            // Intersect merged segments with fight windows to get real combat uptime
+                            let coveredMs = 0;
+                            merged.forEach(seg => {
+                                allFights.forEach(fight => {
+                                    const start = Math.max(seg.start, fight.startTime);
+                                    const end   = Math.min(seg.end,   fight.endTime);
+                                    if (end > start) coveredMs += (end - start);
+                                });
+                            });
+
+                            const uptime = Math.min(100, Math.round((coveredMs / totalCombatMs) * 100));
+                            const color = dlData.color || '#f4b400';
+
+                            html += `
+                            <div class="cd-overall-uptime-row">
+                                <div class="cd-overall-uptime-left">
+                                    <img class="cd-debuff-icon" src="/api/icon/${dlData.icon}.jpg" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'" title="${debuffName}">
+                                    <span class="cd-debuff-name" style="color:${color};">${debuffName}</span>
+                                </div>
+                                <div class="cd-overall-uptime-bar-wrap">
+                                    <div class="cd-overall-uptime-track">
+                                        <div class="cd-overall-uptime-fill" style="width:${uptime}%; background:${color}; box-shadow: 0 0 6px ${color}40;"></div>
+                                    </div>
+                                    <span class="cd-overall-uptime-pct" style="color:${color};">${uptime}%</span>
+                                </div>
+                            </div>`;
+                        });
+
+                    html += '</div></div>';
+                }
+            }
         }
     } else if (debuffEntries.length > 0 && durationMs > 0) {
         html += '<div class="cd-section">';

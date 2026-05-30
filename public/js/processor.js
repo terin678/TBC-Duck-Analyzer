@@ -350,7 +350,11 @@ export function processPlayerData(fightId, fightEvents, player) {
             // Windfury Totem (rank 1-5) — 2 minutes
             8512: 120000, 25587: 120000,
             // Grace of Air Totem — 2 minutes
-            25359: 120000,
+            25359: 120000, 25528: 120000,
+            // Wrath of Air Totem — 2 minutes
+            3738: 120000,
+            // Faerie Fire (Feral) — 5 minutes
+            27011: 300000,
         };
         const DEFAULT_DEBUFF_MS = 15000;
 

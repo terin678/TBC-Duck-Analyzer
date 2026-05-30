@@ -680,15 +680,19 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [8498, 8499, 11314, 11315, 25546, 25547], name: "Fire Nova Totem", icon: "spell_fire_sealoffire" },
             { ids: [25449, 25448, 10392, 10391], name: "Lightning Bolt",       icon: "spell_nature_lightning" },
             { ids: [30823], name: "Shamanistic Rage",     icon: "spell_nature_shamanrage" },
-            { ids: [25587, 8512], name: "Windfury Totem",      icon: "spell_nature_windfury", maxRank: 5 },
-            { ids: [25359], name: "Grace of Air Totem",   icon: "spell_nature_invisibilitytotem" },
+            { ids: [25587], topIds: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury" },
+            { ids: [8512],  name: "Windfury Totem",         icon: "spell_nature_windfury", rankString: "(Rank 1)" },
+            { ids: [25359, 25528], name: "Grace of Air Totem",   icon: "spell_nature_earthbindtotem" },
+            { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem" },
         ],
         debuffs: [
             { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock", icon: "spell_frost_frostshock", color: "#3498db" },
             { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock", icon: "spell_fire_flameshock", color: "#e74c3c" },
             { ids: [25454, 10414, 10413, 10412, 8046, 8045, 8044], name: "Earth Shock", icon: "spell_nature_earthshock", color: "#8e44ad", isCastPoint: true },
-            { ids: [25587, 8512], name: "Windfury Totem", icon: "spell_nature_windfury", color: "#3498db", alwaysOnTop: true, sortOrder: 0, group: "air-totem" },
-            { ids: [25359], name: "Grace of Air Totem", icon: "spell_nature_invisibilitytotem", color: "#2ecc71", alwaysOnTop: true, sortOrder: 1, group: "air-totem" },
+            { ids: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury",       color: "#3498db", alwaysOnTop: true, sortOrder: 0, group: "air-totem" },
+            { ids: [8512],  name: "Windfury Totem (Rank 1)",icon: "spell_nature_windfury",       color: "#5bc0de", alwaysOnTop: true, sortOrder: 1, group: "air-totem" },
+            { ids: [25359, 25528], name: "Grace of Air Totem",  icon: "spell_nature_earthbindtotem",color: "#2ecc71", alwaysOnTop: true, sortOrder: 2, group: "air-totem" },
+            { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem",  color: "#9b59b6", alwaysOnTop: true, sortOrder: 3, group: "air-totem" },
         ]
     },
     "Shaman-Elemental": {
@@ -960,7 +964,8 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [33745], name: "Lacerate",             icon: "ability_druid_lacerate", color: "#c0392b" },
             { ids: [26998, 9898], name: "Demoralizing Roar", icon: "ability_druid_demoralizingroar", color: "#f39c12" },
             { ids: [27008], name: "Rip",                  icon: "ability_ghoulfrenzy",      color: "#e74c3c" },
-            { ids: [26993], name: "Faerie Fire (Feral)",  icon: "spell_nature_faeriefire",  color: "#2ecc71" },
+            { ids: [26993], name: "Faerie Fire",          icon: "spell_nature_faeriefire",  color: "#2ecc71" },
+            { ids: [27011], name: "Faerie Fire (Feral)",  icon: "spell_nature_faeriefire",  color: "#27ae60" },
         ]
     },
     "Druid-Balance": {
