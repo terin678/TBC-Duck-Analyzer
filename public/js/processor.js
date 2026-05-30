@@ -366,6 +366,42 @@ export function processPlayerData(fightId, fightEvents, player) {
         // Track which targets have real applydebuff events per debuff name
         const hasRealEvents = {}; // debuffName -> Set of targetNames
 
+        // Pre-process combatantinfo to capture buffs active at the start of combat (e.g. Battle Shout cast before pull)
+        fightEvents.forEach(ev => {
+            if (ev.type === 'combatantinfo' && ev.auras) {
+                const targetId = ev.sourceID; // The player who has the buff
+                const targetName = actorNameMap[targetId] || `#${targetId}`;
+                ev.auras.forEach(aura => {
+                    // Check if the aura matches our tracked debuffs and the source is our player
+                    if (aura.source === player.id) {
+                        const sid = aura.ability;
+                        const entry = debuffIdMap[sid];
+                        if (entry && !entry.isCastPoint) {
+                            if (!debuffTimeline[entry.name]) {
+                                debuffTimeline[entry.name] = {
+                                    icon: entry.icon,
+                                    color: entry.color || '#f4b400',
+                                    isCastPoint: false,
+                                    alwaysOnTop: entry.alwaysOnTop || false,
+                                    sortOrder: entry.sortOrder != null ? entry.sortOrder : 999,
+                                    group: entry.group || null,
+                                    hideFromOverall: entry.hideFromOverall || false,
+                                    targets: {}
+                                };
+                            }
+                            const tl = debuffTimeline[entry.name];
+                            if (!tl.targets[targetName]) tl.targets[targetName] = [];
+                            if (!tl.targets[targetName].some(s => s.end === null)) {
+                                tl.targets[targetName].push({ start: ev.timestamp, end: null, real: true });
+                            }
+                            if (!hasRealEvents[entry.name]) hasRealEvents[entry.name] = new Set();
+                            hasRealEvents[entry.name].add(targetName);
+                        }
+                    }
+                });
+            }
+        });
+
         fightEvents.forEach(ev => {
             const sid = ev.abilityGameID;
             if (!sid) return;
@@ -459,6 +495,7 @@ export function processPlayerData(fightId, fightEvents, player) {
                     alwaysOnTop: entry.alwaysOnTop || false,
                     sortOrder: entry.sortOrder != null ? entry.sortOrder : 999,
                     group: entry.group || null,
+                    hideFromOverall: entry.hideFromOverall || false,
                     targets: {}
                 };
             }
