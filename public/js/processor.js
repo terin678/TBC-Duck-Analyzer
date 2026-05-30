@@ -355,6 +355,9 @@ export function processPlayerData(fightId, fightEvents, player) {
             3738: 120000,
             // Faerie Fire (Feral) — 5 minutes
             27011: 300000,
+            // Battle Shout (all ranks) — 2 minutes
+            2048: 120000, 6673: 120000, 5242: 120000, 6192: 120000,
+            11549: 120000, 11550: 120000, 11551: 120000, 25289: 120000,
         };
         const DEFAULT_DEBUFF_MS = 15000;
 

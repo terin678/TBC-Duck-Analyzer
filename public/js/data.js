@@ -602,6 +602,7 @@ const TIMELINE_SPELLS = {
     10278: { name: "Blessing of Protection", icon: "spell_holy_sealofprotection", color: "#f58cba", duration: 10000 },
     17116: { name: "Nature's Swiftness", icon: "spell_nature_ravenform", color: "#2ecc71" },
     16188: { name: "Nature's Swiftness", icon: "spell_nature_ravenform", color: "#2ecc71" },
+    16190: { name: "Mana Tide Totem",   icon: "spell_frost_summonwaterelemental", color: "#00bcd4", duration: 12000 },
 };
 
 // ── CLASS ABILITY TRACKING (Casts/Debuff panel) ────────────────────────────
@@ -808,6 +809,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25236], name: "Execute",              icon: "inv_sword_48" },
         ],
         debuffs: [
+            { ids: [2048, 6673, 5242, 6192, 11549, 11550, 11551, 25289], name: "Battle Shout", icon: "ability_warrior_battleshout", color: "#C79C6E" },
             { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
         ]
     },
@@ -819,6 +821,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25241], name: "Slam",                 icon: "ability_warrior_decisivestrike" },
         ],
         debuffs: [
+            { ids: [2048, 6673, 5242, 6192, 11549, 11550, 11551, 25289], name: "Battle Shout", icon: "ability_warrior_battleshout", color: "#C79C6E" },
             { ids: [29859], name: "Blood Frenzy",         icon: "ability_warrior_bloodfrenzy", color: "#c0392b" },
             { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
         ]
@@ -831,6 +834,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [30324, 25286, 11567, 11566, 11565], name: "Heroic Strike",    icon: "ability_rogue_ambush", trackOnDamage: true },
         ],
         debuffs: [
+            { ids: [2048, 6673, 5242, 6192, 11549, 11550, 11551, 25289], name: "Battle Shout", icon: "ability_warrior_battleshout", color: "#C79C6E" },
             { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
         ]
     },
