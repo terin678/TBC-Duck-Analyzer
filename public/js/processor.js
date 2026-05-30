@@ -353,6 +353,8 @@ export function processPlayerData(fightId, fightEvents, player) {
             25359: 120000, 25528: 120000,
             // Wrath of Air Totem — 2 minutes
             3738: 120000,
+            // Totem of Wrath — 2 minutes
+            30706: 120000,
             // Faerie Fire (Feral) — 5 minutes
             27011: 300000,
             // Battle Shout (all ranks) — 2 minutes

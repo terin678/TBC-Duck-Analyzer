@@ -683,16 +683,16 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [30823], name: "Shamanistic Rage",     icon: "spell_nature_shamanrage" },
             { ids: [25587], topIds: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury" },
             { ids: [8512],  name: "Windfury Totem",         icon: "spell_nature_windfury", rankString: "(Rank 1)" },
-            { ids: [25359, 25528], name: "Grace of Air Totem",   icon: "spell_nature_earthbindtotem" },
+            { ids: [25359, 25528], name: "Grace of Air Totem",   icon: "spell_nature_invisibilitytotem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem" },
         ],
         debuffs: [
-            { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock", icon: "spell_frost_frostshock", color: "#3498db" },
-            { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock", icon: "spell_fire_flameshock", color: "#e74c3c" },
+            { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock", icon: "spell_frost_frostshock", color: "#3498db", hideFromOverall: true },
+            { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock", icon: "spell_fire_flameshock", color: "#e74c3c", hideFromOverall: true },
             { ids: [25454, 10414, 10413, 10412, 8046, 8045, 8044], name: "Earth Shock", icon: "spell_nature_earthshock", color: "#8e44ad", isCastPoint: true },
             { ids: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury",       color: "#3498db", alwaysOnTop: true, sortOrder: 0, group: "air-totem" },
             { ids: [8512],  name: "Windfury Totem (Rank 1)",icon: "spell_nature_windfury",       color: "#5bc0de", alwaysOnTop: true, sortOrder: 1, group: "air-totem" },
-            { ids: [25359, 25528], name: "Grace of Air Totem",  icon: "spell_nature_earthbindtotem",color: "#2ecc71", alwaysOnTop: true, sortOrder: 2, group: "air-totem" },
+            { ids: [25359, 25528], name: "Grace of Air Totem",  icon: "spell_nature_invisibilitytotem",color: "#2ecc71", alwaysOnTop: true, sortOrder: 2, group: "air-totem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem",  color: "#9b59b6", alwaysOnTop: true, sortOrder: 3, group: "air-totem" },
         ]
     },
@@ -705,11 +705,13 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock",          icon: "spell_fire_flameshock" },
             { ids: [25547], name: "Fire Nova Totem",      icon: "spell_fire_sealoffire" },
             { ids: [16166], name: "Elemental Mastery",    icon: "spell_nature_wispheal" },
+            { ids: [30706], name: "Totem of Wrath",       icon: "spell_fire_totemofwrath" },
         ],
         debuffs: [
-            { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock", icon: "spell_frost_frostshock", color: "#3498db" },
-            { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock", icon: "spell_fire_flameshock", color: "#e74c3c" },
+            { ids: [25464, 10473, 10472, 8058, 8056], name: "Frost Shock", icon: "spell_frost_frostshock", color: "#3498db", hideFromOverall: true },
+            { ids: [25457, 10448, 10447, 8053, 8052, 8050], name: "Flame Shock", icon: "spell_fire_flameshock", color: "#e74c3c", hideFromOverall: true },
             { ids: [25454, 10414, 10413, 10412], name: "Earth Shock", icon: "spell_nature_earthshock", color: "#8e44ad", isCastPoint: true },
+            { ids: [30706], name: "Totem of Wrath", icon: "spell_fire_totemofwrath", color: "#e67e22", alwaysOnTop: true, sortOrder: 0 },
         ]
     },
     "Shaman-Restoration": {
@@ -975,7 +977,7 @@ const CLASS_ABILITY_TRACKING = {
     "Druid-Balance": {
         casts: [
             { ids: [25298], name: "Starfire",             icon: "spell_arcane_starfire" },
-            { ids: [26985], name: "Wrath",                icon: "spell_nature_wrathv2" },
+            { ids: [26985, 26984], name: "Wrath",                icon: "spell_nature_wrathv2" },
             { ids: [26988], name: "Moonfire",             icon: "spell_nature_starfall" },
             { ids: [27013], name: "Insect Swarm",         icon: "spell_nature_insectswarm" },
             { ids: [33831], name: "Force of Nature",      icon: "ability_druid_forceofnature" },

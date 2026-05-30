@@ -245,14 +245,12 @@ export function toggleCastsDebuffInline(playerName, fightId) {
             const totalCombatMs = allFights.reduce((sum, f) => sum + (f.endTime - f.startTime), 0);
 
             if (totalCombatMs > 0) {
-                // Filter out point-only debuffs (Earth Shock etc.) — uptime % only makes sense for duration debuffs
-                const durationDebuffs = debuffEntries.filter(([, dl]) => !dl.isCastPoint);
+                // Filter out point-only debuffs and those explicitly hidden from overall
+                const durationDebuffs = debuffEntries.filter(([, dl]) => !dl.isCastPoint && !dl.hideFromOverall);
 
                 if (durationDebuffs.length > 0) {
-                    html += '<div class="cd-section">';
-                    html += '<div class="cd-section-title">🩸 Debuff Uptime <span class="cd-overall-label">(Overall — all fights)</span></div>';
-                    html += '<div class="cd-overall-uptime-list">';
-
+                    // Pre-calculate uptimes to avoid rendering empty sections
+                    const validRows = [];
                     durationDebuffs
                         .sort((a, b) => {
                             const aOrder = a[1].sortOrder != null ? a[1].sortOrder : 999;
@@ -260,14 +258,12 @@ export function toggleCastsDebuffInline(playerName, fightId) {
                             return aOrder - bOrder;
                         })
                         .forEach(([debuffName, dlData]) => {
-                            // Collect ALL segments from ALL targets and merge overlapping ones
                             let allSegs = [];
                             Object.values(dlData.targets).forEach(segs => {
                                 allSegs = allSegs.concat(segs);
                             });
                             if (allSegs.length === 0) return;
 
-                            // Sort and merge overlapping segments
                             allSegs.sort((a, b) => a.start - b.start);
                             const merged = [];
                             for (const seg of allSegs) {
@@ -278,7 +274,6 @@ export function toggleCastsDebuffInline(playerName, fightId) {
                                 }
                             }
 
-                            // Intersect merged segments with fight windows to get real combat uptime
                             let coveredMs = 0;
                             merged.forEach(seg => {
                                 allFights.forEach(fight => {
@@ -289,8 +284,18 @@ export function toggleCastsDebuffInline(playerName, fightId) {
                             });
 
                             const uptime = Math.min(100, Math.round((coveredMs / totalCombatMs) * 100));
-                            const color = dlData.color || '#f4b400';
+                            if (uptime > 0) {
+                                validRows.push({ debuffName, dlData, uptime });
+                            }
+                        });
 
+                    if (validRows.length > 0) {
+                        html += '<div class="cd-section">';
+                        html += '<div class="cd-section-title">🩸 Debuff Uptime <span class="cd-overall-label">(Overall — all fights)</span></div>';
+                        html += '<div class="cd-overall-uptime-list">';
+
+                        validRows.forEach(({ debuffName, dlData, uptime }) => {
+                            const color = dlData.color || '#f4b400';
                             html += `
                             <div class="cd-overall-uptime-row">
                                 <div class="cd-overall-uptime-left">
@@ -306,27 +311,33 @@ export function toggleCastsDebuffInline(playerName, fightId) {
                             </div>`;
                         });
 
-                    html += '</div></div>';
+                        html += '</div></div>';
+                    }
                 }
             }
         }
-    } else if (debuffEntries.length > 0 && durationMs > 0) {
-        html += '<div class="cd-section">';
-        html += '<div class="cd-section-title">🩸 Debuff Uptime</div>';
-        html += '<div class="cd-debuff-block">';
+    } else {
+        const validDebuffs = debuffEntries.filter(([, dlData]) => {
+            return Object.entries(dlData.targets).some(([, segs]) => segs.length > 0);
+        });
 
-        debuffEntries
-            .sort((a, b) => {
-                // alwaysOnTop entries come first, sorted by sortOrder (lower = higher position)
-                const aTop = a[1].alwaysOnTop ? 0 : 1;
-                const bTop = b[1].alwaysOnTop ? 0 : 1;
-                if (aTop !== bTop) return aTop - bTop;
-                // Within the same tier, sort by sortOrder
-                const aOrder = a[1].sortOrder != null ? a[1].sortOrder : 999;
-                const bOrder = b[1].sortOrder != null ? b[1].sortOrder : 999;
-                return aOrder - bOrder;
-            })
-            .forEach(([debuffName, dlData]) => {
+        if (validDebuffs.length > 0 && durationMs > 0) {
+            html += '<div class="cd-section">';
+            html += '<div class="cd-section-title">🩸 Debuff Uptime</div>';
+            html += '<div class="cd-debuff-block">';
+
+            validDebuffs
+                .sort((a, b) => {
+                    // alwaysOnTop entries come first, sorted by sortOrder (lower = higher position)
+                    const aTop = a[1].alwaysOnTop ? 0 : 1;
+                    const bTop = b[1].alwaysOnTop ? 0 : 1;
+                    if (aTop !== bTop) return aTop - bTop;
+                    // Within the same tier, sort by sortOrder
+                    const aOrder = a[1].sortOrder != null ? a[1].sortOrder : 999;
+                    const bOrder = b[1].sortOrder != null ? b[1].sortOrder : 999;
+                    return aOrder - bOrder;
+                })
+                .forEach(([debuffName, dlData]) => {
             const color = dlData.color || '#f4b400';
             const isPoint = dlData.isCastPoint;
             // Only show targets with at least one segment
