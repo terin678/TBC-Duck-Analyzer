@@ -212,11 +212,11 @@ export function processPlayerData(fightId, fightEvents, player) {
             spells[spellId].count += 1;
         }
         // Sappers: track cast count + accumulate damage from hits
-        else if (ev.type === 'cast' && (spellId === 13241 || spellId === 30486 || spellId === 30216 || spellId === 30217)) {
+        else if (ev.type === 'cast' && (spellId === 13241 || spellId === 30486 || spellId === 30216 || spellId === 30217 || spellId === 23063)) {
             if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
             spells[spellId].count += 1;
         }
-        else if (ev.type === 'damage' && (spellId === 13241 || spellId === 30486 || spellId === 30216 || spellId === 30217 || spellId === 33671)) {
+        else if (ev.type === 'damage' && (spellId === 13241 || spellId === 30486 || spellId === 30216 || spellId === 30217 || spellId === 23063 || spellId === 33671)) {
             if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
             spells[spellId].damage += (ev.amount || 0) + (ev.absorbed || 0);
             if (spellId === 33671) spells[spellId].count += 1;

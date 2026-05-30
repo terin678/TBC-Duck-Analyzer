@@ -436,6 +436,7 @@ const SPELL_DB = {
     30486: {name:"TBC Sapper",icon:"inv_gizmo_supersappercharge",category:5},
     30216: {name:"Fel Iron Bomb",icon:"inv_gizmo_felironbomb",category:5},
     30217: {name:"Adamantite Grenade",icon:"inv_misc_bomb_08",category:5},
+    23063: {name:"Dense Dynamite",icon:"inv_misc_bomb_06",category:5},
     30823: {name:"Shamanistic Rage",icon:"spell_nature_shamanrage",category:1},
     31224: {name:"Cloak of Shadows",icon:"spell_shadow_nethercloak",category:1},
     31804: {name:"Judgement of the Martyr",icon:"spell_holy_sealofblood"},
@@ -569,6 +570,7 @@ const TIMELINE_SPELLS = {
     30486: { name: "Super Sapper", icon: "spell_fire_selfdestruct", color: "#ff4500", duration: 1000 },
     30216: { name: "Fel Iron Bomb", icon: "inv_gizmo_felironbomb", color: "#ff4500", duration: 1000 },
     30217: { name: "Adamantite Grenade", icon: "inv_misc_bomb_08", color: "#ff4500", duration: 1000 },
+    23063: { name: "Dense Dynamite", icon: "inv_misc_bomb_06", color: "#ff4500", duration: 1000 },
     34653: { name: "LC Prayerbook", icon: "inv_relics_libramoftruth", color: "#fff" },
 
     // Class CDs
@@ -828,10 +830,13 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25231, 20569, 11609, 11608, 845], name: "Cleave",             icon: "ability_warrior_cleave", trackOnDamage: true },
             { ids: [29707, 30324, 25286, 11567, 11566, 11565], name: "Heroic Strike",    icon: "ability_rogue_ambush", trackOnDamage: true },
             { ids: [25236], name: "Execute",              icon: "inv_sword_48" },
+            { ids: [25225, 11597, 11596, 7405, 7386], name: "Sunder Armor", icon: "ability_warrior_sunder" },
+            { ids: [20243], name: "Devastate", icon: "inv_sword_11" },
         ],
         debuffs: [
             { ids: [2048, 6673, 5242, 6192, 11549, 11550, 11551, 25289], name: "Battle Shout", icon: "ability_warrior_battleshout", color: "#C79C6E" },
             { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
+            { ids: [25225, 11597, 11596, 7405, 7386], name: "Sunder Armor", icon: "ability_warrior_sunder", color: "#7f8c8d" },
         ]
     },
     "Warrior-Arms": {
@@ -840,11 +845,14 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [29707, 30324, 25286, 11567, 11566, 11565], name: "Heroic Strike",    icon: "ability_rogue_ambush", trackOnDamage: true },
             { ids: [25236], name: "Execute",              icon: "inv_sword_48" },
             { ids: [25241], name: "Slam",                 icon: "ability_warrior_decisivestrike" },
+            { ids: [25225, 11597, 11596, 7405, 7386], name: "Sunder Armor", icon: "ability_warrior_sunder" },
+            { ids: [20243], name: "Devastate", icon: "inv_sword_11" },
         ],
         debuffs: [
             { ids: [2048, 6673, 5242, 6192, 11549, 11550, 11551, 25289], name: "Battle Shout", icon: "ability_warrior_battleshout", color: "#C79C6E" },
             { ids: [29859], name: "Blood Frenzy",         icon: "ability_warrior_bloodfrenzy", color: "#c0392b" },
             { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
+            { ids: [25225, 11597, 11596, 7405, 7386], name: "Sunder Armor", icon: "ability_warrior_sunder", color: "#7f8c8d" },
         ]
     },
     "Warrior-Protection": {
@@ -853,10 +861,13 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25258], name: "Revenge",              icon: "ability_warrior_revenge" },
             { ids: [25231, 20569, 11609, 11608, 845], name: "Cleave",             icon: "ability_warrior_cleave", trackOnDamage: true },
             { ids: [30324, 25286, 11567, 11566, 11565], name: "Heroic Strike",    icon: "ability_rogue_ambush", trackOnDamage: true },
+            { ids: [25225, 11597, 11596, 7405, 7386], name: "Sunder Armor", icon: "ability_warrior_sunder" },
+            { ids: [20243], name: "Devastate", icon: "inv_sword_11" },
         ],
         debuffs: [
             { ids: [2048, 6673, 5242, 6192, 11549, 11550, 11551, 25289], name: "Battle Shout", icon: "ability_warrior_battleshout", color: "#C79C6E" },
             { ids: [25203, 11556, 11555, 11554], name: "Demoralizing Shout", icon: "ability_warrior_warcry", color: "#e74c3c" },
+            { ids: [25225, 11597, 11596, 7405, 7386], name: "Sunder Armor", icon: "ability_warrior_sunder", color: "#7f8c8d" },
         ]
     },
 
