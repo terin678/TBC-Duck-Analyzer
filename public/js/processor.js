@@ -617,6 +617,14 @@ export function processPlayerData(fightId, fightEvents, player) {
         });
 
     }
+    // Transfer itemCasts to spells for Abilities grid display
+    Object.keys(itemCasts).forEach(id => {
+        if (id === '_lastTimestamp') return;
+        if (typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[id] && window.SPELL_DB[id].category === 5) {
+            if (!spells[id]) spells[id] = { count: 0, damage: 0 };
+            spells[id].count += itemCasts[id];
+        }
+    });
 
     return {
         combatantInfos,
