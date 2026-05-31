@@ -352,14 +352,25 @@ export function toggleCastsDebuffInline(playerName, fightId) {
             } else {
                 // Compute per-target uptime and pick the one with most coverage for the header %
                 let bestUptime = 0;
-                targets.forEach(([, segs]) => {
+                targets.forEach(([tName, segs]) => {
                     let covered = 0;
                     segs.forEach(s => {
                         const relS = Math.max(0, s.start - fightInfo.startTime);
                         const relE = Math.min(durationMs, s.end - fightInfo.startTime);
                         if (relE > relS) covered += (relE - relS);
                     });
-                    const pct = Math.round((covered / durationMs) * 100);
+                    
+                    let targetDur = durationMs;
+                    if (castData.targetLifespans && castData.targetLifespans[tName]) {
+                        const tLife = castData.targetLifespans[tName];
+                        const start = Math.max(fightInfo.startTime, tLife.firstSeen);
+                        const validDeaths = tLife.deaths.filter(d => d <= fightInfo.endTime + 5000);
+                        const end = validDeaths.length > 0 ? Math.min(fightInfo.endTime, Math.max(...validDeaths)) : fightInfo.endTime;
+                        targetDur = end - start;
+                        if (targetDur <= 0) targetDur = durationMs;
+                    }
+
+                    const pct = Math.round((covered / targetDur) * 100);
                     if (pct > bestUptime) bestUptime = pct;
                 });
                 headerLabel = `${bestUptime}%`;
@@ -385,13 +396,35 @@ export function toggleCastsDebuffInline(playerName, fightId) {
                         const relE = Math.min(durationMs, s.end - fightInfo.startTime);
                         if (relE > relS) covered += (relE - relS);
                     });
-                    rightLabel = `${Math.round((covered / durationMs) * 100)}%`;
+                    
+                    let targetDur = durationMs;
+                    if (castData.targetLifespans && castData.targetLifespans[targetName]) {
+                        const tLife = castData.targetLifespans[targetName];
+                        const start = Math.max(fightInfo.startTime, tLife.firstSeen);
+                        const validDeaths = tLife.deaths.filter(d => d <= fightInfo.endTime + 5000);
+                        const end = validDeaths.length > 0 ? Math.min(fightInfo.endTime, Math.max(...validDeaths)) : fightInfo.endTime;
+                        targetDur = end - start;
+                        if (targetDur <= 0) targetDur = durationMs;
+                    }
+
+                    rightLabel = `${Math.round((covered / targetDur) * 100)}%`;
                 }
 
                 html += `
                 <div class="cd-debuff-target-row">
                     <div class="cd-debuff-target-name" title="${targetName}">${targetName}</div>
                     <div class="cd-debuff-track">`;
+
+                if (castData.targetLifespans && castData.targetLifespans[targetName] && castData.targetLifespans[targetName].deaths) {
+                    castData.targetLifespans[targetName].deaths.forEach(dTime => {
+                        const relD = dTime - fightInfo.startTime;
+                        if (relD >= 0 && relD <= durationMs) {
+                            const leftPct = (relD / durationMs) * 100;
+                            html += `<div class="cd-debuff-death-marker" title="Died at ${formatDuration(relD)}" style="left:${leftPct.toFixed(2)}%; position:absolute; width:2px; height:100%; background:#ff3333; z-index:10; box-shadow: 0 0 4px #ff3333;"></div>`;
+                        }
+                    });
+                }
+
                 segs.forEach(s => {
                     const relStart = Math.max(0, s.start - fightInfo.startTime);
                     const relEnd   = Math.min(durationMs, s.end - fightInfo.startTime);

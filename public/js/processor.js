@@ -39,6 +39,7 @@ export function processPlayerData(fightId, fightEvents, player) {
     let activeSeal = null;
     let itemCasts = {};
     let prePots = {};
+    let targetLifespans = {};
 
     // Build actorId → name map from ALL actors (players + NPCs/bosses)
     const actorNameMap = {};
@@ -133,6 +134,24 @@ export function processPlayerData(fightId, fightEvents, player) {
 
     // Phase 2: Spell casts, interrupts, damage
     fightEvents.forEach(ev => {
+        const checkActor = (id, ts) => {
+            if (!id) return;
+            const name = actorNameMap[id] || `#${id}`;
+            if (!targetLifespans[name]) targetLifespans[name] = { firstSeen: ts, deaths: [] };
+            else if (ts < targetLifespans[name].firstSeen) targetLifespans[name].firstSeen = ts;
+        };
+        checkActor(ev.sourceID, ev.timestamp);
+        checkActor(ev.targetID, ev.timestamp);
+
+        if (ev.type === 'death') {
+            const deathId = ev.targetID || ev.sourceID;
+            if (deathId) {
+                const name = actorNameMap[deathId] || `#${deathId}`;
+                if (!targetLifespans[name]) targetLifespans[name] = { firstSeen: ev.timestamp, deaths: [] };
+                targetLifespans[name].deaths.push(ev.timestamp);
+            }
+        }
+
         if (ev.type === 'death' && (ev.targetID === player.id || (!ev.targetID && ev.sourceID === player.id))) {
             deaths.push(ev.timestamp);
         }
@@ -605,6 +624,7 @@ export function processPlayerData(fightId, fightEvents, player) {
         prePots,
         castCounts,
         debuffTimeline,
+        targetLifespans,
         spec
     };
 }

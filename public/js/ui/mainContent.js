@@ -202,7 +202,7 @@ export function renderPlayerView(data, player, fightInfo) {
     // === CASTS/UPTIME BUTTON ===
     if (!state.castsDebuffDB) state.castsDebuffDB = {};
     if (!state.castsDebuffDB[fightId]) state.castsDebuffDB[fightId] = {};
-    state.castsDebuffDB[fightId][player.name] = { castCounts: data.castCounts, debuffTimeline: data.debuffTimeline };
+    state.castsDebuffDB[fightId][player.name] = { castCounts: data.castCounts, debuffTimeline: data.debuffTimeline, targetLifespans: data.targetLifespans };
 
     const hasCastData = data.castCounts && Object.keys(data.castCounts).length > 0;
     const hasDebuffData = data.debuffTimeline && Object.keys(data.debuffTimeline).length > 0;
