@@ -140,8 +140,8 @@ app.post('/api/audit', async (req, res) => {
                 const filterExp = `type = 'death' OR type = 'combatantinfo' OR (type IN ('cast', 'damage', 'interrupt', 'resurrect', 'applybuff', 'applybuffstack', 'refreshbuff', 'removebuff', 'applydebuff', 'refreshdebuff', 'removedebuff') AND ability.id IN (${allUniqueIds}))`;
                 // Función para obtener todas las páginas de eventos
                 const fetchEventsPaginated = async (startEvent, startDeath) => {
-                    const evStr = startEvent !== null ? `events(startTime: ${startEvent}, endTime: 999999999999, filterExpression: "${filterExp}") { data nextPageTimestamp }` : '';
-                    const deathStr = startDeath !== null ? `deaths: events(startTime: ${startDeath}, endTime: 999999999999, dataType: Deaths) { data nextPageTimestamp }` : '';
+                    const evStr = startEvent !== null ? `events(startTime: ${startEvent}, endTime: 999999999999, killType: All, filterExpression: "${filterExp}") { data nextPageTimestamp }` : '';
+                    const deathStr = startDeath !== null ? `deaths: events(startTime: ${startDeath}, endTime: 999999999999, killType: All, dataType: Deaths) { data nextPageTimestamp }` : '';
                     
                     if (!evStr && !deathStr) return null;
 
