@@ -201,7 +201,8 @@ export function processPlayerData(fightId, fightEvents, player) {
         if (isBuffOrCast) {
             if (!itemCasts._lastTimestamp) itemCasts._lastTimestamp = {};
             
-            let timeSinceLast = ev.timestamp - (itemCasts._lastTimestamp[spellId] || 0);
+            let lastTs = itemCasts._lastTimestamp[spellId];
+            let timeSinceLast = lastTs === undefined ? 999999 : (ev.timestamp - lastTs);
             if (timeSinceLast > 5000) { // Evitar doble conteo entre cast y applybuff
                 let counted = false;
                 if (typeof window.BUFF_DB !== 'undefined' && window.BUFF_DB[spellId]) {
@@ -230,15 +231,19 @@ export function processPlayerData(fightId, fightEvents, player) {
             if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
             spells[spellId].count += 1;
         }
-        // Sappers: track cast count + accumulate damage from hits
-        else if (ev.type === 'cast' && (spellId === 13241 || spellId === 30486 || spellId === 30216 || spellId === 30217 || spellId === 23063)) {
-            if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
-            spells[spellId].count += 1;
-        }
+        // Sappers: accumulate damage and track missing casts via damage
         else if (ev.type === 'damage' && (spellId === 13241 || spellId === 30486 || spellId === 30216 || spellId === 30217 || spellId === 23063 || spellId === 33671)) {
-            if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
-            spells[spellId].damage += (ev.amount || 0) + (ev.absorbed || 0);
-            if (spellId === 33671) spells[spellId].count += 1;
+            let mapId = spellId === 33671 ? 30486 : spellId;
+            if (!spells[mapId]) spells[mapId] = { count: 0, damage: 0 };
+            spells[mapId].damage += (ev.amount || 0) + (ev.absorbed || 0);
+            
+            if (!itemCasts._lastTimestamp) itemCasts._lastTimestamp = {};
+            let lastTs = itemCasts._lastTimestamp[mapId];
+            let timeSinceLast = lastTs === undefined ? 999999 : (ev.timestamp - lastTs);
+            if (timeSinceLast > 5000) {
+                itemCasts[mapId] = (itemCasts[mapId] || 0) + 1;
+                itemCasts._lastTimestamp[mapId] = ev.timestamp;
+            }
         }
 
         // Phase 3: Timeline tracking
