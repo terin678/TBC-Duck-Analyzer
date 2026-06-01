@@ -617,12 +617,14 @@ export function processPlayerData(fightId, fightEvents, player) {
         });
 
     }
-    // Transfer itemCasts to spells for Abilities grid display
+    // Transfer itemCasts to spells ONLY for items that already exist in spells (e.g. Sappers/Bombs that dealt damage).
+    // This prevents standard consumables (Potions) from incorrectly showing up in the CDs/Abilities grid.
     Object.keys(itemCasts).forEach(id => {
         if (id === '_lastTimestamp') return;
         if (typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[id] && window.SPELL_DB[id].category === 5) {
-            if (!spells[id]) spells[id] = { count: 0, damage: 0 };
-            spells[id].count += itemCasts[id];
+            if (spells[id]) {
+                spells[id].count += itemCasts[id];
+            }
         }
     });
 
