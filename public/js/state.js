@@ -12,7 +12,8 @@ export const state = {
     allViewClassFilter: null,
     timelineDB: {},
     castsDebuffDB: {},
-    allActors: []
+    allActors: [],
+    openPanels: { gear: false, timeline: false, casts: false }
 };
 
 export function resetStateForAudit(logId) {

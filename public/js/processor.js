@@ -243,14 +243,26 @@ export function processPlayerData(fightId, fightEvents, player) {
                     itemCasts._lastTimestamp[spellId] = ev.timestamp;
                 }
                 
-                // Track class CDs
-                if (!counted && window.SPELL_DB && window.SPELL_DB[spellId] && !SEAL_TO_TYPE[spellId] && !window.SPELL_DB[spellId].isInterrupt && !window.SPELL_DB[spellId].isMechanic && !window.SPELL_DB[spellId].isRes && window.SPELL_DB[spellId].category !== 5 && window.SPELL_DB[spellId].category !== 3) {
+                // Track class CDs and trinkets (category 3)
+                if (!counted && window.SPELL_DB && window.SPELL_DB[spellId] && !SEAL_TO_TYPE[spellId] && !window.SPELL_DB[spellId].isInterrupt && !window.SPELL_DB[spellId].isMechanic && !window.SPELL_DB[spellId].isRes && window.SPELL_DB[spellId].category !== 5) {
                     if (spellId !== 33671) {
                         if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
                         spells[spellId].count += 1;
                         itemCasts._lastTimestamp[spellId] = ev.timestamp;
                     }
                 }
+            }
+        }
+
+        // Track trinket procs (category 3) from applybuff events where sourceID may not be the player
+        if (ev.type === 'applybuff' && !isBuffOrCast && window.SPELL_DB && window.SPELL_DB[spellId] && window.SPELL_DB[spellId].category === 3) {
+            if (!itemCasts._lastTimestamp) itemCasts._lastTimestamp = {};
+            let lastTs = itemCasts._lastTimestamp[spellId];
+            let timeSinceLast = lastTs === undefined ? 999999 : (ev.timestamp - lastTs);
+            if (timeSinceLast > 5000) {
+                if (!spells[spellId]) spells[spellId] = { count: 0, damage: 0 };
+                spells[spellId].count += 1;
+                itemCasts._lastTimestamp[spellId] = ev.timestamp;
             }
         }
 

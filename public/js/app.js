@@ -33,11 +33,45 @@ export function selectFight(fightId) {
 }
 
 export function selectPlayer(playerName) {
+    // Save which panels were open before re-render
+    const wasGearOpen = state.openPanels.gear;
+    const wasTimelineOpen = state.openPanels.timeline;
+    const wasCastsOpen = state.openPanels.casts;
+
+    // Reset panel state since renderMainContent will destroy the DOM
+    state.openPanels.gear = false;
+    state.openPanels.timeline = false;
+    state.openPanels.casts = false;
+
     state.selectedPlayerName = playerName;
     document.querySelectorAll('.player-item').forEach(el => {
         el.classList.toggle('active', el.dataset.player === playerName);
     });
     renderMainContent();
+
+    // Re-open previously open panels for the new player (only for individual player views)
+    if (playerName && playerName !== '__ALL__' && state.selectedFightId) {
+        const safeName = playerName.replace(/'/g, "\\'");
+        const fightId = state.selectedFightId;
+        const isOverall = (fightId === 'overall');
+
+        // Use setTimeout to let the DOM render first
+        setTimeout(() => {
+            if (wasGearOpen) {
+                const player = state.currentActors && state.currentActors.find(a => a.name === playerName);
+                if (player) {
+                    const spec = state.detectedSpecs[playerName] || player.subType;
+                    window.toggleGearInline(safeName, fightId, player.subType, spec);
+                }
+            }
+            if (wasTimelineOpen && !isOverall) {
+                window.toggleTimelineInline(safeName, fightId);
+            }
+            if (wasCastsOpen) {
+                window.toggleCastsDebuffInline(safeName, fightId);
+            }
+        }, 50);
+    }
 }
 
 // === EXPOSE TO WINDOW FOR INLINE ONCLICK HANDLERS ===

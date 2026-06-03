@@ -9,6 +9,7 @@ export function toggleGearInline(playerName, encounterId, className, specName) {
     const container = document.getElementById('inlineGearContainer');
     if (container.style.display === 'flex') {
         container.style.display = 'none';
+        state.openPanels.gear = false;
         return;
     }
     
@@ -18,6 +19,7 @@ export function toggleGearInline(playerName, encounterId, className, specName) {
     // Note: Casts/Debuff panel stays open — both Gear and Casts/Debuff can be open at the same time
 
     container.style.display = 'flex';
+    state.openPanels.gear = true;
     container.innerHTML = '<p style="color:#aaa;">Loading gear...</p>';
 
     const gear = (state.playerGearDB && state.playerGearDB[encounterId] && state.playerGearDB[encounterId][playerName]) ? state.playerGearDB[encounterId][playerName] : [];
@@ -186,6 +188,7 @@ export function toggleCastsDebuffInline(playerName, fightId) {
     const container = document.getElementById('inlineCastsContainer');
     if (container.style.display === 'block') {
         container.style.display = 'none';
+        state.openPanels.casts = false;
         return;
     }
 
@@ -200,6 +203,7 @@ export function toggleCastsDebuffInline(playerName, fightId) {
     if (!castData || (Object.keys(castData.castCounts).length === 0 && Object.keys(castData.debuffTimeline).length === 0)) {
         container.innerHTML = '<div class="cd-empty">No cast/debuff data available for this spec.</div>';
         container.style.display = 'block';
+        state.openPanels.casts = true;
         return;
     }
 
@@ -537,6 +541,7 @@ export function toggleCastsDebuffInline(playerName, fightId) {
     html += '</div>';
     container.innerHTML = html;
     container.style.display = 'block';
+    state.openPanels.casts = true;
 }
 
 
@@ -545,6 +550,7 @@ export function toggleTimelineInline(playerName, fightId) {
     const container = document.getElementById('inlineTimelineContainer');
     if (container.style.display === 'block') {
         container.style.display = 'none';
+        state.openPanels.timeline = false;
         return;
     }
     
@@ -553,6 +559,7 @@ export function toggleTimelineInline(playerName, fightId) {
     if (!state.timelineDB || !state.timelineDB[fightId] || !state.timelineDB[fightId][playerName]) {
         container.innerHTML = '<div class="timeline-empty">No timeline data available.</div>';
         container.style.display = 'block';
+        state.openPanels.timeline = true;
         return;
     }
 
@@ -634,6 +641,7 @@ export function toggleTimelineInline(playerName, fightId) {
     html += `</div></div>`;
     container.innerHTML = html;
     container.style.display = 'block';
+    state.openPanels.timeline = true;
 }
 
 // =============================================
