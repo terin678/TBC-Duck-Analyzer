@@ -3,6 +3,3 @@ node_modules/
 *.sqlite
 *.db
 memoria_duck_analyzer.md
-check_*.js
-scratch.js
-*.exe
