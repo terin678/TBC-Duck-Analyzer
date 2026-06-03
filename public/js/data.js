@@ -691,6 +691,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25587], topIds: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury" },
             { ids: [8512],  name: "Windfury Totem (Rank 1)", icon: "spell_nature_windfury" },
             { ids: [25359], name: "Grace of Air Totem",   icon: "spell_nature_invisibilitytotem" },
+            { ids: [25574], name: "Nature Resistance Totem", icon: "spell_nature_natureresistancetotem" },
             { ids: [25528], name: "Strength of Earth Totem",   icon: "spell_nature_earthbindtotem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem" },
         ],
@@ -700,6 +701,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25454, 10414, 10413, 10412, 8046, 8045, 8044], name: "Earth Shock", icon: "spell_nature_earthshock", color: "#8e44ad", isCastPoint: true },
             { ids: [25587, 8512], name: "Windfury Totem",         icon: "spell_nature_windfury",       color: "#3498db", alwaysOnTop: true, sortOrder: 0, group: "air-totem" },
             { ids: [25359], name: "Grace of Air Totem",  icon: "spell_nature_invisibilitytotem",color: "#2ecc71", alwaysOnTop: true, sortOrder: 2, group: "air-totem" },
+            { ids: [25574], name: "Nature Resistance Totem", icon: "spell_nature_natureresistancetotem", color: "#27ae60", alwaysOnTop: true, sortOrder: 2.5, group: "air-totem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem",  color: "#9b59b6", alwaysOnTop: true, sortOrder: 3, group: "air-totem" },
             { ids: [25528], name: "Strength of Earth Totem",  icon: "spell_nature_earthbindtotem",color: "#e67e22", alwaysOnTop: true, sortOrder: 4, group: "earth-totem" },
         ]
@@ -717,6 +719,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25587], topIds: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury" },
             { ids: [8512],  name: "Windfury Totem (Rank 1)", icon: "spell_nature_windfury" },
             { ids: [25359], name: "Grace of Air Totem",   icon: "spell_nature_invisibilitytotem" },
+            { ids: [25574], name: "Nature Resistance Totem", icon: "spell_nature_natureresistancetotem" },
             { ids: [25528], name: "Strength of Earth Totem",   icon: "spell_nature_earthbindtotem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem" },
         ],
@@ -727,6 +730,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [30706], name: "Totem of Wrath", icon: "spell_fire_totemofwrath", color: "#e67e22", alwaysOnTop: true, sortOrder: 0 },
             { ids: [25587, 8512], name: "Windfury Totem",         icon: "spell_nature_windfury",       color: "#3498db", alwaysOnTop: true, sortOrder: 1, group: "air-totem" },
             { ids: [25359], name: "Grace of Air Totem",  icon: "spell_nature_invisibilitytotem",color: "#2ecc71", alwaysOnTop: true, sortOrder: 2, group: "air-totem" },
+            { ids: [25574], name: "Nature Resistance Totem", icon: "spell_nature_natureresistancetotem", color: "#27ae60", alwaysOnTop: true, sortOrder: 2.5, group: "air-totem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem",  color: "#9b59b6", alwaysOnTop: true, sortOrder: 3, group: "air-totem" },
             { ids: [25528], name: "Strength of Earth Totem",  icon: "spell_nature_earthbindtotem",color: "#e67e22", alwaysOnTop: true, sortOrder: 4, group: "earth-totem" },
         ]
@@ -741,6 +745,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [25587], topIds: [25587], name: "Windfury Totem",         icon: "spell_nature_windfury" },
             { ids: [8512],  name: "Windfury Totem (Rank 1)", icon: "spell_nature_windfury" },
             { ids: [25359], name: "Grace of Air Totem",   icon: "spell_nature_invisibilitytotem" },
+            { ids: [25574], name: "Nature Resistance Totem", icon: "spell_nature_natureresistancetotem" },
             { ids: [25528], name: "Strength of Earth Totem",   icon: "spell_nature_earthbindtotem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem" },
         ],
@@ -748,6 +753,7 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [32594, 32593, 33201], name: "Earth Shield", icon: "spell_nature_skinofearth", color: "#f1c40f" },
             { ids: [25587, 8512], name: "Windfury Totem",         icon: "spell_nature_windfury",       color: "#3498db", alwaysOnTop: true, sortOrder: 1, group: "air-totem" },
             { ids: [25359], name: "Grace of Air Totem",  icon: "spell_nature_invisibilitytotem",color: "#2ecc71", alwaysOnTop: true, sortOrder: 2, group: "air-totem" },
+            { ids: [25574], name: "Nature Resistance Totem", icon: "spell_nature_natureresistancetotem", color: "#27ae60", alwaysOnTop: true, sortOrder: 2.5, group: "air-totem" },
             { ids: [3738],  name: "Wrath of Air Totem",     icon: "spell_nature_slowingtotem",  color: "#9b59b6", alwaysOnTop: true, sortOrder: 3, group: "air-totem" },
             { ids: [25528], name: "Strength of Earth Totem",  icon: "spell_nature_earthbindtotem",color: "#e67e22", alwaysOnTop: true, sortOrder: 4, group: "earth-totem" },
         ]
