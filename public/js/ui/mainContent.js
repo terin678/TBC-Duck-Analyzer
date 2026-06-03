@@ -1,7 +1,7 @@
-import { state } from '../state.js?v=1.3.5';
-import { formatDuration } from '../utils.js?v=1.3.5';
-import { processPlayerData } from '../processor.js?v=1.3.5';
-import { fetchDps } from '../api.js?v=1.3.5';
+import { state } from '../state.js?v=1.3.6';
+import { formatDuration } from '../utils.js?v=1.3.6';
+import { processPlayerData } from '../processor.js?v=1.3.6';
+import { fetchDps } from '../api.js?v=1.3.6';
 
 export function renderMainContent() {
     const contentArea = document.getElementById('contentArea');
