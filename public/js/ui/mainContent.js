@@ -260,7 +260,7 @@ export function renderPlayerView(data, player, fightInfo) {
     const getBasePath = () => window.location.pathname.includes('TBC-Duck-Analyzer') ? '/TBC-Duck-Analyzer' : '';
     const basePath = getBasePath();
     const cacheBuster = Date.now();
-    let bossIconHtml = isOverall ? '' : `<img src="${basePath}/assets/bosses/encounter-${bossSlug}.png?v=${cacheBuster}" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='${basePath}/assets/icons/inv_misc_questionmark.jpg'; this.onerror=null;">`;
+    let bossIconHtml = isOverall ? '' : `<img src="${basePath}/assets/fights/pic-${bossSlug}.png?v=${cacheBuster}" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='${basePath}/assets/icons/inv_misc_questionmark.jpg'; this.onerror=null;">`;
 
     return `
         <div class="player-view">
@@ -313,7 +313,7 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     const getBasePath = () => window.location.pathname.includes('TBC-Duck-Analyzer') ? '/TBC-Duck-Analyzer' : '';
     const basePath = getBasePath();
     const cacheBuster = Date.now();
-    let bossIconHtml = isOverall ? '' : `<img src="${basePath}/assets/bosses/encounter-${bossSlug}.png?v=${cacheBuster}" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='${basePath}/assets/icons/inv_misc_questionmark.jpg'; this.onerror=null;">`;
+    let bossIconHtml = isOverall ? '' : `<img src="${basePath}/assets/fights/pic-${bossSlug}.png?v=${cacheBuster}" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='${basePath}/assets/icons/inv_misc_questionmark.jpg'; this.onerror=null;">`;
 
     // Calculate global max fights for the overall denominator
     let globalMaxFights = 1;
