@@ -100,7 +100,7 @@ export async function auditarLog() {
         document.getElementById('btnDiscord').style.display = 'block';
 
         // Update URL
-        window.history.pushState({}, '', '/report/' + logId);
+        window.history.pushState({}, '', '?log=' + logId);
 
         // Auto-select "Overall" and "All Players"
         if (typeof window.selectFight === 'function' && typeof window.selectPlayer === 'function') {
