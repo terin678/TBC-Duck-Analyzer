@@ -461,6 +461,7 @@ const SPELL_DB = {
     45438: {name:"Ice Block",icon:"spell_frost_frost",category:1},
     51582: {name:"Rocket Boots",icon:"inv_gizmo_rocketboot_01",category:3},
     26481: {name:"Badge of the Swarmguard",icon:"inv_misc_ahnqirajtrinket_04",category:3},
+    40402: {name:"Earring of Soulful Meditation",icon:"inv_jewelry_ring_07",category:3},
     40729: {name:"Badge of Tenacity",icon:"inv_misc_armorkit_12",category:3},
     // Nuevas habilidades de Shaman
     17364: {name:"Stormstrike",icon:"ability_shaman_stormstrike"},
@@ -536,6 +537,7 @@ const TIMELINE_SPELLS = {
     29601: { name: "Pendant of the Violet Eye", icon: "inv_trinket_naxxramas02", color: "#179299" },
     35166: { name: "Bloodlust Brooch", icon: "inv_trinket_naxxramas03", color: "#d9534f" },
     26481: { name: "Badge of the Swarmguard", icon: "inv_misc_ahnqirajtrinket_04", color: "#d9534f" },
+    40402: { name: "Earring of Soulful Meditation", icon: "inv_jewelry_ring_07", color: "#8e44ad" },
     40729: { name: "Badge of Tenacity", icon: "inv_misc_armorkit_12", color: "#5cb85c" },
     35084: { name: "Scarab of the Infinite Cycle", icon: "inv_misc_orb_03", color: "#179299" },
     23723: { name: "Mind Quickening", icon: "spell_nature_wispheal", color: "#179299" },
