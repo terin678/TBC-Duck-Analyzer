@@ -613,6 +613,25 @@ export function toggleTimelineInline(playerName, fightId) {
                 <div class="timeline-spell-name" style="color: ${color};">${spellInfo.name}</div>
                 <div class="timeline-track">`;
                 
+            // Calculate overlapping levels
+            let stackLevels = [];
+            events[spellIdStr].forEach(ev => {
+                let placed = false;
+                for (let i = 0; i < stackLevels.length; i++) {
+                    let overlaps = stackLevels[i].some(existing => (ev.start < existing.end && ev.end > existing.start));
+                    if (!overlaps) {
+                        stackLevels[i].push(ev);
+                        ev._level = i;
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    ev._level = stackLevels.length;
+                    stackLevels.push([ev]);
+                }
+            });
+
             events[spellIdStr].forEach(ev => {
                 let relStart = ev.start - fightInfo.startTime;
                 let relEnd = ev.end - fightInfo.startTime;
@@ -622,7 +641,8 @@ export function toggleTimelineInline(playerName, fightId) {
                 if (relEnd > relStart) {
                     const leftPct = (relStart / durationMs) * 100;
                     const widthPct = ((relEnd - relStart) / durationMs) * 100;
-                    html += `<div class="timeline-bar" style="left: ${leftPct}%; width: ${widthPct}%; background-color: ${color}; opacity: 0.7; box-shadow: 0 0 8px ${color}; border: 1px solid ${color};"></div>`;
+                    const levelOffset = ev._level ? (ev._level * 6) : 0;
+                    html += `<div class="timeline-bar" style="left: ${leftPct}%; width: ${widthPct}%; background-color: ${color}; opacity: 0.7; box-shadow: 0 0 8px ${color}; border: 1px solid ${color}; top: calc(50% - 8px + ${levelOffset}px);"></div>`;
                 }
             });
             html += `</div></div>`;
