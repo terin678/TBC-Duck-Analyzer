@@ -363,11 +363,35 @@ export function toggleCastsDebuffInline(playerName, fightId) {
                     let targetDur = durationMs;
                     if (castData.targetLifespans && castData.targetLifespans[tName]) {
                         const tLife = castData.targetLifespans[tName];
-                        const start = Math.max(fightInfo.startTime, tLife.firstSeen);
-                        const validDeaths = tLife.deaths.filter(d => d <= fightInfo.endTime + 5000);
-                        const end = validDeaths.length > 0 ? Math.min(fightInfo.endTime, Math.max(...validDeaths)) : fightInfo.endTime;
-                        targetDur = end - start;
-                        if (targetDur <= 0) targetDur = durationMs;
+                        let aliveMs = 0;
+                        let lastAliveStart = Math.max(fightInfo.startTime, tLife.firstSeen);
+                        let isAlive = true;
+                        
+                        let events = [];
+                        if (tLife.deaths) tLife.deaths.forEach(d => events.push({time: d, type: 'death'}));
+                        if (tLife.rebirths) tLife.rebirths.forEach(r => events.push({time: r, type: 'rebirth'}));
+                        events.sort((a, b) => a.time - b.time);
+                        
+                        events.forEach(ev => {
+                            if (ev.time > fightInfo.endTime + 5000) return;
+                            if (ev.time < lastAliveStart) {
+                                if (ev.type === 'death') isAlive = false;
+                                else isAlive = true;
+                                return;
+                            }
+                            if (ev.type === 'death' && isAlive) {
+                                aliveMs += (ev.time - lastAliveStart);
+                                isAlive = false;
+                            } else if (ev.type === 'rebirth' && !isAlive) {
+                                lastAliveStart = ev.time;
+                                isAlive = true;
+                            }
+                        });
+                        
+                        if (isAlive) {
+                            aliveMs += (fightInfo.endTime - lastAliveStart);
+                        }
+                        targetDur = aliveMs > 0 ? aliveMs : durationMs;
                     }
 
                     const pct = Math.round((covered / targetDur) * 100);
@@ -400,11 +424,35 @@ export function toggleCastsDebuffInline(playerName, fightId) {
                     let targetDur = durationMs;
                     if (castData.targetLifespans && castData.targetLifespans[targetName]) {
                         const tLife = castData.targetLifespans[targetName];
-                        const start = Math.max(fightInfo.startTime, tLife.firstSeen);
-                        const validDeaths = tLife.deaths.filter(d => d <= fightInfo.endTime + 5000);
-                        const end = validDeaths.length > 0 ? Math.min(fightInfo.endTime, Math.max(...validDeaths)) : fightInfo.endTime;
-                        targetDur = end - start;
-                        if (targetDur <= 0) targetDur = durationMs;
+                        let aliveMs = 0;
+                        let lastAliveStart = Math.max(fightInfo.startTime, tLife.firstSeen);
+                        let isAlive = true;
+                        
+                        let events = [];
+                        if (tLife.deaths) tLife.deaths.forEach(d => events.push({time: d, type: 'death'}));
+                        if (tLife.rebirths) tLife.rebirths.forEach(r => events.push({time: r, type: 'rebirth'}));
+                        events.sort((a, b) => a.time - b.time);
+                        
+                        events.forEach(ev => {
+                            if (ev.time > fightInfo.endTime + 5000) return;
+                            if (ev.time < lastAliveStart) {
+                                if (ev.type === 'death') isAlive = false;
+                                else isAlive = true;
+                                return;
+                            }
+                            if (ev.type === 'death' && isAlive) {
+                                aliveMs += (ev.time - lastAliveStart);
+                                isAlive = false;
+                            } else if (ev.type === 'rebirth' && !isAlive) {
+                                lastAliveStart = ev.time;
+                                isAlive = true;
+                            }
+                        });
+                        
+                        if (isAlive) {
+                            aliveMs += (fightInfo.endTime - lastAliveStart);
+                        }
+                        targetDur = aliveMs > 0 ? aliveMs : durationMs;
                     }
 
                     rightLabel = `${Math.round((covered / targetDur) * 100)}%`;
@@ -415,14 +463,40 @@ export function toggleCastsDebuffInline(playerName, fightId) {
                     <div class="cd-debuff-target-name" title="${targetName}">${targetName}</div>
                     <div class="cd-debuff-track">`;
 
-                if (castData.targetLifespans && castData.targetLifespans[targetName] && castData.targetLifespans[targetName].deaths) {
-                    castData.targetLifespans[targetName].deaths.forEach(dTime => {
-                        const relD = dTime - fightInfo.startTime;
-                        if (relD >= 0 && relD <= durationMs) {
-                            const leftPct = (relD / durationMs) * 100;
-                            html += `<div class="cd-debuff-death-marker" title="Died at ${formatDuration(relD)}" style="left:${leftPct.toFixed(2)}%; position:absolute; width:2px; height:100%; background:#ff3333; z-index:10; box-shadow: 0 0 4px #ff3333;"></div>`;
+                if (castData.targetLifespans && castData.targetLifespans[targetName]) {
+                    const tLife = castData.targetLifespans[targetName];
+                    let events = [];
+                    if (tLife.deaths) tLife.deaths.forEach(d => events.push({time: d, type: 'death'}));
+                    if (tLife.rebirths) tLife.rebirths.forEach(r => events.push({time: r, type: 'rebirth'}));
+                    events.sort((a, b) => a.time - b.time);
+                    
+                    let isDead = false;
+                    let deadStart = 0;
+                    events.forEach(ev => {
+                        const relT = ev.time - fightInfo.startTime;
+                        if (relT < 0 || relT > durationMs) return;
+                        
+                        if (ev.type === 'death' && !isDead) {
+                            isDead = true;
+                            deadStart = relT;
+                            const leftPct = (relT / durationMs) * 100;
+                            html += `<div class="cd-debuff-death-marker" title="Died at ${formatDuration(relT)}" style="left:${leftPct.toFixed(2)}%; position:absolute; width:2px; height:100%; background:#ff3333; z-index:10; box-shadow: 0 0 4px #ff3333;"></div>`;
+                        } else if (ev.type === 'rebirth' && isDead) {
+                            isDead = false;
+                            const deadWidth = ((relT - deadStart) / durationMs) * 100;
+                            const deadLeft = (deadStart / durationMs) * 100;
+                            html += `<div class="cd-debuff-dead-zone" style="left:${deadLeft.toFixed(2)}%; width:${deadWidth.toFixed(2)}%; position:absolute; height:100%; background:rgba(255,51,51,0.1); z-index:5;"></div>`;
+                            
+                            const leftPct = (relT / durationMs) * 100;
+                            html += `<div class="cd-debuff-ress-marker" title="Resurrected at ${formatDuration(relT)}" style="left:${leftPct.toFixed(2)}%; position:absolute; width:2px; height:100%; background:#4caf50; z-index:10; box-shadow: 0 0 4px #4caf50;"></div>`;
                         }
                     });
+                    
+                    if (isDead) {
+                        const deadWidth = ((durationMs - deadStart) / durationMs) * 100;
+                        const deadLeft = (deadStart / durationMs) * 100;
+                        html += `<div class="cd-debuff-dead-zone" style="left:${deadLeft.toFixed(2)}%; width:${deadWidth.toFixed(2)}%; position:absolute; height:100%; background:rgba(255,51,51,0.1); z-index:5;"></div>`;
+                    }
                 }
 
                 segs.forEach(s => {

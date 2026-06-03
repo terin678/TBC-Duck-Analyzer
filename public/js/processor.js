@@ -137,7 +137,7 @@ export function processPlayerData(fightId, fightEvents, player) {
         const checkActor = (id, ts) => {
             if (!id) return;
             const name = actorNameMap[id] || `#${id}`;
-            if (!targetLifespans[name]) targetLifespans[name] = { firstSeen: ts, deaths: [] };
+            if (!targetLifespans[name]) targetLifespans[name] = { firstSeen: ts, deaths: [], rebirths: [] };
             else if (ts < targetLifespans[name].firstSeen) targetLifespans[name].firstSeen = ts;
         };
         checkActor(ev.sourceID, ev.timestamp);
@@ -147,13 +147,17 @@ export function processPlayerData(fightId, fightEvents, player) {
             const deathId = ev.targetID || ev.sourceID;
             if (deathId) {
                 const name = actorNameMap[deathId] || `#${deathId}`;
-                if (!targetLifespans[name]) targetLifespans[name] = { firstSeen: ev.timestamp, deaths: [] };
-                targetLifespans[name].deaths.push(ev.timestamp);
+                if (!targetLifespans[name]) targetLifespans[name] = { firstSeen: ev.timestamp, deaths: [], rebirths: [] };
+                if (!targetLifespans[name].deaths.some(d => Math.abs(d - ev.timestamp) < 5000)) {
+                    targetLifespans[name].deaths.push(ev.timestamp);
+                }
             }
         }
 
         if (ev.type === 'death' && (ev.targetID === player.id || (!ev.targetID && ev.sourceID === player.id))) {
-            deaths.push(ev.timestamp);
+            if (!deaths.some(d => Math.abs(d - ev.timestamp) < 5000)) {
+                deaths.push(ev.timestamp);
+            }
         }
 
         // ── Detección de resurrecciones ────────────────────────────────────────
@@ -181,6 +185,29 @@ export function processPlayerData(fightId, fightEvents, player) {
                 else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isSoulstone && playerIsTarget) {
                     rebirths.push({ timestamp: ev.timestamp, type: 'Soulstone', icon: '💎' });
                 }
+            }
+        }
+
+        // Track rebirths for targetLifespans
+        if ((ev.type === 'cast' || ev.type === 'resurrect' || ev.type === 'applybuff') && isRebirth && ev.targetID) {
+            const name = actorNameMap[ev.targetID] || `#${ev.targetID}`;
+            if (targetLifespans[name]) {
+                if (!targetLifespans[name].rebirths) targetLifespans[name].rebirths = [];
+                targetLifespans[name].rebirths.push(ev.timestamp);
+            }
+        }
+        else if (isAnkh && ev.sourceID && (ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect')) {
+            const name = actorNameMap[ev.sourceID] || `#${ev.sourceID}`;
+            if (targetLifespans[name]) {
+                if (!targetLifespans[name].rebirths) targetLifespans[name].rebirths = [];
+                targetLifespans[name].rebirths.push(ev.timestamp);
+            }
+        }
+        else if ((ev.type === 'cast' || ev.type === 'applybuff' || ev.type === 'resurrect') && isSoulstone && ev.targetID) {
+            const name = actorNameMap[ev.targetID] || `#${ev.targetID}`;
+            if (targetLifespans[name]) {
+                if (!targetLifespans[name].rebirths) targetLifespans[name].rebirths = [];
+                targetLifespans[name].rebirths.push(ev.timestamp);
             }
         }
 
