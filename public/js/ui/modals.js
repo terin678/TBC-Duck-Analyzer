@@ -641,8 +641,8 @@ export function toggleTimelineInline(playerName, fightId) {
                 if (relEnd > relStart) {
                     const leftPct = (relStart / durationMs) * 100;
                     const widthPct = ((relEnd - relStart) / durationMs) * 100;
-                    const levelOffset = ev._level ? (ev._level * 6) : 0;
-                    html += `<div class="timeline-bar" style="left: ${leftPct}%; width: ${widthPct}%; background-color: ${color}; opacity: 0.7; box-shadow: 0 0 8px ${color}; border: 1px solid ${color}; top: calc(50% - 8px + ${levelOffset}px);"></div>`;
+                    const levelOffset = ev._level ? (ev._level * 5) : 0;
+                    html += `<div class="timeline-bar" style="left: ${leftPct}%; width: ${widthPct}%; background-color: ${color}; opacity: 0.85; border: 1px solid rgba(0,0,0,0.5); border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.5); top: calc(50% - 7px + ${levelOffset}px); height: 14px; z-index: ${ev._level || 0};"></div>`;
                 }
             });
             html += `</div></div>`;
