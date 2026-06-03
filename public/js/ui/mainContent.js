@@ -256,7 +256,7 @@ export function renderPlayerView(data, player, fightInfo) {
     let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.trim().replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
     // Removes trailing hyphens if any
     bossSlug = bossSlug.replace(/-+$/, '');
-    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/encounter-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'; this.onerror=null;">`;
+    let bossIconHtml = isOverall ? '' : `<img src="assets/bosses/encounter-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='assets/icons/inv_misc_questionmark.jpg'; this.onerror=null;">`;
 
     return `
         <div class="player-view">
@@ -305,7 +305,7 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     }
     let bossSlug = (fightInfo && fightInfo.name) ? fightInfo.name.trim().replace(/'/g, '').replace(/[\s,-]+/g, '-').toLowerCase() : '';
     bossSlug = bossSlug.replace(/-+$/, '');
-    let bossIconHtml = isOverall ? '' : `<img src="/assets/bosses/encounter-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'; this.onerror=null;">`;
+    let bossIconHtml = isOverall ? '' : `<img src="assets/bosses/encounter-${bossSlug}.png" style="height: 40px; vertical-align: middle; margin-right: 12px; border-radius: 6px;" onerror="this.src='assets/icons/inv_misc_questionmark.jpg'; this.onerror=null;">`;
 
     // Calculate global max fights for the overall denominator
     let globalMaxFights = 1;

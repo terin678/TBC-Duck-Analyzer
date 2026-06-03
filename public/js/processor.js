@@ -297,12 +297,27 @@ export function processPlayerData(fightId, fightEvents, player) {
             }
 
             if (['applybuff', 'applybuffstack', 'refreshbuff'].includes(ev.type)) {
-                let openEv = timelineEvents[timelineKey].find(t => t.end === null);
-                if (!openEv) {
-                    timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
+                if (spellId === 28093) {
+                    // Mongoose can stack up to 2 times, just push a new segment
+                    let openCount = timelineEvents[timelineKey].filter(t => t.end === null).length;
+                    if (openCount < 2) {
+                        timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
+                    } else if (ev.type === 'refreshbuff') {
+                        timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
+                    }
+                } else {
+                    let openEv = timelineEvents[timelineKey].find(t => t.end === null);
+                    if (!openEv) {
+                        timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
+                    }
                 }
             } else if (ev.type === 'removebuff') {
-                if (spellId === 29166) {
+                if (spellId === 28093) {
+                    let openEvs = timelineEvents[timelineKey].filter(t => t.end === null);
+                    if (openEvs.length > 0) {
+                        openEvs[0].end = ev.timestamp; // Close oldest open segment
+                    }
+                } else if (spellId === 29166) {
                     const openKey = Object.keys(timelineEvents).find(k => k.startsWith('29166') && timelineEvents[k].some(t => t.end === null));
                     if (openKey) {
                         let openEv = timelineEvents[openKey].find(t => t.end === null);
