@@ -1,12 +1,12 @@
-import { state, resetStateForLanding } from './state.js?v=1.3.5';
-import { auditarLog } from './api.js?v=1.3.5';
-import { renderMainContent, filterAllViewByClass } from './ui/mainContent.js?v=1.3.5';
+import { state, resetStateForLanding } from './state.js?v=1.3.6';
+import { auditarLog } from './api.js?v=1.3.6';
+import { renderMainContent, filterAllViewByClass } from './ui/mainContent.js?v=1.3.6';
 import { 
     toggleGearInline, closeGearModal, toggleTimelineInline, 
     toggleCastsDebuffInline,
     sendToWebhookProfile, editWebhookProfile, deleteWebhookProfile, 
     enviarADiscord, closeDiscordModal 
-} from './ui/modals.js?v=1.3.5';
+} from './ui/modals.js?v=1.3.6';
 
 // === PAGE TRANSITIONS ===
 
