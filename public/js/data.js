@@ -541,7 +541,7 @@ const TIMELINE_SPELLS = {
     40729: { name: "Badge of Tenacity", icon: "inv_misc_armorkit_12", color: "#5cb85c" },
     35084: { name: "Scarab of the Infinite Cycle", icon: "inv_misc_orb_03", color: "#179299" },
     23723: { name: "Mind Quickening", icon: "spell_nature_wispheal", color: "#179299" },
-    34477: { name: "Misdirection", icon: "ability_hunter_misdirection", color: "#ABD473", duration: 1000 },
+    34477: { name: "Misdirection", icon: "ability_hunter_misdirection", color: "#ABD473" },
     33807: { name: "Abacus of Violent Odds", icon: "inv_misc_enggizmos_18", color: "#179299" },
     42084: { name: "Tsunami", icon: "inv_jewelry_talisman_04", color: "#8a2be2" },
     37447: { name: "Serpent-Coil Braid", icon: "spell_nature_poisoncleansingtotem", color: "#179299" },

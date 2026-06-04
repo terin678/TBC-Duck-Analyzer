@@ -56,11 +56,15 @@ app.post('/api/audit', async (req, res) => {
         }
 
         // Consultar a la base de datos como caché
-        db.get("SELECT log_data FROM logs_cache WHERE log_id = ?", [logId], async (err, row) => {
+        const CACHE_VERSION = 'v1_';
+        const cacheKey = CACHE_VERSION + logId;
+        
+        db.get("SELECT log_data FROM logs_cache WHERE log_id = ?", [cacheKey], async (err, row) => {
             if (err) {
                 console.error("Cache read error:", err);
             }
             if (!bypassCache && row && row.log_data) {
+                console.log(`Cache HIT for ${logId}`);
                 // Encontrado en caché
                 try {
                     return res.json(JSON.parse(row.log_data));
@@ -69,6 +73,7 @@ app.post('/api/audit', async (req, res) => {
                 }
             }
 
+            console.log(`Cache MISS for ${logId}, fetching from WCL...`);
             // No existe o falló en caché, procedemos a consultar WCL
             try {
 
@@ -199,9 +204,11 @@ app.post('/api/audit', async (req, res) => {
 
                 // Guardar en la base de datos (caché)
                 const responseString = JSON.stringify(responseData.data);
-                db.run("INSERT OR REPLACE INTO logs_cache (log_id, log_data) VALUES (?, ?)", [logId, responseString], (insertErr) => {
+                db.run("INSERT OR REPLACE INTO logs_cache (log_id, log_data) VALUES (?, ?)", [cacheKey, responseString], (insertErr) => {
                     if (insertErr) {
                         console.error("Cache insert error:", insertErr);
+                    } else {
+                        console.log(`Log ${logId} stored in cache as ${cacheKey}`);
                     }
                 });
 
@@ -227,10 +234,11 @@ app.post('/api/dps', async (req, res) => {
         }
 
         let cacheKey;
+        const CACHE_VERSION = 'v1_';
         if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
-            cacheKey = `dps_${logId}_fights_${fightIDs.join('_')}_${playerId}`;
+            cacheKey = CACHE_VERSION + `dps_${logId}_fights_${fightIDs.join('_')}_${playerId}`;
         } else if (startTime != null && endTime != null) {
-            cacheKey = `dps_${logId}_${startTime}_${endTime}_${playerId}`;
+            cacheKey = CACHE_VERSION + `dps_${logId}_${startTime}_${endTime}_${playerId}`;
         } else {
             return res.status(400).json({ error: "Missing either fightIDs or startTime/endTime" });
         }

@@ -302,8 +302,6 @@ export function processPlayerData(fightId, fightEvents, player) {
                     let openCount = timelineEvents[timelineKey].filter(t => t.end === null).length;
                     if (openCount < 2) {
                         timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
-                    } else if (ev.type === 'refreshbuff') {
-                        timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
                     }
                 } else {
                     let openEv = timelineEvents[timelineKey].find(t => t.end === null);
