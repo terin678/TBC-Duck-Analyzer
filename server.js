@@ -56,7 +56,7 @@ app.post('/api/audit', async (req, res) => {
         }
 
         // Consultar a la base de datos como caché
-        const CACHE_VERSION = 'v1_';
+        const CACHE_VERSION = 'v2_';
         const cacheKey = CACHE_VERSION + logId;
         
         db.get("SELECT log_data FROM logs_cache WHERE log_id = ?", [cacheKey], async (err, row) => {
@@ -234,7 +234,7 @@ app.post('/api/dps', async (req, res) => {
         }
 
         let cacheKey;
-        const CACHE_VERSION = 'v1_';
+        const CACHE_VERSION = 'v2_';
         if (fightIDs && Array.isArray(fightIDs) && fightIDs.length > 0) {
             cacheKey = CACHE_VERSION + `dps_${logId}_fights_${fightIDs.join('_')}_${playerId}`;
         } else if (startTime != null && endTime != null) {

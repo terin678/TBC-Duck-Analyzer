@@ -307,7 +307,7 @@ const SPELL_DB = {
     10057: {name:"Mana Citrine",icon:"inv_misc_gem_opal_01",category:5},
     10058: {name:"Mana Ruby",icon:"inv_misc_gem_ruby_01",category:5},
     27103: {name:"Mana Emerald",icon:"inv_misc_gem_stone_01",category:5},
-    37447: {name:"Serpent-Coil Braid",icon:"spell_nature_poisoncleansingtotem",category:3},
+    37445: {name:"Serpent-Coil Braid",icon:"spell_nature_poisoncleansingtotem",category:3},
     12472: {name:"Icy Veins",icon:"spell_frost_coldhearted",category:1},
     13241: {name:"Goblin Sapper",icon:"spell_fire_selfdestruct",category:5},
     13750: {name:"Adrenaline Rush",icon:"spell_shadow_shadowworddominate",category:1},
@@ -544,7 +544,7 @@ const TIMELINE_SPELLS = {
     34477: { name: "Misdirection", icon: "ability_hunter_misdirection", color: "#ABD473" },
     33807: { name: "Abacus of Violent Odds", icon: "inv_misc_enggizmos_18", color: "#179299" },
     42084: { name: "Tsunami", icon: "inv_jewelry_talisman_04", color: "#8a2be2" },
-    37447: { name: "Serpent-Coil Braid", icon: "spell_nature_poisoncleansingtotem", color: "#179299" },
+    37445: { name: "Serpent-Coil Braid", icon: "spell_nature_poisoncleansingtotem", color: "#179299" },
     9512: { name: "Thistle Tea", icon: "inv_drink_milk_0", color: "#f1c40f", duration: 1000 },
 
     // Potions & Consumables
