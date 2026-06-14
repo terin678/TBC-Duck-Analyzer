@@ -494,9 +494,39 @@ function aggregateData(actors, selection, events, report, fightId) {
         }
 
         // Sum Spell Casts (from pData.castCounts)
-        for (const [id, count] of Object.entries(pData.castCounts || {})) {
-            if (!totalCasts[id]) totalCasts[id] = { count: 0, uptime: null };
-            totalCasts[id].count = Math.max(totalCasts[id].count || 0, count || 0);
+        for (const [spellName, countData] of Object.entries(pData.castCounts || {})) {
+            let bestId = null;
+            let maxCount = -1;
+            
+            // Try to match with an already tracked ID for this player
+            for (const id of Object.keys(totalCasts)) {
+                if (window.SPELL_DB && window.SPELL_DB[id] && window.SPELL_DB[id].name === spellName) {
+                    if (totalCasts[id].count > maxCount) {
+                        maxCount = totalCasts[id].count;
+                        bestId = id;
+                    }
+                }
+            }
+            
+            // If not found in player's spells, find any matching ID in the global DB
+            if (!bestId && window.SPELL_DB) {
+                for (const [sId, sInfo] of Object.entries(window.SPELL_DB)) {
+                    if (sInfo.name === spellName) {
+                        bestId = sId;
+                        break;
+                    }
+                }
+            }
+            
+            // Fallback: create a dynamic ID so it renders properly
+            if (!bestId) {
+                bestId = "cast_" + spellName.replace(/\s+/g, '_');
+                if (!window.SPELL_DB) window.SPELL_DB = {};
+                window.SPELL_DB[bestId] = { name: spellName, icon: countData.icon || 'inv_misc_questionmark' };
+            }
+
+            if (!totalCasts[bestId]) totalCasts[bestId] = { count: 0, uptime: null };
+            totalCasts[bestId].count = Math.max(totalCasts[bestId].count || 0, countData.count || 0);
         }
 
         // Calculate Uptime
