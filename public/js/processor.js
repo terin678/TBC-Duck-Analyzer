@@ -335,12 +335,24 @@ export function processPlayerData(fightId, fightEvents, player) {
         }
     });
 
-    // Cleanup any open timeline events
+    // Cleanup any open timeline events and clamp to death
     const fightEndTl = fightEvents.length > 0 ? fightEvents[fightEvents.length - 1].timestamp : 0;
+    const playerLife = targetLifespans[player.name];
+    const playerDeaths = (playerLife && playerLife.deaths) ? playerLife.deaths.slice().sort((a, b) => a - b) : [];
+
     Object.keys(timelineEvents).forEach(spellId => {
         timelineEvents[spellId].forEach(ev => {
+            let deathEnd = null;
+            for (let d of playerDeaths) {
+                if (d > ev.start) {
+                    deathEnd = d;
+                    break;
+                }
+            }
             if (ev.end === null) {
-                ev.end = fightEndTl; 
+                ev.end = deathEnd !== null ? deathEnd : fightEndTl;
+            } else if (deathEnd !== null && ev.end > deathEnd) {
+                ev.end = deathEnd;
             }
         });
     });
@@ -652,8 +664,24 @@ export function processPlayerData(fightId, fightEvents, player) {
                     // Remove estimated cast-based segments globally if any real events exist
                     dl.targets[tName] = segs.filter(s => s.real !== false);
                 }
-                // Close any still-open segments at fight end
-                dl.targets[tName].forEach(s => { if (s.end === null) s.end = fightEnd; });
+                // Clamp segments to target death times
+                const tLife = targetLifespans[tName];
+                const deaths = (tLife && tLife.deaths) ? tLife.deaths.slice().sort((a, b) => a - b) : [];
+                
+                dl.targets[tName].forEach(s => {
+                    let deathEnd = null;
+                    for (let d of deaths) {
+                        if (d > s.start) {
+                            deathEnd = d;
+                            break;
+                        }
+                    }
+                    if (s.end === null) {
+                        s.end = deathEnd !== null ? deathEnd : fightEnd;
+                    } else if (deathEnd !== null && s.end > deathEnd) {
+                        s.end = deathEnd;
+                    }
+                });
 
                 // Merge overlapping segments to prevent uptime > 100%
                 const sorted = dl.targets[tName].slice().sort((a, b) => a.start - b.start);
