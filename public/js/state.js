@@ -17,7 +17,7 @@ export const state = {
     openPanels: { gear: false, timeline: false, casts: false },
     compareLogA: null, // { report, events, actors, logId, title }
     compareLogB: null, // { report, events, actors, logId, title }
-    compareState: { active: false, fightA: null, playerA: null, fightB: null, playerB: null }
+    compareState: { active: false, fightA: null, playerA: null, fightB: null, playerB: null, diffMode: 'A-B' }
 };
 
 export function resetStateForAudit(logId) {
@@ -30,7 +30,7 @@ export function resetStateForAudit(logId) {
     state.allActors = [];
     state.compareLogA = null;
     state.compareLogB = null;
-    state.compareState = { active: false, fightA: null, playerA: null, fightB: null, playerB: null };
+    state.compareState = { active: false, fightA: null, playerA: null, fightB: null, playerB: null, diffMode: 'A-B' };
 }
 
 export function resetStateForLanding() {
@@ -41,5 +41,5 @@ export function resetStateForLanding() {
     state.currentActors = null;
     state.compareLogA = null;
     state.compareLogB = null;
-    state.compareState = { active: false, fightA: null, playerA: null, fightB: null, playerB: null };
+    state.compareState = { active: false, fightA: null, playerA: null, fightB: null, playerB: null, diffMode: 'A-B' };
 }

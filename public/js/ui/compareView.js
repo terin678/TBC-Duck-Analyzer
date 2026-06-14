@@ -610,7 +610,10 @@ function generateComparisonTable() {
     });
 
     if (is1v1) {
-        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center;">Diff (A - B)</th>`;
+        const diffText = state.compareState.diffMode === 'B-A' ? 'Diff (B - A)' : 'Diff (A - B)';
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; cursor: pointer; user-select: none;" onclick="window.toggleDiffMode()" title="Click to swap diff direction">
+            ${diffText} 🔁
+        </th>`;
     }
 
     html += `</tr></thead>`;
@@ -660,7 +663,8 @@ function generateComparisonTable() {
 
         // Render Diff if 1v1
         if (is1v1) {
-            const diff = valA - valB;
+            const isBA = state.compareState.diffMode === 'B-A';
+            const diff = isBA ? valB - valA : valA - valB;
             let diffColor = '#bdc3c7'; // neutral
             if (diff > 0) diffColor = '#2ecc71';
             if (diff < 0) diffColor = '#e74c3c';
@@ -817,4 +821,13 @@ window.handleTimelineDrop = function(e) {
             }
         }
     }
+};
+
+window.toggleDiffMode = function() {
+    state.compareState.diffMode = state.compareState.diffMode === 'B-A' ? 'A-B' : 'B-A';
+    // Re-render only the table or the whole compare UI
+    // We can just call renderCompareUI() but it'll refresh everything. That's fine since we have state.
+    // However, `renderCompareUI` doesn't exist globally if not exposed. Oh wait, we can't call renderCompareUI from window context directly unless it's exported or we do it here. 
+    // Wait, since toggleDiffMode is inside compareView.js, it has access to renderCompareUI.
+    renderCompareUI();
 };
