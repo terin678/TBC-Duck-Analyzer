@@ -1,7 +1,7 @@
 import { state, resetStateForLanding } from './state.js?v=2.1.0';
 import { auditarLog } from './api.js?v=2.1.0';
 import { renderMainContent, toggleAllViewFilter } from './ui/mainContent.js?v=2.1.0';
-import { updatePlayersSidebar } from './ui/sidebar.js?v=2.1.0';
+
 import { 
     toggleGearInline, closeGearModal, toggleTimelineInline, 
     toggleCastsDebuffInline,
