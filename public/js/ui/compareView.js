@@ -214,6 +214,17 @@ function getFilteredActors(actors, selection, events, fightId) {
     } else if (selection.startsWith('CLASS:')) {
         const cls = selection.split(':')[1];
         return actors.filter(a => a.subType === cls);
+    } else if (selection.startsWith('COMBO:')) {
+        const parts = selection.split(':');
+        const cls = parts[1];
+        const role = parts[2];
+        return actors.filter(a => {
+            if (a.subType !== cls) return false;
+            const pData = processPlayerData(fightId || 'overall', events, a);
+            const spec = pData ? pData.spec : a.subType;
+            let r = (window.SPEC_ROLES && window.SPEC_ROLES[spec]) ? window.SPEC_ROLES[spec] : (window.SPEC_ROLES && window.SPEC_ROLES[a.subType] ? window.SPEC_ROLES[a.subType] : 'Unknown');
+            return r === role;
+        });
     } else {
         return actors.filter(a => a.name === selection);
     }
@@ -275,6 +286,21 @@ function buildPlayersOptions(actors, selectedName) {
     window.CLASSES.forEach(c => {
         const val = `CLASS:${c}`;
         html += `<option value="${val}" ${selectedName === val ? 'selected' : ''} style="color: ${getClassColor(c)};">[All ${c}s]</option>`;
+        
+        // Add class + role combos
+        const classRoles = [];
+        if (c === 'Warrior') classRoles.push('Tank', 'Melee DPS');
+        if (c === 'Paladin') classRoles.push('Tank', 'Healer', 'Melee DPS');
+        if (c === 'Priest') classRoles.push('Healer', 'Ranged DPS');
+        if (c === 'Shaman') classRoles.push('Healer', 'Melee DPS', 'Ranged DPS');
+        if (c === 'Druid') classRoles.push('Tank', 'Healer', 'Melee DPS', 'Ranged DPS');
+
+        if (classRoles.length > 0) {
+            classRoles.forEach(r => {
+                const valCombo = `COMBO:${c}:${r}`;
+                html += `<option value="${valCombo}" ${selectedName === valCombo ? 'selected' : ''} style="color: ${getClassColor(c)};">&nbsp;&nbsp;&nbsp;↳ [${c} ${r}s]</option>`;
+            });
+        }
     });
 
     html += `<option disabled>──────────</option>`;
