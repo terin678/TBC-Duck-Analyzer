@@ -828,6 +828,23 @@ function generateComparisonTable() {
         addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, name, id, false, false);
     });
 
+    // Then render trinkets that were captured ONLY as auras (like Abacus)
+    const auraTrinketIds = [];
+    [...allAuras].forEach(id => {
+        if (window.BUFF_DB[id]) {
+            const name = window.BUFF_DB[id].name;
+            if (isTrinket(name) && !spellNamesRendered.has(name)) {
+                auraTrinketIds.push(id);
+            }
+        }
+    });
+    
+    auraTrinketIds.sort((a,b) => window.BUFF_DB[a].name.localeCompare(window.BUFF_DB[b].name)).forEach(id => {
+        const name = window.BUFF_DB[id].name;
+        spellNamesRendered.add(name);
+        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, name, id, true, false); 
+    });
+
     const sortedSpells = regularSpells.sort((a,b) => {
         const nameA = getSpellInfo(a).name;
         const nameB = getSpellInfo(b).name;
