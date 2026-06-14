@@ -1,7 +1,7 @@
-import { state } from '../state.js?v=1.3.6';
-import { processPlayerData } from '../processor.js?v=1.3.6';
-import { parseLogId } from '../utils.js?v=1.3.6';
-import { generateTimelineHTML } from './modals.js?v=1.3.6';
+import { state } from '../state.js?v=2.1.0';
+import { processPlayerData } from '../processor.js?v=2.1.0';
+import { parseLogId } from '../utils.js?v=2.1.0';
+import { generateTimelineHTML } from './modals.js?v=2.1.0';
 
 export function openCompareMode() {
     state.compareState.active = true;

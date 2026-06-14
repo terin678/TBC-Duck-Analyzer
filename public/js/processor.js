@@ -1,4 +1,4 @@
-import { state } from './state.js?v=1.3.6';
+import { state } from './state.js?v=2.1.0';
 
 const SEAL_TO_TYPE = {
     // Seal of Righteousness

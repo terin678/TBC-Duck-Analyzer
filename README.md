@@ -22,6 +22,7 @@
 - 🎯 **Advanced Tracking:** Tracks consumables (flasks, elixirs, weapon enchants, sappers), class abilities, interrupts, and racials.
 - 🛡️ **Debuff & Buff Uptime:** Fully interactive timeline for crucial raid debuffs (Sunder Armor, Improved Scorch, Judgements) and buffs (Battle Shout, Totems).
 - 🔍 **Gear Inspector:** Inspect exact player gear, enchants, and gems directly from the log.
+- ⚖️ **Compare Logs:** Powerful side-by-side comparison tool to track performance differences between two separate logs, players, or classes.
 - 🎨 **Premium UI:** A sleek, dynamic dark-mode interface inspired by modern gaming aesthetics.
 
 ---

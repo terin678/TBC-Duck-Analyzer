@@ -1,15 +1,20 @@
-import { state, resetStateForLanding } from './state.js?v=1.3.6';
-import { auditarLog } from './api.js?v=1.3.6';
-import { renderMainContent, toggleAllViewFilter } from './ui/mainContent.js?v=1.3.6';
+import { state, resetStateForLanding } from './state.js?v=2.1.0';
+import { auditarLog } from './api.js?v=2.1.0';
+import { renderMainContent, toggleAllViewFilter } from './ui/mainContent.js?v=2.1.0';
+import { updatePlayersSidebar } from './ui/sidebar.js?v=2.1.0';
 import { 
-    toggleGearInline, closeGearModal, toggleTimelineInline, 
-    toggleCastsDebuffInline,
-    sendToWebhookProfile, editWebhookProfile, deleteWebhookProfile, 
-    enviarADiscord, closeDiscordModal 
-} from './ui/modals.js?v=1.3.6';
-import {
-    openCompareMode, exitCompareMode, loadCompareLog, useSameLogForCompare, clearCompareLog, updateCompareSelection
-} from './ui/compareView.js?v=1.3.6';
+    closeModal, 
+    toggleTimelineInline, 
+    toggleCastsDebuffInline 
+} from './ui/modals.js?v=2.1.0';
+import { 
+    openCompareMode,
+    closeCompareMode,
+    loadCompareLog, 
+    useSameLogForCompare, 
+    clearCompareLog, 
+    updateCompareSelection 
+} from './ui/compareView.js?v=2.1.0';
 
 // === PAGE TRANSITIONS ===
 

@@ -2,6 +2,18 @@
 
 All notable changes to TBC Duck Analyzer are documented here.
 
+## [2.1.0] - 2026-06-14
+
+### ✨ Compare Logs & UI Improvements
+- **Compare Logs Module** - Implemented a new "Compare Logs" functionality allowing side-by-side comparison of two logs.
+- **Collapsible Sections** - Comparison table sections (Consumables, Buffs, Abilities & Spells) can now be collapsed for cleaner viewing.
+- **Smart Spell Grouping** - Abilities in the comparison view are now intelligently sorted: Trinkets first, then Totems/Heroism, then Shocks, and finally remaining spells alphabetically.
+- **Accurate Role Filtering** - Fixed an issue where the role filter (e.g. "Healer") incorrectly matched all players of certain classes regardless of their actual talent spec.
+- **Curse Uptime Mapping** - Added normalization logic to correctly match WCL's "Curse Elements" and "Curse Recklessness" with internal database names to accurately calculate debuff uptime.
+- **Sapper Tracking** - Reclassified TBC Sappers from generic "Abilities" into the "Consumables" section for better logical grouping.
+- **Timeline UI Tweaks** - Improved the timeline visuals by removing background boxes to make them blend seamlessly, and implemented synchronized scrolling logic for side-by-side comparison.
+
+
 ## [2.0.0] - 2026-05-30
 
 ### ✨ Full-Stack Migration & Architecture
