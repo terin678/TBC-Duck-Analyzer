@@ -16,7 +16,14 @@ export async function auditarLog() {
     // Immediately transition to app layout with loading overlay
     document.getElementById('landingStatus').innerHTML = '';
     const loadingOverlay = document.getElementById('loadingOverlay');
-    loadingOverlay.style.display = 'flex';
+    
+    // Only show the police duck animation if the fetch takes longer than 300ms (not cached)
+    const loaderTimeout = setTimeout(() => {
+        loadingOverlay.style.display = 'flex';
+    }, 300);
+
+    // Store timeout ID to clear it if it's cached
+    state._loaderTimeout = loaderTimeout;
 
     // Clear sidebars and content for fresh load
     document.getElementById('fightsList').innerHTML = '';
@@ -156,19 +163,21 @@ export async function auditarLog() {
         prefetchDiv.innerHTML = prefetchHtml;
 
         // Hide loading overlay with fade
+        if (state._loaderTimeout) clearTimeout(state._loaderTimeout);
         loadingOverlay.style.animation = 'fadeOut 0.3s ease forwards';
         setTimeout(() => {
             loadingOverlay.style.display = 'none';
             loadingOverlay.style.animation = '';
         }, 300);
-
     } catch (e) {
+        if (state._loaderTimeout) clearTimeout(state._loaderTimeout);
         // On error, go back to landing page
+        document.getElementById('appLayout').classList.remove('visible');
+        document.getElementById('landingPage').classList.remove('hidden');
+        document.getElementById('landingStatus').innerHTML = `<span style="color:#e74c3c;">Error: ${e.message}</span>`;
         loadingOverlay.style.display = 'none';
         loadingOverlay.style.animation = '';
-        window.goBackToLanding();
-        const statusEl = document.getElementById('landingStatus');
-        statusEl.innerHTML = `<p style='color:#ff5252; font-weight:bold; font-size:1.1rem;'>Error: ${e.message}</p>`;
+        state.currentLogId = null;
     }
 }
 

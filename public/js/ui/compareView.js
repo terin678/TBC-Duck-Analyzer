@@ -1,6 +1,7 @@
 import { state } from '../state.js?v=1.3.6';
 import { processPlayerData } from '../processor.js?v=1.3.6';
 import { parseLogId } from '../utils.js?v=1.3.6';
+import { generateTimelineHTML } from './modals.js?v=1.3.6';
 
 export function openCompareMode() {
     state.compareState.active = true;
@@ -147,23 +148,26 @@ function renderCompareTimeline() {
     html += '</div>';
     container.innerHTML += html;
 
-    // We dynamically import timeline.js and render for each
-    import('./timeline.js?v=1.3.6').then(module => {
-        timelinesToRender.forEach(t => {
-            const containerEl = document.getElementById(t.id);
-            if (!containerEl) return;
-            const evs = t.side === 'A' ? state.currentEvents : state.compareLogB.events;
-            const fightId = t.side === 'A' ? state.compareState.fightA : state.compareState.fightB;
-            const report = t.side === 'A' ? state.currentReport : state.compareLogB.report;
-            const fightEvents = extractRelevantEventsForFight(evs, report, fightId);
-            const pData = processPlayerData(fightId, fightEvents, t.player);
-            if (pData) {
-                containerEl.innerHTML = module.renderTimelineHTML(pData, t.player.name);
-                module.initTimelineLogic(containerEl);
+    timelinesToRender.forEach(t => {
+        const containerEl = document.getElementById(t.id);
+        if (!containerEl) return;
+        const evs = t.side === 'A' ? state.currentEvents : state.compareLogB.events;
+        const fightId = t.side === 'A' ? state.compareState.fightA : state.compareState.fightB;
+        const report = t.side === 'A' ? state.currentReport : state.compareLogB.report;
+        const fightEvents = extractRelevantEventsForFight(evs, report, fightId);
+        
+        // We use processPlayerData which populates timelineEvents internally
+        const pData = processPlayerData(fightId, fightEvents, t.player);
+        if (pData && pData.timelineEvents) {
+            const fightInfo = report.fights.find(f => String(f.id) === String(fightId));
+            if (fightInfo) {
+                containerEl.innerHTML = generateTimelineHTML(t.player.name, fightId, pData.timelineEvents, fightInfo, true);
             } else {
-                containerEl.innerHTML = '<span style="color:#7f8c8d;">No data available.</span>';
+                containerEl.innerHTML = '<span style="color:#7f8c8d;">Fight info not found.</span>';
             }
-        });
+        } else {
+            containerEl.innerHTML = '<span style="color:#7f8c8d;">No timeline data available.</span>';
+        }
     });
 }
 
@@ -436,11 +440,11 @@ function generateComparisonTable() {
     `;
 
     dataA.players.forEach(p => {
-        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #f1c40f;">${p.name} (A)</th>`;
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #f1c40f;">${p.name}</th>`;
     });
     
     dataB.players.forEach(p => {
-        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #3498db;">${p.name} (B)</th>`;
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #3498db;">${p.name}</th>`;
     });
 
     if (is1v1) {

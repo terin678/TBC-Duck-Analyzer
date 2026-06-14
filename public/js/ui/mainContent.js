@@ -354,8 +354,9 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     // Role filters
     const ROLES = ["Tank", "Healer", "Melee DPS", "Ranged DPS"];
     ROLES.forEach(role => {
-        const isActive = state.allViewRoleFilters && state.allViewRoleFilters.has(role);
-        filterHtml += `<button class="all-view-filter-chip role-chip ${isActive ? 'active' : ''}" data-role="${role}" onclick="window.toggleAllViewFilter('role', '${role}')">${role}</button>`;
+        const isActive = state.allViewRoleFilters.has(role);
+        const roleClass = role.replace(' ', '-') + '-chip';
+        filterHtml += `<button class="all-view-filter-chip role-chip ${roleClass} ${isActive ? 'active' : ''}" data-role="${role}" onclick="window.toggleAllViewFilter('role', '${role}')">${role}</button>`;
     });
 
     filterHtml += `<div style="width: 1px; background: #333; margin: 0 10px;"></div>`;

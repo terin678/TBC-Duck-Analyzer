@@ -554,8 +554,6 @@ export function toggleTimelineInline(playerName, fightId) {
         return;
     }
     
-    // Note: all panels (gear, timeline, casts/debuff) can be open simultaneously in any combination
-
     if (!state.timelineDB || !state.timelineDB[fightId] || !state.timelineDB[fightId][playerName]) {
         container.innerHTML = '<div class="timeline-empty">No timeline data available.</div>';
         container.style.display = 'block';
@@ -567,8 +565,16 @@ export function toggleTimelineInline(playerName, fightId) {
     const fightInfo = state.currentReport.fights.find(f => f.id == fightId || f.id == parseInt(fightId));
     if (!fightInfo) return;
     
+    container.innerHTML = generateTimelineHTML(playerName, fightId, events, fightInfo);
+    container.style.display = 'block';
+    state.openPanels.timeline = true;
+}
+
+export function generateTimelineHTML(playerName, fightId, events, fightInfo, isCompare = false) {
+    if (!events || Object.keys(events).length === 0) return '<div class="timeline-empty">No tracked cooldowns or procs used.</div>';
+
     const durationMs = fightInfo.endTime - fightInfo.startTime;
-    let html = `<div class="timeline-wrapper"><div class="timeline-title">FIGHT TIMELINE</div><div class="timeline-content">`;
+    let html = `<div class="timeline-wrapper"><div class="timeline-title">${isCompare ? '' : 'FIGHT '}TIMELINE</div><div class="timeline-content">`;
     
     const usedSpells = Object.keys(events).filter(sId => events[sId].length > 0);
     
@@ -659,9 +665,15 @@ export function toggleTimelineInline(playerName, fightId) {
     }
     
     html += `</div></div>`;
-    container.innerHTML = html;
-    container.style.display = 'block';
-    state.openPanels.timeline = true;
+    return html;
+}
+
+// Helper needed for generateTimelineHTML if it's not exported
+function formatDuration(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
 // =============================================
