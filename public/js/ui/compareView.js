@@ -37,7 +37,7 @@ function renderCompareUI() {
     if (!state.compareLogB) {
         logBTop = `
             <div style="margin-top: 15px;">
-                <input type="text" id="compareLogInput" placeholder="Paste Log B URL or ID here..." style="padding: 8px; width: 60%; background: #2c3e50; border: 1px solid #34495e; color: #fff;">
+                <input type="text" id="compareLogInput" placeholder="Paste Log B URL or ID here..." onkeypress="if(event.key === 'Enter') window.loadCompareLog()" style="padding: 8px; width: 60%; background: #2c3e50; border: 1px solid #34495e; color: #fff;">
                 <button onclick="window.loadCompareLog()" style="padding: 8px 15px; background: #27ae60; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 4px;">Load Log B</button>
                 <button onclick="window.useSameLogForCompare()" style="padding: 8px 15px; background: #2980b9; color: #fff; border: none; cursor: pointer; font-weight: bold; margin-left: 10px; border-radius: 4px;">Compare with same log</button>
             </div>
@@ -296,6 +296,7 @@ export function updateCompareSelection() {
     }
     
     renderCompareUI();
+    if (window.updateURL) window.updateURL();
 }
 
 export function exitCompareMode() {
@@ -357,6 +358,7 @@ export async function loadCompareLog() {
         if (!state.compareState.playerB) state.compareState.playerB = state.compareState.playerA;
 
         renderCompareUI();
+        if (window.updateURL) window.updateURL();
         
     } catch (e) {
         statusEl.innerHTML = `<span style="color:#e74c3c;">Error: ${e.message}</span>`;
@@ -375,6 +377,7 @@ export function useSameLogForCompare() {
     if (!state.compareState.playerB) state.compareState.playerB = state.compareState.playerA;
 
     renderCompareUI();
+    if (window.updateURL) window.updateURL();
 }
 
 export function clearCompareLog() {
@@ -382,6 +385,7 @@ export function clearCompareLog() {
     state.compareState.fightB = null;
     state.compareState.playerB = null;
     renderCompareUI();
+    if (window.updateURL) window.updateURL();
 }
 
 // === COMPARISON TABLE LOGIC ===
