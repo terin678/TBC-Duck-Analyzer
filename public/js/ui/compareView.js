@@ -149,7 +149,7 @@ function renderCompareTimeline() {
                 ondragleave="window.handleTimelineDragLeave(event)"
                 ondrop="window.handleTimelineDrop(event)"
                 style="transition: box-shadow 0.2s; width: 100%;">
-                <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'}; cursor: grab;">
+                <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#3498db' : '#e67e22'}; cursor: grab;">
                     <span style="color: #7f8c8d; margin-right: 5px; font-size: 0.9em;">☰</span> ${player.name}
                 </h4>
                 <div id="${innerId}" class="timeline-inline-container" style="min-height: 100px; width: 100%;"></div>
