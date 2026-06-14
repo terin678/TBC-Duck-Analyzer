@@ -1891,6 +1891,11 @@ div.wowhead-tooltip .iconmedium {
 .Druid-chip.active { background: rgba(255,125,10,0.12); border-color: #FF7D0A; color: #FF7D0A; }
 .Druid-chip.active .chip-count { background: rgba(255,125,10,0.15); color: #FF7D0A; }
 
+/* Role-colored chip styles */
+.Tank-chip.active { background: rgba(52, 152, 219, 0.12); border-color: #3498db; color: #3498db; }
+.Healer-chip.active { background: rgba(46, 204, 113, 0.12); border-color: #2ecc71; color: #2ecc71; }
+.Melee-DPS-chip.active { background: rgba(231, 76, 60, 0.12); border-color: #e74c3c; color: #e74c3c; }
+.Ranged-DPS-chip.active { background: rgba(155, 89, 182, 0.12); border-color: #9b59b6; color: #9b59b6; }
 /* Class Sections */
 .all-view-class-section {
     margin-bottom: 18px;

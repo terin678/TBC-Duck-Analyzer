@@ -23,6 +23,41 @@ export function goBackToLanding() {
     document.getElementById('landingPage').classList.remove('hidden');
     resetStateForLanding();
     document.getElementById('btnDiscord').style.display = 'none';
+    window.history.pushState({}, '', '/');
+}
+
+// === URL STATE MANAGEMENT ===
+export function updateURL() {
+    const url = new URL(window.location);
+    if (state.currentLogId) url.searchParams.set('log', state.currentLogId);
+    else url.searchParams.delete('log');
+
+    if (state.selectedFightId) url.searchParams.set('fight', state.selectedFightId);
+    else url.searchParams.delete('fight');
+
+    if (state.selectedPlayerName && state.selectedPlayerName !== '__ALL__') {
+        url.searchParams.set('player', state.selectedPlayerName);
+    } else {
+        url.searchParams.delete('player');
+    }
+
+    if (state.compareState && state.compareState.active) {
+        url.searchParams.set('compare', 'true');
+        if (state.compareLogB) url.searchParams.set('logB', state.compareLogB.logId);
+        if (state.compareState.fightA) url.searchParams.set('fightA', state.compareState.fightA);
+        if (state.compareState.playerA) url.searchParams.set('playerA', state.compareState.playerA);
+        if (state.compareState.fightB) url.searchParams.set('fightB', state.compareState.fightB);
+        if (state.compareState.playerB) url.searchParams.set('playerB', state.compareState.playerB);
+    } else {
+        url.searchParams.delete('compare');
+        url.searchParams.delete('logB');
+        url.searchParams.delete('fightA');
+        url.searchParams.delete('playerA');
+        url.searchParams.delete('fightB');
+        url.searchParams.delete('playerB');
+    }
+
+    window.history.pushState({}, '', url);
 }
 
 // === SELECTION HANDLERS ===
@@ -43,6 +78,7 @@ export function selectFight(fightId) {
         el.classList.toggle('active', el.dataset.fight == fightId);
     });
     renderMainContent();
+    updateURL();
 
     // Re-open previously open panels for the current player on the new encounter
     const playerName = state.selectedPlayerName;
@@ -84,6 +120,7 @@ export function selectPlayer(playerName) {
         el.classList.toggle('active', el.dataset.player === playerName);
     });
     renderMainContent();
+    updateURL();
 
     // Re-open previously open panels for the new player (only for individual player views)
     if (playerName && playerName !== '__ALL__' && state.selectedFightId) {
@@ -138,7 +175,7 @@ window.loadCompareLog = loadCompareLog;
 window.useSameLogForCompare = useSameLogForCompare;
 window.clearCompareLog = clearCompareLog;
 window.updateCompareSelection = updateCompareSelection;
-
+window.updateURL = updateURL;
 
 // === INITIALIZATION ===
 
@@ -155,6 +192,23 @@ if (window.location.pathname.startsWith('/report/')) {
 
 if (potentialLogId) {
     document.getElementById('logInput').value = potentialLogId;
+    
+    // Read state from URL before audit
+    if (urlParams.get('fight')) state.selectedFightId = urlParams.get('fight');
+    if (urlParams.get('player')) state.selectedPlayerName = urlParams.get('player');
+    
+    if (urlParams.get('compare') === 'true') {
+        state.compareState.active = true;
+        if (urlParams.get('fightA')) state.compareState.fightA = urlParams.get('fightA');
+        if (urlParams.get('playerA')) state.compareState.playerA = urlParams.get('playerA');
+        if (urlParams.get('fightB')) state.compareState.fightB = urlParams.get('fightB');
+        if (urlParams.get('playerB')) state.compareState.playerB = urlParams.get('playerB');
+        if (urlParams.get('logB')) {
+            // We will load logB after main audit finishes. We store it temporarily.
+            state._pendingLogB = urlParams.get('logB');
+        }
+    }
+
     auditarLog();
 }
 

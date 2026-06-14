@@ -110,13 +110,25 @@ export async function auditarLog() {
         // Show Discord button
         document.getElementById('btnDiscord').style.display = 'block';
 
-        // Auto-select "Overall" and "All Players"
+        // Auto-select based on state or defaults
         if (typeof window.selectFight === 'function' && typeof window.selectPlayer === 'function') {
-            state.selectedFightId = 'overall';
-            document.querySelectorAll('.fight-item').forEach(el => {
-                el.classList.toggle('active', el.dataset.fight == 'overall');
-            });
-            window.selectPlayer('__ALL__');
+            const initialFight = state.selectedFightId || 'overall';
+            const initialPlayer = state.selectedPlayerName || '__ALL__';
+            
+            // Bypass app.js updateURL for a moment to set initial DOM state silently, or just let it update.
+            window.selectFight(initialFight);
+            window.selectPlayer(initialPlayer);
+            
+            if (state.compareState && state.compareState.active) {
+                window.openCompareMode();
+                if (state._pendingLogB) {
+                    document.getElementById('compareLogInput').value = state._pendingLogB;
+                    window.loadCompareLog().then(() => {
+                        state._pendingLogB = null;
+                        if (window.updateURL) window.updateURL();
+                    });
+                }
+            }
         }
 
         // Wowhead prefetch

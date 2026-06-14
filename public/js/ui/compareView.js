@@ -12,8 +12,14 @@ export function openCompareMode() {
     if (!state.compareState.playerA) {
         state.compareState.playerA = state.selectedPlayerName && state.selectedPlayerName !== '__ALL__' ? state.selectedPlayerName : '';
     }
+    // Hide sidebars to give full width to compare view
+    const sbLeft = document.getElementById('sidebarLeft');
+    const sbRight = document.getElementById('sidebarRight');
+    if (sbLeft) sbLeft.style.display = 'none';
+    if (sbRight) sbRight.style.display = 'none';
 
     renderCompareUI();
+    if (window.updateURL) window.updateURL();
 }
 
 function renderCompareUI() {
@@ -93,8 +99,93 @@ function renderCompareUI() {
             <div style="margin-top: 30px;">
                 ${compareResult}
             </div>
+            
+            <div id="compareTimelineContainer" style="margin-top: 30px;"></div>
         </div>
     `;
+    
+    // Inject timeline if compare Result was generated and players selected
+    if (compareResult) {
+        setTimeout(() => {
+            renderCompareTimeline();
+        }, 100);
+    }
+}
+
+// === TIMELINE INTEGRATION ===
+function renderCompareTimeline() {
+    const container = document.getElementById('compareTimelineContainer');
+    if (!container || !state.compareState.fightA || !state.compareLogB || !state.compareState.fightB) return;
+
+    container.innerHTML = `<h3 style="color: #f1c40f; margin-bottom: 15px;">⏳ Comparative Timeline</h3>`;
+    
+    // We reuse the existing toggleTimelineInline function logic from modals.js, but adapted to render inline.
+    // However, timeline.js is built to render a specific player and fight. We might need to render multiple timelines.
+    // For simplicity, we can instantiate the timeline HTML and logic manually for the selected players here.
+    
+    // Fetch logic from modals.js -> renderTimeline
+    // To keep it simple and within existing architecture: we will render a grid of timelines.
+    const playersA = getFilteredActors(state.currentActors, state.compareState.playerA, state.currentEvents);
+    const playersB = getFilteredActors(state.compareLogB.actors, state.compareState.playerB, state.compareLogB.events);
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 20px;">';
+    
+    // Helper to generate a placeholder for a timeline
+    const addTimelinePlaceholder = (player, logId, side) => {
+        const id = `timeline-${side}-${player.id}`;
+        html += `<div style="background: #1a252f; padding: 15px; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'};">${player.name} (${logId})</h4>
+            <div id="${id}" class="timeline-inline-container" style="min-height: 100px;"></div>
+        </div>`;
+        return { id, player, side };
+    };
+
+    const timelinesToRender = [];
+    playersA.forEach(p => timelinesToRender.push(addTimelinePlaceholder(p, state.currentLogId, 'A')));
+    playersB.forEach(p => timelinesToRender.push(addTimelinePlaceholder(p, state.compareLogB.logId, 'B')));
+    
+    html += '</div>';
+    container.innerHTML += html;
+
+    // We dynamically import timeline.js and render for each
+    import('./timeline.js?v=1.3.6').then(module => {
+        timelinesToRender.forEach(t => {
+            const containerEl = document.getElementById(t.id);
+            if (!containerEl) return;
+            const evs = t.side === 'A' ? state.currentEvents : state.compareLogB.events;
+            const fightId = t.side === 'A' ? state.compareState.fightA : state.compareState.fightB;
+            const report = t.side === 'A' ? state.currentReport : state.compareLogB.report;
+            const fightEvents = extractRelevantEventsForFight(evs, report, fightId);
+            const pData = processPlayerData(fightId, fightEvents, t.player);
+            if (pData) {
+                containerEl.innerHTML = module.renderTimelineHTML(pData, t.player.name);
+                module.initTimelineLogic(containerEl);
+            } else {
+                containerEl.innerHTML = '<span style="color:#7f8c8d;">No data available.</span>';
+            }
+        });
+    });
+}
+
+function getFilteredActors(actors, selection, events) {
+    if (!selection) return [];
+    if (selection.startsWith('ROLE:')) {
+        const role = selection.split(':')[1];
+        return actors.filter(a => {
+            const ci = events.find(e => e.type === 'combatantinfo' && e.sourceID === a.id);
+            let r = window.SPEC_ROLES[a.subType] || 'Unknown';
+            if (role === 'Healer' && ['Priest', 'Paladin', 'Shaman', 'Druid'].includes(a.subType)) r = 'Healer';
+            if (role === 'Tank' && ['Warrior', 'Paladin', 'Druid'].includes(a.subType)) r = 'Tank';
+            if (role === 'Ranged DPS' && ['Mage', 'Warlock', 'Hunter', 'Druid', 'Shaman', 'Priest'].includes(a.subType)) r = 'Ranged DPS';
+            if (role === 'Melee DPS' && ['Rogue', 'Warrior', 'Paladin', 'Shaman', 'Druid'].includes(a.subType)) r = 'Melee DPS';
+            return r === role;
+        });
+    } else if (selection.startsWith('CLASS:')) {
+        const cls = selection.split(':')[1];
+        return actors.filter(a => a.subType === cls);
+    } else {
+        return actors.filter(a => a.name === selection);
+    }
 }
 
 function buildFightsOptions(report, selectedId) {
@@ -161,6 +252,15 @@ export function updateCompareSelection() {
 
 export function exitCompareMode() {
     state.compareState.active = false;
+    
+    // Restore sidebars
+    const sbLeft = document.getElementById('sidebarLeft');
+    const sbRight = document.getElementById('sidebarRight');
+    if (sbLeft) sbLeft.style.display = '';
+    if (sbRight) sbRight.style.display = '';
+
+    if (window.updateURL) window.updateURL();
+
     // Trigger main content re-render
     if (window.selectFight) {
         window.selectFight(state.selectedFightId || 'overall');
@@ -261,43 +361,20 @@ function extractRelevantEventsForFight(events, report, fightId) {
 }
 
 function aggregateData(actors, selection, events, report, fightId) {
-    let filteredActors = [];
-    if (selection.startsWith('ROLE:')) {
-        const role = selection.split(':')[1];
-        // Heuristic: map subType to generic roles, or better, process all and check their detected spec
-        // We will process all actors and filter by their detected spec role
-        filteredActors = actors.filter(a => {
-            // Find one combatantinfo to detect spec
-            const ci = events.find(e => e.type === 'combatantinfo' && e.sourceID === a.id);
-            if (!ci) return false;
-            // Hack: manually duplicate detectPlayerSpec logic or just map subTypes
-            let r = window.SPEC_ROLES[a.subType] || 'Unknown';
-            // Proper spec detection needs more logic, let's just use broad classes for now if no spec is available
-            if (role === 'Healer' && ['Priest', 'Paladin', 'Shaman', 'Druid'].includes(a.subType)) r = 'Healer'; // Simplify
-            if (role === 'Tank' && ['Warrior', 'Paladin', 'Druid'].includes(a.subType)) r = 'Tank'; // Simplify
-            if (role === 'Ranged DPS' && ['Mage', 'Warlock', 'Hunter', 'Druid', 'Shaman', 'Priest'].includes(a.subType)) r = 'Ranged DPS';
-            if (role === 'Melee DPS' && ['Rogue', 'Warrior', 'Paladin', 'Shaman', 'Druid'].includes(a.subType)) r = 'Melee DPS';
-            return r === role;
-        });
-    } else if (selection.startsWith('CLASS:')) {
-        const cls = selection.split(':')[1];
-        filteredActors = actors.filter(a => a.subType === cls);
-    } else {
-        filteredActors = actors.filter(a => a.name === selection);
-    }
-
+    const filteredActors = getFilteredActors(actors, selection, events);
     if (filteredActors.length === 0) return null;
 
     const fightEvents = extractRelevantEventsForFight(events, report, fightId);
     
-    // Process each actor and sum up stats
-    let totalCasts = {};
-    let totalConsumables = {};
-    let totalCI = [];
+    let playersData = [];
 
     filteredActors.forEach(player => {
         const pData = processPlayerData(fightId, fightEvents, player);
         if (!pData) return;
+
+        let totalCasts = {};
+        let totalConsumables = {};
+        let totalCI = [];
 
         // Sum Item Casts (Consumables)
         for (const [id, count] of Object.entries(pData.itemCasts || {})) {
@@ -307,18 +384,28 @@ function aggregateData(actors, selection, events, report, fightId) {
             totalConsumables[id] = (totalConsumables[id] || 0) + count;
         }
 
-        // Sum Spell Casts
-        for (const [id, count] of Object.entries(pData.casts || {})) {
-            totalCasts[id] = (totalCasts[id] || 0) + count;
+        // Sum Spell Casts (pData.casts is an object like { id: { count: X, damage: Y } })
+        for (const [id, data] of Object.entries(pData.casts || {})) {
+            totalCasts[id] = (totalCasts[id] || 0) + data.count;
         }
 
-        // Store CI for auras (just take all auras and we can count occurrences)
         pData.combatantInfos.forEach(auras => {
             totalCI.push(auras);
         });
+
+        playersData.push({
+            name: player.name,
+            subType: player.subType,
+            totalCasts,
+            totalConsumables,
+            totalCI
+        });
     });
 
-    return { totalCasts, totalConsumables, totalCI, count: filteredActors.length, name: selection };
+    // Sort alphabetically
+    playersData.sort((a,b) => a.name.localeCompare(b.name));
+
+    return { players: playersData, count: playersData.length, name: selection };
 }
 
 function generateComparisonTable() {
@@ -330,72 +417,91 @@ function generateComparisonTable() {
     }
 
     // Build unique sets of items/spells to compare
-    const allConsumables = new Set([...Object.keys(dataA.totalConsumables), ...Object.keys(dataB.totalConsumables)]);
-    const allSpells = new Set([...Object.keys(dataA.totalCasts), ...Object.keys(dataB.totalCasts)]);
-    
-    // For auras (flasks, elixirs that are not casts)
+    const allConsumables = new Set();
+    const allSpells = new Set();
     const allAuras = new Set();
-    dataA.totalCI.forEach(auras => auras.forEach(a => { if(window.BUFF_DB[a]) allAuras.add(a); }));
-    dataB.totalCI.forEach(auras => auras.forEach(a => { if(window.BUFF_DB[a]) allAuras.add(a); }));
 
-    let html = `<table class="compare-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #1a252f; border-radius: 8px; overflow: hidden;">
+    [...dataA.players, ...dataB.players].forEach(p => {
+        Object.keys(p.totalConsumables).forEach(id => allConsumables.add(id));
+        Object.keys(p.totalCasts).forEach(id => allSpells.add(id));
+        p.totalCI.forEach(auras => auras.forEach(a => { if(window.BUFF_DB[a]) allAuras.add(a); }));
+    });
+
+    const is1v1 = dataA.players.length === 1 && dataB.players.length === 1;
+
+    let html = `<div style="overflow-x: auto;"><table class="compare-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #1a252f; border-radius: 8px; overflow: hidden; min-width: 600px;">
         <thead>
             <tr style="background: #2c3e50; color: #fff;">
                 <th style="padding: 12px; border-bottom: 2px solid #34495e;">Item / Spell</th>
-                <th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center;">${dataA.name} (A) <span style="font-size: 0.8em; color: #7f8c8d;">(${dataA.count} player${dataA.count>1?'s':''})</span></th>
-                <th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center;">${dataB.name} (B) <span style="font-size: 0.8em; color: #7f8c8d;">(${dataB.count} player${dataB.count>1?'s':''})</span></th>
-                <th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center;">Diff (A - B)</th>
-            </tr>
-        </thead>
-        <tbody>
     `;
 
-    const addRow = (iconUrl, name, valA, valB, isAverage) => {
-        const diff = valA - valB;
-        let diffColor = '#bdc3c7'; // neutral
-        if (diff > 0) diffColor = '#2ecc71';
-        if (diff < 0) diffColor = '#e74c3c';
-        
-        let formatVal = v => isAverage ? (v === Math.round(v) ? v : v.toFixed(1)) : v;
+    dataA.players.forEach(p => {
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #f1c40f;">${p.name} (A)</th>`;
+    });
+    
+    dataB.players.forEach(p => {
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #3498db;">${p.name} (B)</th>`;
+    });
 
-        html += `
-            <tr style="border-bottom: 1px solid #2c3e50;">
-                <td style="padding: 10px; display: flex; align-items: center; gap: 10px;">
-                    <img src="${iconUrl}" style="width: 24px; height: 24px; border-radius: 4px;" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
-                    <span style="color: #ecf0f1;">${name}</span>
-                </td>
-                <td style="padding: 10px; text-align: center; color: #f1c40f; font-weight: bold;">${formatVal(valA)}</td>
-                <td style="padding: 10px; text-align: center; color: #3498db; font-weight: bold;">${formatVal(valB)}</td>
-                <td style="padding: 10px; text-align: center; color: ${diffColor}; font-weight: bold;">${diff > 0 ? '+' : ''}${formatVal(diff)}</td>
-            </tr>
-        `;
+    if (is1v1) {
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center;">Diff (A - B)</th>`;
+    }
+
+    html += `</tr></thead><tbody>`;
+
+    const addRow = (iconUrl, name, id, isAura) => {
+        html += `<tr style="border-bottom: 1px solid #2c3e50;">
+            <td style="padding: 10px; display: flex; align-items: center; gap: 10px;">
+                <img src="${iconUrl}" style="width: 24px; height: 24px; border-radius: 4px;" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
+                <span style="color: #ecf0f1;">${name}</span>
+            </td>`;
+
+        let valA = 0;
+        let valB = 0;
+
+        // Render A columns
+        dataA.players.forEach(p => {
+            let val = isAura ? (p.totalCI.filter(auras => auras.includes(parseInt(id))).length > 0 ? 1 : 0) : (p.totalConsumables[id] || p.totalCasts[id] || 0);
+            valA += val;
+            html += `<td style="padding: 10px; text-align: center; color: #f1c40f; font-weight: bold;">${val}</td>`;
+        });
+
+        // Render B columns
+        dataB.players.forEach(p => {
+            let val = isAura ? (p.totalCI.filter(auras => auras.includes(parseInt(id))).length > 0 ? 1 : 0) : (p.totalConsumables[id] || p.totalCasts[id] || 0);
+            valB += val;
+            html += `<td style="padding: 10px; text-align: center; color: #3498db; font-weight: bold;">${val}</td>`;
+        });
+
+        // Render Diff if 1v1
+        if (is1v1) {
+            const diff = valA - valB;
+            let diffColor = '#bdc3c7'; // neutral
+            if (diff > 0) diffColor = '#2ecc71';
+            if (diff < 0) diffColor = '#e74c3c';
+            html += `<td style="padding: 10px; text-align: center; color: ${diffColor}; font-weight: bold;">${diff > 0 ? '+' : ''}${diff}</td>`;
+        }
+
+        html += `</tr>`;
     };
 
-    html += `<tr><td colspan="4" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Consumables (Casts)</td></tr>`;
+    const colSpanTotal = 1 + dataA.players.length + dataB.players.length + (is1v1 ? 1 : 0);
+
+    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Consumables (Casts)</td></tr>`;
     const sortedCons = [...allConsumables].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedCons.forEach(id => {
         if (!window.BUFF_DB[id]) return;
-        const countA = dataA.totalConsumables[id] || 0;
-        const countB = dataB.totalConsumables[id] || 0;
-        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, countA, countB, false);
+        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, false);
     });
 
-    html += `<tr><td colspan="4" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Buffs (from combatantinfo) - Avg per player</td></tr>`;
+    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Buffs (from combatantinfo)</td></tr>`;
     const sortedAuras = [...allAuras].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedAuras.forEach(id => {
-        let occA = dataA.totalCI.filter(auras => auras.includes(parseInt(id))).length;
-        let occB = dataB.totalCI.filter(auras => auras.includes(parseInt(id))).length;
-        // Average per fight per player
-        let avgA = dataA.totalCI.length ? occA / dataA.totalCI.length : 0;
-        let avgB = dataB.totalCI.length ? occB / dataB.totalCI.length : 0;
-        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, avgA, avgB, true);
+        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, true);
     });
 
-    html += `<tr><td colspan="4" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Abilities & Spells</td></tr>`;
-    // We need spell names. For now, we will use SPELL_DB or generic names. We can query WCL or use our DB.
-    // We will just use the ID if we don't have the name.
+    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Abilities & Spells</td></tr>`;
     const getSpellInfo = (id) => {
-        // Search in SPELL_DB
         for (let cls in window.SPELL_DB) {
             for (let cat of ['casts', 'debuffs']) {
                 const sp = window.SPELL_DB[cls][cat] && window.SPELL_DB[cls][cat].find(s => s.ids && s.ids.includes(parseInt(id)));
@@ -408,11 +514,9 @@ function generateComparisonTable() {
     const sortedSpells = [...allSpells].sort((a,b) => getSpellInfo(a).name.localeCompare(getSpellInfo(b).name));
     sortedSpells.forEach(id => {
         const info = getSpellInfo(id);
-        const countA = dataA.totalCasts[id] || 0;
-        const countB = dataB.totalCasts[id] || 0;
-        addRow(`/api/icon/${info.icon}.jpg`, info.name, countA, countB, false);
+        addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false);
     });
 
-    html += `</tbody></table>`;
+    html += `</tbody></table></div>`;
     return html;
 }
