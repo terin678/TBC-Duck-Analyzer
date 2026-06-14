@@ -1044,11 +1044,51 @@ const CLASS_ABILITY_TRACKING = {
             { ids: [27013], name: "Insect Swarm",         icon: "spell_nature_insectswarm", color: "#8e44ad" },
         ]
     },
+}
+
+const SPEC_ROLES = {
+    "Warrior": "Melee DPS",
+    "Warrior-Arms": "Melee DPS",
+    "Warrior-Fury": "Melee DPS",
+    "Warrior-Protection": "Tank",
+    "Paladin": "Healer",
+    "Paladin-Holy": "Healer",
+    "Paladin-Protection": "Tank",
+    "Paladin-Retribution": "Melee DPS",
+    "Hunter": "Ranged DPS",
+    "Hunter-BeastMastery": "Ranged DPS",
+    "Hunter-Marksmanship": "Ranged DPS",
+    "Hunter-Survival": "Ranged DPS",
+    "Rogue": "Melee DPS",
+    "Rogue-Combat": "Melee DPS",
+    "Rogue-Assassination": "Melee DPS",
+    "Rogue-Subtlety": "Melee DPS",
+    "Priest": "Healer",
+    "Priest-Holy": "Healer",
+    "Priest-Discipline": "Healer",
+    "Priest-Shadow": "Ranged DPS",
+    "Shaman": "Healer",
+    "Shaman-Elemental": "Ranged DPS",
+    "Shaman-Enhancement": "Melee DPS",
+    "Shaman-Restoration": "Healer",
+    "Mage": "Ranged DPS",
+    "Mage-Arcane": "Ranged DPS",
+    "Mage-Fire": "Ranged DPS",
+    "Mage-Frost": "Ranged DPS",
+    "Warlock": "Ranged DPS",
+    "Warlock-Affliction": "Ranged DPS",
+    "Warlock-Demonology": "Ranged DPS",
+    "Warlock-Destruction": "Ranged DPS",
+    "Druid": "Healer",
+    "Druid-Balance": "Ranged DPS",
+    "Druid-Feral": "Melee DPS", // Kept as Melee DPS, could also be Tank
+    "Druid-Restoration": "Healer"
 };
 
 if (typeof window !== 'undefined') {
     window.CLASSES = CLASSES;
     window.SPEC_ICONS = SPEC_ICONS;
+    window.SPEC_ROLES = SPEC_ROLES;
     window.BUFF_DB = BUFF_DB;
     window.ENCHANT_DB = ENCHANT_DB;
     window.SPELL_DB = SPELL_DB;

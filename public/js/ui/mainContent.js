@@ -348,14 +348,23 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
         }
     });
 
-    // Class filter chips
-    const activeFilter = state.allViewClassFilter;
-    let filterHtml = `<div class="all-view-class-filter">`;
-    filterHtml += `<button class="all-view-class-chip ${!activeFilter ? 'active' : ''}" onclick="window.filterAllViewByClass(null)">All</button>`;
+    // Filter chips
+    let filterHtml = `<div class="all-view-filter-group" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">`;
+    
+    // Role filters
+    const ROLES = ["Tank", "Healer", "Melee DPS", "Ranged DPS"];
+    ROLES.forEach(role => {
+        const isActive = state.allViewRoleFilters && state.allViewRoleFilters.has(role);
+        filterHtml += `<button class="all-view-filter-chip role-chip ${isActive ? 'active' : ''}" data-role="${role}" onclick="window.toggleAllViewFilter('role', '${role}')">${role}</button>`;
+    });
+
+    filterHtml += `<div style="width: 1px; background: #333; margin: 0 10px;"></div>`;
+
+    // Class filters
     window.CLASSES.forEach(cls => {
         if (playersByClass[cls].length === 0) return;
-        const isActive = activeFilter === cls;
-        filterHtml += `<button class="all-view-class-chip ${cls}-chip ${isActive ? 'active' : ''}" onclick="window.filterAllViewByClass('${cls}')">${cls} <span class="chip-count">${playersByClass[cls].length}</span></button>`;
+        const isActive = state.allViewClassFilters && state.allViewClassFilters.has(cls);
+        filterHtml += `<button class="all-view-filter-chip class-chip ${cls}-chip ${isActive ? 'active' : ''}" data-class="${cls}" onclick="window.toggleAllViewFilter('class', '${cls}')">${cls}</button>`;
     });
     filterHtml += `</div>`;
 
@@ -364,10 +373,9 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     window.CLASSES.forEach(cls => {
         const players = playersByClass[cls];
         if (players.length === 0) return;
-        const isHidden = activeFilter && activeFilter !== cls;
 
         const classIcon = window.SPEC_ICONS[cls] || 'inv_misc_questionmark';
-        sectionsHtml += `<div class="all-view-class-section ${isHidden ? 'hidden-section' : ''}" data-class="${cls}">`;
+        sectionsHtml += `<div class="all-view-class-section" data-class="${cls}">`;
         sectionsHtml += `<div class="all-view-class-header">
             <img src="/api/icon/${classIcon}.jpg" class="all-view-class-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
             <span class="${cls}-color">${cls}</span>
@@ -377,7 +385,9 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
         sectionsHtml += `<div class="all-view-players-grid">`;
         players.forEach(player => {
             const playerData = processPlayerData(fightId, fightEvents, player);
-            sectionsHtml += renderAllPlayerCard(playerData, player, fightInfo, isOverall, globalMaxFights);
+            const spec = playerData.spec;
+            const role = window.SPEC_ROLES && window.SPEC_ROLES[spec] ? window.SPEC_ROLES[spec] : 'Unknown';
+            sectionsHtml += renderAllPlayerCard(playerData, player, fightInfo, isOverall, globalMaxFights, role);
         });
         sectionsHtml += `</div></div>`;
     });
@@ -395,7 +405,7 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     `;
 }
 
-function renderAllPlayerCard(data, player, fightInfo, isOverall, globalMaxFights = 1) {
+function renderAllPlayerCard(data, player, fightInfo, isOverall, globalMaxFights = 1, role = 'Unknown') {
     const spec = data.spec;
     const specIcon = window.SPEC_ICONS[spec] || window.SPEC_ICONS[player.subType] || 'inv_misc_questionmark';
     const className = player.subType;
@@ -525,7 +535,7 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall, globalMaxFights
     let noSpellsHtml = (!spellsHtml) ? '<span class="av-no-data">—</span>' : '';
 
     return `
-        <div class="all-view-player-card">
+        <div class="all-view-player-card" data-class="${className}" data-role="${role}">
             <div class="av-player-header">
                 <img src="/api/icon/${specIcon}.jpg" class="av-spec-icon" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
                 <span class="av-player-name ${className}-color" style="cursor: pointer;" onclick="if(window.selectPlayer) window.selectPlayer('${player.name}')" title="Click to view details for ${player.name}">${player.name}</span>
@@ -545,23 +555,59 @@ function renderAllPlayerCard(data, player, fightInfo, isOverall, globalMaxFights
     `;
 }
 
-export function filterAllViewByClass(className) {
-    state.allViewClassFilter = className;
-    // Update chips
-    document.querySelectorAll('.all-view-class-chip').forEach(chip => {
-        chip.classList.remove('active');
-    });
-    if (!className) {
-        document.querySelector('.all-view-class-chip:first-child').classList.add('active');
-    } else {
-        document.querySelector(`.all-view-class-chip.${className}-chip`).classList.add('active');
-    }
-    // Show/hide sections
-    document.querySelectorAll('.all-view-class-section').forEach(section => {
-        if (!className || section.dataset.class === className) {
-            section.classList.remove('hidden-section');
+export function toggleAllViewFilter(type, value) {
+    if (type === 'class') {
+        if (state.allViewClassFilters.has(value)) {
+            state.allViewClassFilters.delete(value);
         } else {
+            state.allViewClassFilters.add(value);
+        }
+    } else if (type === 'role') {
+        if (state.allViewRoleFilters.has(value)) {
+            state.allViewRoleFilters.delete(value);
+        } else {
+            state.allViewRoleFilters.add(value);
+        }
+    }
+
+    // Apply visual active state to chips
+    document.querySelectorAll('.all-view-filter-chip.class-chip').forEach(chip => {
+        chip.classList.toggle('active', state.allViewClassFilters.has(chip.dataset.class));
+    });
+    document.querySelectorAll('.all-view-filter-chip.role-chip').forEach(chip => {
+        chip.classList.toggle('active', state.allViewRoleFilters.has(chip.dataset.role));
+    });
+
+    // Show/hide logic
+    const hasClassFilter = state.allViewClassFilters.size > 0;
+    const hasRoleFilter = state.allViewRoleFilters.size > 0;
+
+    document.querySelectorAll('.all-view-class-section').forEach(section => {
+        let visiblePlayersInClass = 0;
+        
+        section.querySelectorAll('.all-view-player-card').forEach(card => {
+            const pClass = card.dataset.class;
+            const pRole = card.dataset.role;
+            
+            const matchClass = !hasClassFilter || state.allViewClassFilters.has(pClass);
+            const matchRole = !hasRoleFilter || state.allViewRoleFilters.has(pRole);
+            
+            if (matchClass && matchRole) {
+                card.style.display = '';
+                visiblePlayersInClass++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Hide whole section if 0 players visible
+        if (visiblePlayersInClass === 0) {
             section.classList.add('hidden-section');
+        } else {
+            section.classList.remove('hidden-section');
+            // update count
+            const countEl = section.querySelector('.all-view-class-count');
+            if(countEl) countEl.innerText = visiblePlayersInClass;
         }
     });
 }

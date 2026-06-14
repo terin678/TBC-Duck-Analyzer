@@ -5,6 +5,11 @@ export function renderFightsSidebar(report) {
     const fightsList = document.getElementById('fightsList');
     let html = '';
 
+    // Compare button
+    html += `<div style="padding: 10px 15px;">
+        <button id="btnCompare" onclick="window.openCompareMode()" style="width: 100%; padding: 8px; background: #2c3e50; color: #fff; border: 1px solid #34495e; border-radius: 4px; cursor: pointer; font-weight: bold;">⚖️ Compare Logs</button>
+    </div>`;
+
     // OVERALL entry
     html += `<div class="fight-item" data-fight="overall" onclick="window.selectFight('overall')">
         <div class="fight-info">

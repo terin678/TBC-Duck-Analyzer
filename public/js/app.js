@@ -1,12 +1,15 @@
 import { state, resetStateForLanding } from './state.js?v=1.3.6';
 import { auditarLog } from './api.js?v=1.3.6';
-import { renderMainContent, filterAllViewByClass } from './ui/mainContent.js?v=1.3.6';
+import { renderMainContent, toggleAllViewFilter } from './ui/mainContent.js?v=1.3.6';
 import { 
     toggleGearInline, closeGearModal, toggleTimelineInline, 
     toggleCastsDebuffInline,
     sendToWebhookProfile, editWebhookProfile, deleteWebhookProfile, 
     enviarADiscord, closeDiscordModal 
 } from './ui/modals.js?v=1.3.6';
+import {
+    openCompareMode, exitCompareMode, loadCompareLog, useSameLogForCompare, clearCompareLog, updateCompareSelection
+} from './ui/compareView.js?v=1.3.6';
 
 // === PAGE TRANSITIONS ===
 
@@ -25,11 +28,44 @@ export function goBackToLanding() {
 // === SELECTION HANDLERS ===
 
 export function selectFight(fightId) {
+    // Save which panels were open before re-render
+    const wasGearOpen = state.openPanels.gear;
+    const wasTimelineOpen = state.openPanels.timeline;
+    const wasCastsOpen = state.openPanels.casts;
+
+    // Reset panel state since renderMainContent will destroy the DOM
+    state.openPanels.gear = false;
+    state.openPanels.timeline = false;
+    state.openPanels.casts = false;
+
     state.selectedFightId = fightId;
     document.querySelectorAll('.fight-item').forEach(el => {
         el.classList.toggle('active', el.dataset.fight == fightId);
     });
     renderMainContent();
+
+    // Re-open previously open panels for the current player on the new encounter
+    const playerName = state.selectedPlayerName;
+    if (playerName && playerName !== '__ALL__' && fightId) {
+        const safeName = playerName.replace(/'/g, "\\'");
+        const isOverall = (fightId === 'overall');
+
+        setTimeout(() => {
+            if (wasGearOpen) {
+                const player = state.currentActors && state.currentActors.find(a => a.name === playerName);
+                if (player) {
+                    const spec = state.detectedSpecs[playerName] || player.subType;
+                    window.toggleGearInline(safeName, fightId, player.subType, spec);
+                }
+            }
+            if (wasTimelineOpen && !isOverall) {
+                window.toggleTimelineInline(safeName, fightId);
+            }
+            if (wasCastsOpen) {
+                window.toggleCastsDebuffInline(safeName, fightId);
+            }
+        }, 50);
+    }
 }
 
 export function selectPlayer(playerName) {
@@ -80,7 +116,7 @@ window.transitionToApp = transitionToApp;
 window.goBackToLanding = goBackToLanding;
 window.selectFight = selectFight;
 window.selectPlayer = selectPlayer;
-window.filterAllViewByClass = filterAllViewByClass;
+window.toggleAllViewFilter = toggleAllViewFilter;
 
 // Modals
 window.toggleGearInline = toggleGearInline;
@@ -94,6 +130,14 @@ window.closeDiscordModal = closeDiscordModal;
 window.sendToWebhookProfile = sendToWebhookProfile;
 window.editWebhookProfile = editWebhookProfile;
 window.deleteWebhookProfile = deleteWebhookProfile;
+
+// Compare
+window.openCompareMode = openCompareMode;
+window.exitCompareMode = exitCompareMode;
+window.loadCompareLog = loadCompareLog;
+window.useSameLogForCompare = useSameLogForCompare;
+window.clearCompareLog = clearCompareLog;
+window.updateCompareSelection = updateCompareSelection;
 
 
 // === INITIALIZATION ===

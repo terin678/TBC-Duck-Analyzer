@@ -9,11 +9,15 @@ export const state = {
     detectedSpecs: {},
     playerGearDB: {},
     playerEnchantsForConsole: {},
-    allViewClassFilter: null,
+    allViewClassFilters: new Set(),
+    allViewRoleFilters: new Set(),
     timelineDB: {},
     castsDebuffDB: {},
     allActors: [],
-    openPanels: { gear: false, timeline: false, casts: false }
+    openPanels: { gear: false, timeline: false, casts: false },
+    compareLogA: null, // { report, events, actors, logId, title }
+    compareLogB: null, // { report, events, actors, logId, title }
+    compareState: { active: false, fightA: null, playerA: null, fightB: null, playerB: null }
 };
 
 export function resetStateForAudit(logId) {
@@ -24,6 +28,9 @@ export function resetStateForAudit(logId) {
     state.timelineDB = {};
     state.castsDebuffDB = {};
     state.allActors = [];
+    state.compareLogA = null;
+    state.compareLogB = null;
+    state.compareState = { active: false, fightA: null, playerA: null, fightB: null, playerB: null };
 }
 
 export function resetStateForLanding() {
@@ -32,4 +39,7 @@ export function resetStateForLanding() {
     state.currentReport = null;
     state.currentEvents = null;
     state.currentActors = null;
+    state.compareLogA = null;
+    state.compareLogB = null;
+    state.compareState = { active: false, fightA: null, playerA: null, fightB: null, playerB: null };
 }

@@ -13,8 +13,25 @@ export async function auditarLog() {
     state.playerGearDB = {};
     state.playerEnchantsForConsole = {};
 
-    const statusEl = document.getElementById('landingStatus');
-    statusEl.innerHTML = "<p style='color:#f4b400; font-weight:bold; font-size:1.2rem;'>POLICE IS INVESTIGATING...</p>";
+    // Immediately transition to app layout with loading overlay
+    document.getElementById('landingStatus').innerHTML = '';
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    loadingOverlay.style.display = 'flex';
+
+    // Clear sidebars and content for fresh load
+    document.getElementById('fightsList').innerHTML = '';
+    document.getElementById('playersList').innerHTML = '';
+    document.getElementById('contentArea').innerHTML = `<div class="content-placeholder"><div class="placeholder-icon">🦆</div><p>Loading report data...</p></div>`;
+
+    // Set report info early
+    document.getElementById('reportInfo').textContent = logId;
+    document.getElementById('btnDiscord').style.display = 'none';
+
+    // Transition to app
+    window.transitionToApp();
+
+    // Update URL early
+    window.history.pushState({}, '', '?log=' + logId);
 
     try {
         const bypassCache = document.getElementById('bypassCacheInput')?.checked || false;
@@ -86,21 +103,12 @@ export async function auditarLog() {
             });
         });
 
-        // Transition to app layout
-        window.transitionToApp();
-
-        // Set report info
-        document.getElementById('reportInfo').textContent = logId;
-
         // Render sidebars
         renderFightsSidebar(report);
         renderPlayersSidebar(raidActors);
 
         // Show Discord button
         document.getElementById('btnDiscord').style.display = 'block';
-
-        // Update URL
-        window.history.pushState({}, '', '?log=' + logId);
 
         // Auto-select "Overall" and "All Players"
         if (typeof window.selectFight === 'function' && typeof window.selectPlayer === 'function') {
@@ -135,10 +143,23 @@ export async function auditarLog() {
         });
         prefetchDiv.innerHTML = prefetchHtml;
 
+        // Hide loading overlay with fade
+        loadingOverlay.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+            loadingOverlay.style.animation = '';
+        }, 300);
+
     } catch (e) {
+        // On error, go back to landing page
+        loadingOverlay.style.display = 'none';
+        loadingOverlay.style.animation = '';
+        window.goBackToLanding();
+        const statusEl = document.getElementById('landingStatus');
         statusEl.innerHTML = `<p style='color:#ff5252; font-weight:bold; font-size:1.1rem;'>Error: ${e.message}</p>`;
     }
 }
+
 
 export async function fetchDps(logId, fightIDs, playerId) {
     try {

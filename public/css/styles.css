@@ -252,6 +252,7 @@ h1::after {
     display: none;
     height: 100vh;
     overflow: hidden;
+    position: relative;
 }
 
 .app-layout.visible {
@@ -1605,12 +1606,104 @@ div.wowhead-tooltip .iconmedium {
 }
 
 /* =============================================
+   LOADING OVERLAY
+   ============================================= */
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.loading-duck {
+    font-size: 5rem;
+    animation: loadingDuckPulse 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(244, 180, 0, 0.4));
+}
+
+@keyframes loadingDuckPulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 20px rgba(244, 180, 0, 0.4));
+    }
+    50% {
+        transform: scale(1.1);
+        filter: drop-shadow(0 0 40px rgba(244, 180, 0, 0.7));
+    }
+}
+
+.loading-text {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #f4b400;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px rgba(244, 180, 0, 0.5), 0 0 30px rgba(244, 180, 0, 0.2);
+    animation: loadingTextGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes loadingTextGlow {
+    0% {
+        text-shadow: 0 0 10px rgba(244, 180, 0, 0.5), 0 0 30px rgba(244, 180, 0, 0.2);
+    }
+    100% {
+        text-shadow: 0 0 15px rgba(244, 180, 0, 0.8), 0 0 40px rgba(244, 180, 0, 0.4), 0 0 60px rgba(244, 180, 0, 0.2);
+    }
+}
+
+.loading-bar-track {
+    width: 280px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.loading-bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, #f4b400, transparent);
+    border-radius: 4px;
+    animation: loadingBarSlide 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingBarSlide {
+    0% { left: -40%; }
+    100% { left: 100%; }
+}
+
+/* =============================================
    ANIMATIONS
    ============================================= */
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 
 /* =============================================
