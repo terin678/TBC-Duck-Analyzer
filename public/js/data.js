@@ -1101,7 +1101,7 @@ if (typeof window !== 'undefined') {
     window.isBuffItem = (name) => {
         if (!name) return false;
         const lower = name.toLowerCase();
-        return lower.includes('flask') || lower.includes('elixir') || lower.includes('roasted') || lower.includes('burger') || lower.includes('food') || lower.includes('soup') || lower.includes('steak') || lower.includes('delight') || lower.includes('fish') || lower.includes('crunchy') || lower.includes('scroll of') || lower.includes('rum') || lower.includes('kibler') || lower.includes('stew') || lower.includes('basilisk') || lower.includes('sausage') || lower.includes('sporeling') || lower.includes('mudder');
+        return lower.includes('flask') || lower.includes('elixir') || lower.includes('roasted') || lower.includes('burger') || lower.includes('food') || lower.includes('soup') || lower.includes('steak') || lower.includes('delight') || lower.includes('fish') || lower.includes('crunchy') || lower.includes('scroll of') || lower.includes('rum') || lower.includes('kibler') || lower.includes('stew') || lower.includes('basilisk') || lower.includes('sausage') || lower.includes('sporeling') || lower.includes('mudder') || lower.includes('talbuk') || lower.includes('spicy') || lower.includes('crawdad');
     };
 
     window.isTrinket = (name) => {
