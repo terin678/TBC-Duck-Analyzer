@@ -47,7 +47,7 @@ const BUFF_DB = {
     28519: {name:"Flask of Mighty Restoration",  icon:"inv_potion_118", order:10},
     28520: {name:"Flask of Relentless Assault",  icon:"inv_potion_117", order:10},
     28521: {name:"Flask of Blinding Light",      icon:"inv_potion_116", order:10},
-    28540: {name:"Flask of Pure Death",          icon:"inv_potion_116", order:10},
+    28540: {name:"Flask of Pure Death",          icon:"inv_potion_115", order:10},
 
     // ── BATTLE ELIXIRS (order 20) ──────────────────────────────────────────
     11406: {name:"Elixir Demonslaying",          icon:"inv_potion_27",  order:20},

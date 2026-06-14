@@ -201,17 +201,14 @@ function renderCompareTimeline() {
     });
 }
 
-function getFilteredActors(actors, selection, events) {
+function getFilteredActors(actors, selection, events, fightId) {
     if (!selection) return [];
     if (selection.startsWith('ROLE:')) {
         const role = selection.split(':')[1];
         return actors.filter(a => {
-            const ci = events.find(e => e.type === 'combatantinfo' && e.sourceID === a.id);
-            let r = window.SPEC_ROLES[a.subType] || 'Unknown';
-            if (role === 'Healer' && ['Priest', 'Paladin', 'Shaman', 'Druid'].includes(a.subType)) r = 'Healer';
-            if (role === 'Tank' && ['Warrior', 'Paladin', 'Druid'].includes(a.subType)) r = 'Tank';
-            if (role === 'Ranged DPS' && ['Mage', 'Warlock', 'Hunter', 'Druid', 'Shaman', 'Priest'].includes(a.subType)) r = 'Ranged DPS';
-            if (role === 'Melee DPS' && ['Rogue', 'Warrior', 'Paladin', 'Shaman', 'Druid'].includes(a.subType)) r = 'Melee DPS';
+            const pData = processPlayerData(fightId || 'overall', events, a);
+            const spec = pData ? pData.spec : a.subType;
+            let r = (window.SPEC_ROLES && window.SPEC_ROLES[spec]) ? window.SPEC_ROLES[spec] : (window.SPEC_ROLES && window.SPEC_ROLES[a.subType] ? window.SPEC_ROLES[a.subType] : 'Unknown');
             return r === role;
         });
     } else if (selection.startsWith('CLASS:')) {
@@ -464,7 +461,7 @@ function getBestUptime(debuffData, fightInfo, lifespans) {
 }
 
 function aggregateData(actors, selection, events, report, fightId) {
-    const filteredActors = getFilteredActors(actors, selection, events);
+    const filteredActors = getFilteredActors(actors, selection, events, fightId);
     if (filteredActors.length === 0) return null;
 
     const fightEvents = extractRelevantEventsForFight(events, report, fightId);
@@ -493,8 +490,19 @@ function aggregateData(actors, selection, events, report, fightId) {
             totalCasts[id].count += (data.count || 0);
         }
 
+        const normalizeSpellName = (name) => {
+            if (name === "Curse Elements") return "Curse of Elements";
+            if (name === "Curse Recklessness") return "Curse of Recklessness";
+            if (name === "Curse Agony") return "Curse of Agony";
+            if (name === "Curse Doom") return "Curse of Doom";
+            if (name === "Curse Tongues") return "Curse of Tongues";
+            if (name === "Curse Weakness") return "Curse of Weakness";
+            return name;
+        };
+
         // Sum Spell Casts (from pData.castCounts)
-        for (const [spellName, countData] of Object.entries(pData.castCounts || {})) {
+        for (const [rawSpellName, countData] of Object.entries(pData.castCounts || {})) {
+            const spellName = normalizeSpellName(rawSpellName);
             let bestId = null;
             let maxCount = -1;
             
@@ -586,7 +594,7 @@ function generateComparisonTable() {
     let html = `<div style="overflow-x: auto;"><table class="compare-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #1a252f; border-radius: 8px; overflow: hidden; min-width: 600px;">
         <thead>
             <tr style="background: #2c3e50; color: #fff;">
-                <th style="padding: 12px; border-bottom: 2px solid #34495e;">Item / Spell</th>
+                <th style="padding: 12px; border-bottom: 2px solid #34495e;">Players</th>
     `;
 
     dataA.players.forEach(p => {
@@ -660,11 +668,34 @@ function generateComparisonTable() {
 
     const colSpanTotal = 1 + dataA.players.length + dataB.players.length + (is1v1 ? 1 : 0);
 
+    const getSpellInfo = (id) => {
+        if (typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[id]) {
+            return window.SPELL_DB[id];
+        }
+        return { name: `Spell ${id}`, icon: 'inv_misc_questionmark' };
+    };
+
+    let sapperSpells = [];
+    let regularSpells = [];
+    [...allSpells].forEach(id => {
+        if (getSpellInfo(id).name.toLowerCase().includes('sapper')) {
+            sapperSpells.push(id);
+        } else {
+            regularSpells.push(id);
+        }
+    });
+
     html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Consumables</td></tr>`;
     const sortedCons = [...allConsumables].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedCons.forEach(id => {
         if (!window.BUFF_DB[id]) return;
         addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, false, false);
+    });
+    
+    // Add sappers to Consumables
+    sapperSpells.sort((a,b) => getSpellInfo(a).name.localeCompare(getSpellInfo(b).name)).forEach(id => {
+        const info = getSpellInfo(id);
+        addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false, true);
     });
 
     html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Buffs</td></tr>`;
@@ -676,14 +707,24 @@ function generateComparisonTable() {
     });
 
     html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Abilities & Spells</td></tr>`;
-    const getSpellInfo = (id) => {
-        if (typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[id]) {
-            return window.SPELL_DB[id];
-        }
-        return { name: `Spell ${id}`, icon: 'inv_misc_questionmark' };
+
+    const getSortGroup = (name) => {
+        const lower = name.toLowerCase();
+        if (lower.includes('brooch') || lower.includes('badge') || lower.includes('pendant') || lower.includes('talisman') || lower.includes('hex shrunken head') || lower.includes('skull of') || lower.includes('icon of') || lower.includes('earring') || lower.includes('ashtongue') || lower.includes('tome of') || lower.includes('vial of') || lower.includes('bangle') || lower.includes('pipe') || lower.includes("mender's") || lower.includes('scarab')) return 1; // Trinkets
+        if (lower.includes('totem') || lower.includes('bloodlust') || lower.includes('heroism')) return 2; // Totems/Heroism
+        if (lower.includes('shock')) return 3; // Shocks
+        return 4; // Rest
     };
 
-    const sortedSpells = [...allSpells].sort((a,b) => getSpellInfo(a).name.localeCompare(getSpellInfo(b).name));
+    const sortedSpells = regularSpells.sort((a,b) => {
+        const nameA = getSpellInfo(a).name;
+        const nameB = getSpellInfo(b).name;
+        const groupA = getSortGroup(nameA);
+        const groupB = getSortGroup(nameB);
+        if (groupA !== groupB) return groupA - groupB;
+        return nameA.localeCompare(nameB);
+    });
+    
     sortedSpells.forEach(id => {
         const info = getSpellInfo(id);
         addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false, true);
