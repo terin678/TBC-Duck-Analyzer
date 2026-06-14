@@ -154,6 +154,7 @@ window.goBackToLanding = goBackToLanding;
 window.selectFight = selectFight;
 window.selectPlayer = selectPlayer;
 window.toggleAllViewFilter = toggleAllViewFilter;
+window.renderMainContent = renderMainContent;
 
 // Modals
 window.toggleGearInline = toggleGearInline;

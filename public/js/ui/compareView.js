@@ -31,6 +31,7 @@ function renderCompareUI() {
     const playersA = buildPlayersOptions(state.currentActors, state.compareState.playerA);
 
     // Build options for Log B (Compare Log)
+    let logBTitle = `<h3 style="margin-top: 0; color: #e67e22;">Log B</h3>`;
     let logBTop = '';
     let logBBottom = '';
     if (!state.compareLogB) {
@@ -45,12 +46,13 @@ function renderCompareUI() {
     } else {
         const fightsB = buildFightsOptions(state.compareLogB.report, state.compareState.fightB);
         const playersB = buildPlayersOptions(state.compareLogB.actors, state.compareState.playerB);
-        logBTop = `
-            <div style="display: flex; gap: 15px; margin-top: 15px; align-items: center;">
-                <div style="color: #2ecc71; font-weight: bold;">Log B Loaded: ${state.compareLogB.logId}</div>
-                <button onclick="window.clearCompareLog()" style="padding: 5px 10px; background: #e74c3c; color: #fff; border: none; cursor: pointer; border-radius: 4px;">Change Log B</button>
+        logBTitle = `
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h3 style="margin: 0; color: #e67e22;">Log B: ${state.compareLogB.logId}</h3>
+                <button onclick="window.clearCompareLog()" style="padding: 4px 10px; font-size: 0.9em; background: #e74c3c; color: #fff; border: none; cursor: pointer; border-radius: 4px;">Change Log B</button>
             </div>
         `;
+        logBTop = '';
         logBBottom = `
             <div style="display: flex; gap: 10px; margin-top: auto;">
                 <select id="compareFightB" onchange="window.updateCompareSelection()" style="padding: 8px; background: #2c3e50; color: #fff; border: 1px solid #34495e; flex: 1;">
@@ -95,7 +97,7 @@ function renderCompareUI() {
 
                 <!-- Column B -->
                 <div style="flex: 1; background: #1a252f; padding: 15px; border-radius: 8px; display: flex; flex-direction: column;">
-                    <h3 style="margin-top: 0; color: #e67e22;">Log B</h3>
+                    ${logBTitle}
                     ${logBTop}
                     ${logBBottom}
                 </div>
@@ -145,11 +147,11 @@ function renderCompareTimeline() {
             ondragover="window.handleTimelineDragOver(event)"
             ondragleave="window.handleTimelineDragLeave(event)"
             ondrop="window.handleTimelineDrop(event)"
-            style="margin-bottom: 20px; transition: border 0.2s;">
+            style="margin-bottom: 20px; transition: border 0.2s; width: 100%;">
             <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'}; cursor: grab;">
                 <span style="color: #7f8c8d; margin-right: 5px; font-size: 0.9em;">☰</span> ${player.name}
             </h4>
-            <div id="${innerId}" class="timeline-inline-container" style="min-height: 100px;"></div>
+            <div id="${innerId}" class="timeline-inline-container" style="min-height: 100px; width: 100%;"></div>
         </div>`;
         return { html: htmlChunk, data: { id: innerId, player, side } };
     };
@@ -157,7 +159,7 @@ function renderCompareTimeline() {
     const timelinesToRender = [];
     
     // Left column (Log A)
-    html += '<div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">';
+    html += '<div style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; width: 100%;">';
     playersA.forEach(p => {
         const res = addTimelinePlaceholder(p, 'A');
         html += res.html;
@@ -166,7 +168,7 @@ function renderCompareTimeline() {
     html += '</div>';
 
     // Right column (Log B)
-    html += '<div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">';
+    html += '<div style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; width: 100%;">';
     playersB.forEach(p => {
         const res = addTimelinePlaceholder(p, 'B');
         html += res.html;
@@ -393,6 +395,58 @@ function extractRelevantEventsForFight(events, report, fightId) {
     }
 }
 
+function getBestUptime(debuffData, fightInfo, lifespans) {
+    if (!debuffData || debuffData.isCastPoint) return null;
+    let bestUptime = 0;
+    const durationMs = fightInfo.endTime - fightInfo.startTime;
+    if (durationMs <= 0) return null;
+    
+    Object.entries(debuffData.targets || {}).forEach(([targetName, segs]) => {
+        let covered = 0;
+        segs.forEach(s => {
+            const relS = Math.max(0, s.start - fightInfo.startTime);
+            const relE = Math.min(durationMs, (s.end === null ? fightInfo.endTime : s.end) - fightInfo.startTime);
+            if (relE > relS) covered += (relE - relS);
+        });
+        
+        let targetDur = durationMs;
+        if (lifespans && lifespans[targetName]) {
+            const tLife = lifespans[targetName];
+            let aliveMs = 0;
+            let lastAliveStart = Math.max(fightInfo.startTime, tLife.firstSeen);
+            let isAlive = true;
+            
+            let events = [];
+            if (tLife.deaths) tLife.deaths.forEach(d => events.push({time: d, type: 'death'}));
+            if (tLife.rebirths) tLife.rebirths.forEach(r => events.push({time: r, type: 'rebirth'}));
+            events.sort((a, b) => a.time - b.time);
+            
+            events.forEach(ev => {
+                if (ev.time > fightInfo.endTime + 5000) return;
+                if (ev.time < lastAliveStart) {
+                    if (ev.type === 'death') isAlive = false;
+                    else isAlive = true;
+                    return;
+                }
+                if (ev.type === 'death' && isAlive) {
+                    aliveMs += (ev.time - lastAliveStart);
+                    isAlive = false;
+                } else if (ev.type === 'rebirth' && !isAlive) {
+                    lastAliveStart = ev.time;
+                    isAlive = true;
+                }
+            });
+            if (isAlive) {
+                aliveMs += (fightInfo.endTime - lastAliveStart);
+            }
+            targetDur = aliveMs > 0 ? aliveMs : durationMs;
+        }
+        const pct = Math.round((covered / targetDur) * 100);
+        if (pct > bestUptime) bestUptime = pct;
+    });
+    return bestUptime;
+}
+
 function aggregateData(actors, selection, events, report, fightId) {
     const filteredActors = getFilteredActors(actors, selection, events);
     if (filteredActors.length === 0) return null;
@@ -417,9 +471,30 @@ function aggregateData(actors, selection, events, report, fightId) {
             totalConsumables[id] = (totalConsumables[id] || 0) + count;
         }
 
-        // Sum Spell Casts (pData.spells is an object like { id: { count: X, damage: Y } })
+        // Sum Spell Casts (from pData.spells)
         for (const [id, data] of Object.entries(pData.spells || {})) {
-            totalCasts[id] = (totalCasts[id] || 0) + data.count;
+            if (!totalCasts[id]) totalCasts[id] = { count: 0, uptime: null };
+            totalCasts[id].count += data.count;
+        }
+
+        // Sum Spell Casts (from pData.castCounts)
+        for (const [id, count] of Object.entries(pData.castCounts || {})) {
+            if (!totalCasts[id]) totalCasts[id] = { count: 0, uptime: null };
+            totalCasts[id].count = Math.max(totalCasts[id].count, count);
+        }
+
+        // Calculate Uptime
+        const fightInfoObj = report.fights.find(f => String(f.id) === String(fightId));
+        if (fightInfoObj && pData.debuffTimeline) {
+            for (const [id, castObj] of Object.entries(totalCasts)) {
+                const sInfo = window.SPELL_DB && window.SPELL_DB[id];
+                if (sInfo && pData.debuffTimeline[sInfo.name]) {
+                    const uptime = getBestUptime(pData.debuffTimeline[sInfo.name], fightInfoObj, pData.targetLifespans);
+                    if (uptime !== null) {
+                        castObj.uptime = Math.max(castObj.uptime || 0, uptime);
+                    }
+                }
+            }
         }
 
         pData.combatantInfos.forEach(auras => {
@@ -482,7 +557,7 @@ function generateComparisonTable() {
 
     html += `</tr></thead><tbody>`;
 
-    const addRow = (iconUrl, name, id, isAura) => {
+    const addRow = (iconUrl, name, id, isAura, isSpell = false) => {
         html += `<tr style="border-bottom: 1px solid #2c3e50;">
             <td style="padding: 10px; display: flex; align-items: center; gap: 10px;">
                 <img src="${iconUrl}" style="width: 24px; height: 24px; border-radius: 4px;" onerror="this.src='/api/icon/inv_misc_questionmark.jpg'">
@@ -492,18 +567,37 @@ function generateComparisonTable() {
         let valA = 0;
         let valB = 0;
 
+        const getValFromPlayer = (p) => {
+            if (isAura) return p.totalCI.filter(auras => auras.includes(parseInt(id))).length > 0 ? 1 : 0;
+            if (isSpell) return p.totalCasts[id] || { count: 0, uptime: null };
+            return p.totalConsumables[id] || 0;
+        };
+
+        const getNumeric = (val) => typeof val === 'object' ? val.count : val;
+
+        const renderCell = (val, color) => {
+            if (val === 0 || !val || (typeof val === 'object' && val.count === 0)) {
+                return `<td style="padding: 10px; text-align: center; color: ${color}; font-weight: bold;">0</td>`;
+            }
+            if (typeof val === 'object') {
+                const uptimeText = val.uptime !== null ? ` <span style="font-size:0.85em; opacity:0.8; font-weight: normal;">(${val.uptime}%)</span>` : '';
+                return `<td style="padding: 10px; text-align: center; color: ${color}; font-weight: bold;">${val.count}${uptimeText}</td>`;
+            }
+            return `<td style="padding: 10px; text-align: center; color: ${color}; font-weight: bold;">${val}</td>`;
+        };
+
         // Render A columns
         dataA.players.forEach(p => {
-            let val = isAura ? (p.totalCI.filter(auras => auras.includes(parseInt(id))).length > 0 ? 1 : 0) : (p.totalConsumables[id] || p.totalCasts[id] || 0);
-            valA += val;
-            html += `<td style="padding: 10px; text-align: center; color: #f1c40f; font-weight: bold;">${val}</td>`;
+            let val = getValFromPlayer(p);
+            valA += getNumeric(val);
+            html += renderCell(val, '#f1c40f');
         });
 
         // Render B columns
         dataB.players.forEach(p => {
-            let val = isAura ? (p.totalCI.filter(auras => auras.includes(parseInt(id))).length > 0 ? 1 : 0) : (p.totalConsumables[id] || p.totalCasts[id] || 0);
-            valB += val;
-            html += `<td style="padding: 10px; text-align: center; color: #3498db; font-weight: bold;">${val}</td>`;
+            let val = getValFromPlayer(p);
+            valB += getNumeric(val);
+            html += renderCell(val, '#3498db');
         });
 
         // Render Diff if 1v1
@@ -524,7 +618,7 @@ function generateComparisonTable() {
     const sortedCons = [...allConsumables].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedCons.forEach(id => {
         if (!window.BUFF_DB[id]) return;
-        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, false);
+        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, false, false);
     });
 
     html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Buffs</td></tr>`;
@@ -532,7 +626,7 @@ function generateComparisonTable() {
     sortedAuras.forEach(id => {
         // Exclude category 5 (consumables) from being displayed in buffs
         if (typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[id] && window.SPELL_DB[id].category === 5) return;
-        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, true);
+        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, true, false);
     });
 
     html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Abilities & Spells</td></tr>`;
@@ -546,7 +640,7 @@ function generateComparisonTable() {
     const sortedSpells = [...allSpells].sort((a,b) => getSpellInfo(a).name.localeCompare(getSpellInfo(b).name));
     sortedSpells.forEach(id => {
         const info = getSpellInfo(id);
-        addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false);
+        addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false, true);
     });
 
     html += `</tbody></table></div>`;

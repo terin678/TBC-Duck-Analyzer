@@ -355,7 +355,7 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     window.clearAllViewFilters = function() {
         state.allViewRoleFilters.clear();
         state.allViewClassFilters.clear();
-        window.renderAllPlayers();
+        window.renderMainContent();
     };
     const allActive = state.allViewRoleFilters.size === 0 && state.allViewClassFilters.size === 0;
     filterHtml += `<button class="all-view-class-chip ${allActive ? 'active' : ''}" style="border-color: #f4b400;" onclick="window.clearAllViewFilters()">ALL</button>`;
@@ -586,10 +586,16 @@ export function toggleAllViewFilter(type, value) {
     }
 
     // Apply visual active state to chips
-    document.querySelectorAll('.all-view-filter-chip.class-chip').forEach(chip => {
+    const allActive = state.allViewRoleFilters.size === 0 && state.allViewClassFilters.size === 0;
+    const allBtn = document.querySelector('.all-view-class-chip[onclick="window.clearAllViewFilters()"]');
+    if (allBtn) {
+        allBtn.classList.toggle('active', allActive);
+    }
+
+    document.querySelectorAll('.all-view-class-chip.class-chip').forEach(chip => {
         chip.classList.toggle('active', state.allViewClassFilters.has(chip.dataset.class));
     });
-    document.querySelectorAll('.all-view-filter-chip.role-chip').forEach(chip => {
+    document.querySelectorAll('.all-view-class-chip.role-chip').forEach(chip => {
         chip.classList.toggle('active', state.allViewRoleFilters.has(chip.dataset.role));
     });
 
