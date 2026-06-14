@@ -602,11 +602,11 @@ function generateComparisonTable() {
     `;
 
     dataA.players.forEach(p => {
-        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #f1c40f;">${p.name}</th>`;
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #3498db;">${p.name}</th>`;
     });
     
     dataB.players.forEach(p => {
-        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #3498db;">${p.name}</th>`;
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #e67e22;">${p.name}</th>`;
     });
 
     if (is1v1) {
@@ -648,14 +648,14 @@ function generateComparisonTable() {
         dataA.players.forEach(p => {
             let val = getValFromPlayer(p);
             valA += getNumeric(val);
-            html += renderCell(val, '#f1c40f');
+            html += renderCell(val, '#3498db');
         });
 
         // Render B columns
         dataB.players.forEach(p => {
             let val = getValFromPlayer(p);
             valB += getNumeric(val);
-            html += renderCell(val, '#3498db');
+            html += renderCell(val, '#e67e22');
         });
 
         // Render Diff if 1v1
