@@ -176,8 +176,35 @@ export function renderPlayerView(data, player, fightInfo) {
             groupedSpells[name].damage += sData.damage;
         });
 
+    // Also include trinkets that only logged as an aura (like Abacus)
+    Object.entries(data.auras)
+        .filter(([spellId]) => window.BUFF_DB && window.BUFF_DB[spellId] && window.isTrinket && window.isTrinket(window.BUFF_DB[spellId].name))
+        .forEach(([spellId, auraData]) => {
+            const count = auraData.filter(a => a.type === 'apply').length;
+            if (count > 0) {
+                 const name = window.BUFF_DB[spellId].name;
+                 if (!groupedSpells[name]) {
+                     groupedSpells[name] = {
+                         name: name,
+                         icon: window.BUFF_DB[spellId].icon,
+                         category: window.SPELL_DB?.[spellId]?.category || 1, // trinkets typically 1
+                         count: 0,
+                         damage: 0,
+                         spellId: spellId
+                     };
+                 }
+                 // Avoid double-counting if it also logged a cast, just take the max
+                 groupedSpells[name].count = Math.max(groupedSpells[name].count, count);
+            }
+        });
+
     let spellListHtml = Object.values(groupedSpells)
-        .sort((a, b) => a.category - b.category)
+        .sort((a, b) => {
+            const catA = window.getSpellSortCategory ? window.getSpellSortCategory(a.name, a.spellId) : a.category;
+            const catB = window.getSpellSortCategory ? window.getSpellSortCategory(b.name, b.spellId) : b.category;
+            if (catA !== catB) return catA - catB;
+            return a.name.localeCompare(b.name);
+        })
         .map(spell => {
             let dmgText = spell.damage > 0 ? (spell.damage >= 1000 ? (spell.damage / 1000).toFixed(1) + 'k' : spell.damage) : '';
             return `<div class="spell-item">

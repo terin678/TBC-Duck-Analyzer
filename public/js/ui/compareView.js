@@ -747,15 +747,8 @@ function generateComparisonTable() {
         </td></tr></tbody><tbody id="${sectionId}">`;
     };
 
-    const isBuffItem = (name) => {
-        const lower = name.toLowerCase();
-        return lower.includes('flask') || lower.includes('elixir') || lower.includes('roasted') || lower.includes('burger') || lower.includes('food') || lower.includes('soup') || lower.includes('steak') || lower.includes('delight') || lower.includes('fish') || lower.includes('crunchy') || lower.includes('scroll of') || lower.includes('rum') || lower.includes('kibler') || lower.includes('stew') || lower.includes('basilisk') || lower.includes('sausage') || lower.includes('sporeling') || lower.includes('mudder');
-    };
-
-    const isTrinket = (name) => {
-        const lower = name.toLowerCase();
-        return lower.includes('brooch') || lower.includes('badge') || lower.includes('pendant') || lower.includes('talisman') || lower.includes('hex shrunken head') || lower.includes('skull of') || lower.includes('icon of') || lower.includes('earring') || lower.includes('ashtongue') || lower.includes('tome of') || lower.includes('vial of') || lower.includes('bangle') || lower.includes('pipe') || lower.includes("mender's") || lower.includes('scarab') || lower.includes('abacus') || lower.includes('figurine') || lower.includes('essence') || lower.includes('eye of') || lower.includes('stone of') || lower.includes('ribbon') || lower.includes('compass') || lower.includes('book of') || lower.includes('charm');
-    };
+    const isBuffItem = window.isBuffItem || ((name) => false);
+    const isTrinket = window.isTrinket || ((name) => false);
 
     const actualConsumables = [];
     const trinketItems = [];
@@ -795,30 +788,6 @@ function generateComparisonTable() {
 
     html += renderSectionHeader('Abilities & Spells', 'compare-spells');
 
-    const getSortCategory = (name, id) => {
-        if (isTrinket(name)) return 0; // Trinkets absolute first
-        
-        const lower = name.toLowerCase();
-        if (lower.includes('heroism') || lower.includes('bloodlust')) return 1;
-
-        if (window.SPELL_DB && window.SPELL_DB[id] && window.SPELL_DB[id].category === 1) {
-            return 2; // Major CDs / Big abilities
-        }
-
-        // Group by spec/type
-        if (lower.includes('totem') || lower.includes('blessing') || lower.includes('aura') || lower.includes('aspect') || lower.includes('armor') || lower.includes('ward') || lower.includes('shout') || lower.includes('stance') || lower.includes('presence') || lower.includes('seal') || lower.includes('judgement')) return 3; // Utility / General Class
-
-        if (lower.includes('heal') || lower.includes('cure') || lower.includes('renew') || lower.includes('rejuvenation') || lower.includes('regrowth') || lower.includes('lifebloom') || lower.includes('flash of light') || lower.includes('holy light') || lower.includes('prayer') || lower.includes('mend') || lower.includes('shield') || lower.includes('resurrect') || lower.includes('rebirth')) return 4; // Healers
-
-        if (lower.includes('taunt') || lower.includes('sunder') || lower.includes('block') || lower.includes('defense') || lower.includes('swipe') || lower.includes('growl') || lower.includes('righteous fury')) return 5; // Tanks
-
-        if (lower.includes('strike') || lower.includes('eviscerate') || lower.includes('bite') || lower.includes('cleave') || lower.includes('rend') || lower.includes('execute') || lower.includes('backstab') || lower.includes('ambush') || lower.includes('garrote')) return 6; // Melee DPS
-
-        if (lower.includes('bolt') || lower.includes('shock') || lower.includes('fire') || lower.includes('frost') || lower.includes('shadow') || lower.includes('arcane') || lower.includes('smite') || lower.includes('wrath') || lower.includes('starfire') || lower.includes('shot') || lower.includes('sting')) return 7; // Ranged/Caster DPS
-
-        return 8; // Others
-    };
-
     // First render trinkets that were captured as items (if any)
     const spellNamesRendered = new Set();
     trinketItems.sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || '')).forEach(id => {
@@ -848,8 +817,8 @@ function generateComparisonTable() {
     const sortedSpells = regularSpells.sort((a,b) => {
         const nameA = getSpellInfo(a).name;
         const nameB = getSpellInfo(b).name;
-        const catA = getSortCategory(nameA, a);
-        const catB = getSortCategory(nameB, b);
+        const catA = window.getSpellSortCategory ? window.getSpellSortCategory(nameA, a) : 2;
+        const catB = window.getSpellSortCategory ? window.getSpellSortCategory(nameB, b) : 2;
         if (catA !== catB) return catA - catB;
         return nameA.localeCompare(nameB);
     });
