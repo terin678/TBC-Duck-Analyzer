@@ -721,14 +721,36 @@ function generateComparisonTable() {
         </td></tr></tbody><tbody id="${sectionId}">`;
     };
 
-    html += renderSectionHeader('Consumables', 'compare-consumables');
-    const sortedCons = [...allConsumables].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
+    const isBuffItem = (name) => {
+        const lower = name.toLowerCase();
+        return lower.includes('flask') || lower.includes('elixir') || lower.includes('roasted') || lower.includes('food') || lower.includes('soup') || lower.includes('steak') || lower.includes('delight') || lower.includes('fish') || lower.includes('crunchy') || lower.includes('scroll of') || lower.includes('rum') || lower.includes('kibler') || lower.includes('stew') || lower.includes('basilisk') || lower.includes('sausage') || lower.includes('sporeling') || lower.includes('mudder');
+    };
+
+    const isTrinket = (name) => {
+        const lower = name.toLowerCase();
+        return lower.includes('brooch') || lower.includes('badge') || lower.includes('pendant') || lower.includes('talisman') || lower.includes('hex shrunken head') || lower.includes('skull of') || lower.includes('icon of') || lower.includes('earring') || lower.includes('ashtongue') || lower.includes('tome of') || lower.includes('vial of') || lower.includes('bangle') || lower.includes('pipe') || lower.includes("mender's") || lower.includes('scarab') || lower.includes('abacus') || lower.includes('figurine') || lower.includes('essence') || lower.includes('eye of') || lower.includes('stone of') || lower.includes('ribbon') || lower.includes('compass') || lower.includes('book of') || lower.includes('charm');
+    };
+
+    const actualConsumables = [];
+    const trinketItems = [];
+    [...allConsumables].forEach(id => {
+        const name = window.BUFF_DB[id]?.name || '';
+        if (isBuffItem(name)) return; // Only show in Buffs
+        if (isTrinket(name)) {
+            trinketItems.push(id);
+        } else {
+            actualConsumables.push(id);
+        }
+    });
+
+    html += renderSectionHeader('Use Items', 'compare-consumables');
+    const sortedCons = actualConsumables.sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedCons.forEach(id => {
         if (!window.BUFF_DB[id]) return;
         addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, false, false);
     });
     
-    // Add sappers to Consumables
+    // Add sappers to Use Items
     sapperSpells.sort((a,b) => getSpellInfo(a).name.localeCompare(getSpellInfo(b).name)).forEach(id => {
         const info = getSpellInfo(id);
         addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false, true);
@@ -746,25 +768,36 @@ function generateComparisonTable() {
 
     html += renderSectionHeader('Abilities & Spells', 'compare-spells');
 
-    const getSortGroup = (name) => {
-        const lower = name.toLowerCase();
-        if (lower.includes('brooch') || lower.includes('badge') || lower.includes('pendant') || lower.includes('talisman') || lower.includes('hex shrunken head') || lower.includes('skull of') || lower.includes('icon of') || lower.includes('earring') || lower.includes('ashtongue') || lower.includes('tome of') || lower.includes('vial of') || lower.includes('bangle') || lower.includes('pipe') || lower.includes("mender's") || lower.includes('scarab')) return 1; // Trinkets
-        if (lower.includes('totem') || lower.includes('bloodlust') || lower.includes('heroism')) return 2; // Totems/Heroism
-        if (lower.includes('shock')) return 3; // Shocks
-        return 4; // Rest
+    const getSortCategory = (name, id) => {
+        if (isTrinket(name)) return 1; // Trinkets first
+        if (window.SPELL_DB && window.SPELL_DB[id]) {
+            return window.SPELL_DB[id].category || 2;
+        }
+        return 2;
     };
+
+    // First render trinkets that were captured as items (if any)
+    const spellNamesRendered = new Set();
+    trinketItems.sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || '')).forEach(id => {
+        const name = window.BUFF_DB[id]?.name;
+        if (!name) return;
+        spellNamesRendered.add(name);
+        addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, name, id, false, false);
+    });
 
     const sortedSpells = regularSpells.sort((a,b) => {
         const nameA = getSpellInfo(a).name;
         const nameB = getSpellInfo(b).name;
-        const groupA = getSortGroup(nameA);
-        const groupB = getSortGroup(nameB);
-        if (groupA !== groupB) return groupA - groupB;
+        const catA = getSortCategory(nameA, a);
+        const catB = getSortCategory(nameB, b);
+        if (catA !== catB) return catA - catB;
         return nameA.localeCompare(nameB);
     });
     
     sortedSpells.forEach(id => {
         const info = getSpellInfo(id);
+        if (spellNamesRendered.has(info.name)) return; // Skip if already rendered as a trinket item
+        spellNamesRendered.add(info.name);
         addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false, true);
     });
     html += `</tbody>`;
