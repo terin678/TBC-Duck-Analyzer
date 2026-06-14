@@ -135,46 +135,45 @@ function renderCompareTimeline() {
     const playersA = getFilteredActors(state.currentActors, state.compareState.playerA, state.currentEvents);
     const playersB = getFilteredActors(state.compareLogB.actors, state.compareState.playerB, state.compareLogB.events);
 
-    let html = '<div style="display: flex; gap: 20px; width: 100%;">';
+    let html = '<div style="display: flex; flex-direction: column; gap: 20px; width: 100%;">';
     
-    // Helper to generate a placeholder for a timeline
     const addTimelinePlaceholder = (player, side) => {
+        if (!player) return { html: '<div style="flex: 1; min-width: 0;" class="timeline-slot"></div>', data: null };
         const id = `timeline-container-${side}-${player.id}`;
         const innerId = `timeline-${side}-${player.id}`;
-        let htmlChunk = `<div id="${id}" class="timeline-draggable" draggable="true" 
-            ondragstart="window.handleTimelineDragStart(event)" 
-            ondragend="window.handleTimelineDragEnd(event)"
-            ondragover="window.handleTimelineDragOver(event)"
-            ondragleave="window.handleTimelineDragLeave(event)"
-            ondrop="window.handleTimelineDrop(event)"
-            style="margin-bottom: 20px; transition: border 0.2s; width: 100%;">
-            <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'}; cursor: grab;">
-                <span style="color: #7f8c8d; margin-right: 5px; font-size: 0.9em;">☰</span> ${player.name}
-            </h4>
-            <div id="${innerId}" class="timeline-inline-container" style="min-height: 100px; width: 100%;"></div>
+        let htmlChunk = `<div style="flex: 1; min-width: 0;" class="timeline-slot" data-side="${side}">
+            <div id="${id}" class="timeline-draggable" draggable="true" 
+                ondragstart="window.handleTimelineDragStart(event)" 
+                ondragend="window.handleTimelineDragEnd(event)"
+                ondragover="window.handleTimelineDragOver(event)"
+                ondragleave="window.handleTimelineDragLeave(event)"
+                ondrop="window.handleTimelineDrop(event)"
+                style="background: #1a252f; padding: 15px; border-radius: 8px; transition: box-shadow 0.2s; width: 100%; height: 100%; box-sizing: border-box;">
+                <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'}; cursor: grab;">
+                    <span style="color: #7f8c8d; margin-right: 5px; font-size: 0.9em;">☰</span> ${player.name}
+                </h4>
+                <div id="${innerId}" class="timeline-inline-container" style="min-height: 100px; width: 100%;"></div>
+            </div>
         </div>`;
         return { html: htmlChunk, data: { id: innerId, player, side } };
     };
 
     const timelinesToRender = [];
+    const maxRows = Math.max(playersA.length, playersB.length);
     
-    // Left column (Log A)
-    html += '<div style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; width: 100%;">';
-    playersA.forEach(p => {
-        const res = addTimelinePlaceholder(p, 'A');
-        html += res.html;
-        timelinesToRender.push(res.data);
-    });
-    html += '</div>';
-
-    // Right column (Log B)
-    html += '<div style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; width: 100%;">';
-    playersB.forEach(p => {
-        const res = addTimelinePlaceholder(p, 'B');
-        html += res.html;
-        timelinesToRender.push(res.data);
-    });
-    html += '</div>';
+    for (let i = 0; i < maxRows; i++) {
+        html += '<div class="timeline-row" style="display: flex; gap: 20px; width: 100%; align-items: stretch;">';
+        
+        const resA = addTimelinePlaceholder(playersA[i], 'A');
+        html += resA.html;
+        if (resA.data) timelinesToRender.push(resA.data);
+        
+        const resB = addTimelinePlaceholder(playersB[i], 'B');
+        html += resB.html;
+        if (resB.data) timelinesToRender.push(resB.data);
+        
+        html += '</div>';
+    }
 
     html += '</div>';
     container.innerHTML += html;
@@ -251,24 +250,41 @@ function buildPlayersOptions(actors, selectedName) {
         return a.name.localeCompare(b.name);
     });
 
+    const getClassColor = (c) => {
+        const colors = {
+            'Warrior': '#C79C6E', 'Paladin': '#F58CBA', 'Hunter': '#ABD473',
+            'Rogue': '#FFF569', 'Priest': '#FFFFFF', 'DeathKnight': '#C41F3B',
+            'Shaman': '#0070DE', 'Mage': '#69CCF0', 'Warlock': '#9482C9',
+            'Monk': '#00FF96', 'Druid': '#FF7D0A', 'DemonHunter': '#A330C9', 'Evoker': '#33937F'
+        };
+        return colors[c] || '#ecf0f1';
+    };
+
+    const getRoleColor = (r) => {
+        const colors = {
+            'Healer': '#2ecc71', 'Tank': '#3498db', 'Melee DPS': '#e74c3c', 'Ranged DPS': '#9b59b6'
+        };
+        return colors[r] || '#f1c40f';
+    };
+
     // Add aggregate options for roles
     const ROLES = ["Healer", "Tank", "Melee DPS", "Ranged DPS"];
     ROLES.forEach(r => {
         const val = `ROLE:${r}`;
-        html += `<option value="${val}" ${selectedName === val ? 'selected' : ''} style="color: #f1c40f;">[All ${r}s]</option>`;
+        html += `<option value="${val}" ${selectedName === val ? 'selected' : ''} style="color: ${getRoleColor(r)};">[All ${r}s]</option>`;
     });
     
     // Add aggregate options for classes
     window.CLASSES.forEach(c => {
         const val = `CLASS:${c}`;
-        html += `<option value="${val}" ${selectedName === val ? 'selected' : ''} style="color: #3498db;">[All ${c}s]</option>`;
+        html += `<option value="${val}" ${selectedName === val ? 'selected' : ''} style="color: ${getClassColor(c)};">[All ${c}s]</option>`;
     });
 
     html += `<option disabled>──────────</option>`;
 
     sorted.forEach(p => {
         const isSelected = selectedName === p.name ? 'selected' : '';
-        html += `<option value="${p.name}" ${isSelected}>${p.name} (${p.subType})</option>`;
+        html += `<option value="${p.name}" ${isSelected} style="color: ${getClassColor(p.subType)};">${p.name} (${p.subType})</option>`;
     });
     return html;
 }
@@ -669,22 +685,14 @@ window.handleTimelineDragOver = function(e) {
     e.preventDefault();
     const target = e.target.closest('.timeline-draggable');
     if (target) {
-        const rect = target.getBoundingClientRect();
-        if (e.clientY < rect.top + rect.height / 2) {
-            target.style.borderTop = '2px solid #f1c40f';
-            target.style.borderBottom = '';
-        } else {
-            target.style.borderBottom = '2px solid #f1c40f';
-            target.style.borderTop = '';
-        }
+        target.style.boxShadow = '0 0 10px #f1c40f';
     }
 };
 
 window.handleTimelineDragLeave = function(e) {
     const target = e.target.closest('.timeline-draggable');
     if (target) {
-        target.style.borderTop = '';
-        target.style.borderBottom = '';
+        target.style.boxShadow = '';
     }
 };
 
@@ -695,8 +703,7 @@ window.handleTimelineDrop = function(e) {
     const dropZone = e.target.closest('.timeline-draggable');
 
     document.querySelectorAll('.timeline-draggable').forEach(el => {
-        el.style.borderTop = '';
-        el.style.borderBottom = '';
+        el.style.boxShadow = '';
     });
 
     if (dropZone && draggedEl && draggedEl !== dropZone) {
@@ -705,11 +712,13 @@ window.handleTimelineDrop = function(e) {
         const isColumnB = draggedId.includes('-container-B-') && dropZone.id.includes('-container-B-');
         
         if (isColumnA || isColumnB) {
-            const rect = dropZone.getBoundingClientRect();
-            if (e.clientY < rect.top + rect.height / 2) {
-                dropZone.parentNode.insertBefore(draggedEl, dropZone);
-            } else {
-                dropZone.parentNode.insertBefore(draggedEl, dropZone.nextSibling);
+            const dragParent = draggedEl.parentNode;
+            const dropParent = dropZone.parentNode;
+            
+            // Swap the elements between their parent slots
+            if (dragParent && dropParent) {
+                dropParent.appendChild(draggedEl);
+                dragParent.appendChild(dropZone);
             }
         }
     }
