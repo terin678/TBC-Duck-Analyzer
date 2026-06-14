@@ -595,8 +595,8 @@ function generateComparisonTable() {
 
     const is1v1 = dataA.players.length === 1 && dataB.players.length === 1;
 
-    let html = `<div style="overflow-x: auto;"><table class="compare-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #1a252f; border-radius: 8px; overflow: hidden; min-width: 600px;">
-        <thead>
+    let html = `<div style="overflow-x: auto; overflow-y: auto; max-height: 75vh;"><table class="compare-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #1a252f; border-radius: 8px; overflow: hidden; min-width: 600px;">
+        <thead style="position: sticky; top: 0; z-index: 10;">
             <tr style="background: #2c3e50; color: #fff;">
                 <th style="padding: 12px; border-bottom: 2px solid #34495e;">Players</th>
     `;
@@ -628,17 +628,28 @@ function generateComparisonTable() {
         let valA = 0;
         let valB = 0;
 
-        const getValFromPlayer = (p) => {
-            if (isAura) return p.totalCI.filter(auras => auras.includes(parseInt(id))).length > 0 ? 1 : 0;
+        const getValFromPlayer = (p, fightId) => {
+            if (isAura) {
+                const count = p.totalCI.filter(auras => auras.includes(parseInt(id))).length;
+                if (fightId === 'overall') {
+                    return `${count}/${p.totalCI.length}`;
+                }
+                return count > 0 ? 1 : 0;
+            }
             if (isSpell) return p.totalCasts[id] || { count: 0, uptime: null };
             return p.totalConsumables[id] || 0;
         };
 
-        const getNumeric = (val) => typeof val === 'object' ? val.count : val;
+        const getNumeric = (val) => {
+            if (typeof val === 'object' && val !== null) return val.count;
+            if (typeof val === 'string' && val.includes('/')) return parseInt(val.split('/')[0], 10);
+            return val;
+        };
 
         const renderCell = (val, color) => {
-            if (val === 0 || !val || (typeof val === 'object' && val.count === 0)) {
-                return `<td style="padding: 10px; text-align: center; color: ${color}; font-weight: bold;">0</td>`;
+            const num = getNumeric(val);
+            if (num === 0 || !num) {
+                return `<td style="padding: 10px; text-align: center; color: #7f8c8d; font-weight: bold;">-</td>`;
             }
             if (typeof val === 'object') {
                 const uptimeText = val.uptime !== null ? ` <span style="font-size:0.85em; opacity:0.8; font-weight: normal;">(${val.uptime}%)</span>` : '';
@@ -649,14 +660,14 @@ function generateComparisonTable() {
 
         // Render A columns
         dataA.players.forEach(p => {
-            let val = getValFromPlayer(p);
+            let val = getValFromPlayer(p, state.compareState.fightA);
             valA += getNumeric(val);
             html += renderCell(val, '#3498db');
         });
 
         // Render B columns
         dataB.players.forEach(p => {
-            let val = getValFromPlayer(p);
+            let val = getValFromPlayer(p, state.compareState.fightB);
             valB += getNumeric(val);
             html += renderCell(val, '#e67e22');
         });
