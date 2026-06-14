@@ -148,7 +148,7 @@ function renderCompareTimeline() {
                 ondragover="window.handleTimelineDragOver(event)"
                 ondragleave="window.handleTimelineDragLeave(event)"
                 ondrop="window.handleTimelineDrop(event)"
-                style="background: #1a252f; padding: 15px; border-radius: 8px; transition: box-shadow 0.2s; width: 100%; height: 100%; box-sizing: border-box;">
+                style="transition: box-shadow 0.2s; width: 100%;">
                 <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'}; cursor: grab;">
                     <span style="color: #7f8c8d; margin-right: 5px; font-size: 0.9em;">☰</span> ${player.name}
                 </h4>
@@ -490,13 +490,13 @@ function aggregateData(actors, selection, events, report, fightId) {
         // Sum Spell Casts (from pData.spells)
         for (const [id, data] of Object.entries(pData.spells || {})) {
             if (!totalCasts[id]) totalCasts[id] = { count: 0, uptime: null };
-            totalCasts[id].count += data.count;
+            totalCasts[id].count += (data.count || 0);
         }
 
         // Sum Spell Casts (from pData.castCounts)
         for (const [id, count] of Object.entries(pData.castCounts || {})) {
             if (!totalCasts[id]) totalCasts[id] = { count: 0, uptime: null };
-            totalCasts[id].count = Math.max(totalCasts[id].count, count);
+            totalCasts[id].count = Math.max(totalCasts[id].count || 0, count || 0);
         }
 
         // Calculate Uptime
