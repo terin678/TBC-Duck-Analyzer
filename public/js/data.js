@@ -99,9 +99,9 @@ const BUFF_DB = {
 
     // ── IN-COMBAT CONSUMABLES (order 70) ──────────────────────────────────
     43204: {name:"Healthstone",    icon:"inv_stone_04",              order:70, category:5},
-    27237: {name:"Healthstone",    icon:"inv_stone_04",              order:70, category:5},
-    27238: {name:"Healthstone",    icon:"inv_stone_04",              order:70, category:5},
-    27239: {name:"Healthstone",    icon:"inv_stone_04",              order:70, category:5},
+    27235: {name:"Healthstone 0/2",icon:"inv_stone_04",              order:70, category:5},
+    27236: {name:"Healthstone 1/2",icon:"inv_stone_04",              order:70, category:5},
+    27237: {name:"Healthstone 2/2",icon:"inv_stone_04",              order:70, category:5},
     16666: {name:"Demonic Rune",   icon:"inv_misc_rune_04",          order:70, category:5},
     27869: {name:"Dark Rune",      icon:"spell_shadow_sealofkings",  order:70, category:5},
     27089: {name:"Mana Emerald",   icon:"inv_misc_gem_sapphire_02",  order:70, category:5},
@@ -399,9 +399,9 @@ const SPELL_DB = {
     27154: {name:"Lay on Hands",icon:"spell_holy_layonhands",category:1},
     27226: {name:"Curse Recklessness",icon:"spell_shadow_unholystrength",category:2},
     27228: {name:"Curse Elements",icon:"spell_shadow_chilltouch",category:2},
-    27237: {name:"Healthstone",icon:"inv_stone_04",category:5},
-    27238: {name:"Healthstone",icon:"inv_stone_04",category:5},
-    27239: {name:"Healthstone",icon:"inv_stone_04",category:5},
+    27235: {name:"Healthstone 0/2",icon:"inv_stone_04",category:5},
+    27236: {name:"Healthstone 1/2",icon:"inv_stone_04",category:5},
+    27237: {name:"Healthstone 2/2",icon:"inv_stone_04",category:5},
     27263: {name:"Shadowburn",icon:"spell_shadow_scourgebuild",category:2},
     29341: {name:"Shadowburn",icon:"spell_shadow_scourgebuild",category:2},
     30546: {name:"Shadowburn",icon:"spell_shadow_scourgebuild",category:2},
@@ -492,6 +492,8 @@ const SPELL_DB = {
     34864: {name:"Circle of Healing",icon:"spell_holy_circleofrenewal",category:2},
     34863: {name:"Circle of Healing",icon:"spell_holy_circleofrenewal",category:2},
     34861: {name:"Circle of Healing",icon:"spell_holy_circleofrenewal",category:2},
+    1161: {name:"Challenging Shout",icon:"ability_bullrush",category:2},
+    5209: {name:"Challenging Roar",icon:"ability_druid_challangingroar",category:2},
 };
 
 const OPTIMAL_ENCHANTS = {
