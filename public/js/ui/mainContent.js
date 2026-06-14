@@ -177,10 +177,10 @@ export function renderPlayerView(data, player, fightInfo) {
         });
 
     // Also include trinkets that only logged as an aura (like Abacus)
-    Object.entries(data.auras)
+    Object.entries(data.timelineEvents || {})
         .filter(([spellId]) => window.BUFF_DB && window.BUFF_DB[spellId] && window.isTrinket && window.isTrinket(window.BUFF_DB[spellId].name))
         .forEach(([spellId, auraData]) => {
-            const count = auraData.filter(a => a.type === 'apply').length;
+            const count = auraData.length;
             if (count > 0) {
                  const name = window.BUFF_DB[spellId].name;
                  if (!groupedSpells[name]) {
@@ -638,7 +638,12 @@ export function toggleAllViewFilter(type, value) {
             const pRole = card.dataset.role;
             
             const matchClass = !hasClassFilter || state.allViewClassFilters.has(pClass);
-            const matchRole = !hasRoleFilter || state.allViewRoleFilters.has(pRole);
+            let matchRole = !hasRoleFilter || state.allViewRoleFilters.has(pRole);
+            
+            // Feral Druids can be both Tank and Melee DPS
+            if (hasRoleFilter && state.allViewRoleFilters.has('Tank') && pClass === 'Druid' && pRole === 'Melee DPS') {
+                matchRole = true;
+            }
             
             if (matchClass && matchRole) {
                 card.style.display = '';
