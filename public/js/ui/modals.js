@@ -574,9 +574,22 @@ export function generateTimelineHTML(playerName, fightId, events, fightInfo, isC
     if (!events || Object.keys(events).length === 0) return '<div class="timeline-empty">No tracked cooldowns or procs used.</div>';
 
     const durationMs = fightInfo.endTime - fightInfo.startTime;
-    let html = `<div class="timeline-wrapper"><div class="timeline-title">${isCompare ? '' : 'FIGHT '}TIMELINE</div><div class="timeline-content">`;
+    const durationStr = formatDuration(durationMs);
+    let html = `<div class="timeline-wrapper"><div class="timeline-title" style="display: flex; justify-content: space-between;">
+        <span>${isCompare ? '' : 'FIGHT '}TIMELINE</span>
+        <span style="color: #aaa; font-weight: normal; font-size: 0.9em;">Duration: ${durationStr}</span>
+    </div><div class="timeline-content">`;
     
     const usedSpells = Object.keys(events).filter(sId => events[sId].length > 0);
+    
+    // Sort alphabetically, but treat Heroism as Bloodlust so they align in comparisons
+    usedSpells.sort((a, b) => {
+        let nameA = window.TIMELINE_SPELLS[a.split('-')[0]]?.name || '';
+        let nameB = window.TIMELINE_SPELLS[b.split('-')[0]]?.name || '';
+        if (nameA === 'Heroism') nameA = 'Bloodlust';
+        if (nameB === 'Heroism') nameB = 'Bloodlust';
+        return nameA.localeCompare(nameB);
+    });
     
     if (usedSpells.length === 0) {
         html += '<div class="timeline-empty">No tracked cooldowns or procs used.</div>';
