@@ -299,9 +299,11 @@ export function processPlayerData(fightId, fightEvents, player) {
             if (['applybuff', 'applybuffstack', 'refreshbuff'].includes(ev.type)) {
                 if (spellId === 28093) {
                     // Mongoose can stack up to 2 times, just push a new segment
-                    let openCount = timelineEvents[timelineKey].filter(t => t.end === null).length;
-                    if (openCount < 2) {
-                        timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
+                    if (ev.type === 'applybuff') {
+                        let openCount = timelineEvents[timelineKey].filter(t => t.end === null).length;
+                        if (openCount < 2) {
+                            timelineEvents[timelineKey].push({ start: ev.timestamp, end: null });
+                        }
                     }
                 } else {
                     let openEv = timelineEvents[timelineKey].find(t => t.end === null);

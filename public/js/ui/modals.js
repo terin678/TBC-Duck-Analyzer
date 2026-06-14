@@ -620,25 +620,72 @@ export function generateTimelineHTML(playerName, fightId, events, fightInfo, isC
                 <div class="timeline-track">`;
                 
             // Calculate overlapping levels
-            let stackLevels = [];
-            events[spellIdStr].forEach(ev => {
-                let placed = false;
-                for (let i = 0; i < stackLevels.length; i++) {
-                    let overlaps = stackLevels[i].some(existing => (ev.start < existing.end && ev.end > existing.start));
-                    if (!overlaps) {
-                        stackLevels[i].push(ev);
-                        ev._level = i;
-                        placed = true;
-                        break;
-                    }
-                }
-                if (!placed) {
-                    ev._level = stackLevels.length;
-                    stackLevels.push([ev]);
-                }
-            });
+            let segmentsToRender = [];
+            
+            if (baseSpellId == 28093) { // Mongoose
+                let edges = [];
+                events[spellIdStr].forEach(ev => {
+                    edges.push({ time: ev.start, delta: 1 });
+                    edges.push({ time: ev.end || fightInfo.endTime, delta: -1 });
+                });
+                edges.sort((a, b) => a.time - b.time);
 
-            events[spellIdStr].forEach(ev => {
+                let currentCount = 0;
+                let currentBase = null;
+                let lastDoubleTime = 0;
+                
+                edges.forEach(edge => {
+                    let prevCount = currentCount;
+                    currentCount += edge.delta;
+                    
+                    if (prevCount === 0 && currentCount > 0) {
+                        currentBase = { start: edge.time, end: null, _level: 0, doubles: [] };
+                    } else if (prevCount > 0 && currentCount === 0) {
+                        if (currentBase) {
+                            currentBase.end = edge.time;
+                            segmentsToRender.push(currentBase);
+                            currentBase = null;
+                        }
+                    }
+                    
+                    if (prevCount < 2 && currentCount >= 2) {
+                        lastDoubleTime = edge.time;
+                    } else if (prevCount >= 2 && currentCount < 2) {
+                        if (currentBase) {
+                            currentBase.doubles.push({ start: lastDoubleTime, end: edge.time });
+                        }
+                    }
+                });
+                
+                if (currentBase) {
+                    currentBase.end = fightInfo.endTime;
+                    if (currentCount >= 2) {
+                        currentBase.doubles.push({ start: lastDoubleTime, end: fightInfo.endTime });
+                    }
+                    segmentsToRender.push(currentBase);
+                }
+            } else {
+                let stackLevels = [];
+                events[spellIdStr].forEach(ev => {
+                    let placed = false;
+                    for (let i = 0; i < stackLevels.length; i++) {
+                        let overlaps = stackLevels[i].some(existing => (ev.start < existing.end && ev.end > existing.start));
+                        if (!overlaps) {
+                            stackLevels[i].push(ev);
+                            ev._level = i;
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if (!placed) {
+                        ev._level = stackLevels.length;
+                        stackLevels.push([ev]);
+                    }
+                    segmentsToRender.push(ev);
+                });
+            }
+
+            segmentsToRender.forEach(ev => {
                 let relStart = ev.start - fightInfo.startTime;
                 let relEnd = ev.end - fightInfo.startTime;
                 relStart = Math.max(0, relStart);
@@ -648,7 +695,22 @@ export function generateTimelineHTML(playerName, fightId, events, fightInfo, isC
                     const leftPct = (relStart / durationMs) * 100;
                     const widthPct = ((relEnd - relStart) / durationMs) * 100;
                     const levelOffset = ev._level ? (ev._level * 5) : 0;
-                    html += `<div class="timeline-bar" style="left: ${leftPct}%; width: ${widthPct}%; background-color: ${color}; opacity: 0.85; border: 1px solid rgba(0,0,0,0.5); border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.5); top: calc(50% - 7px + ${levelOffset}px); height: 14px; z-index: ${ev._level || 0};"></div>`;
+                    
+                    let innerHtml = '';
+                    if (ev.doubles && ev.doubles.length > 0) {
+                        let durationBase = ev.end - ev.start;
+                        ev.doubles.forEach(d => {
+                            let dStart = Math.max(ev.start, d.start);
+                            let dEnd = Math.min(ev.end, d.end);
+                            if (dEnd > dStart) {
+                                let dLeftPct = ((dStart - ev.start) / durationBase) * 100;
+                                let dWidthPct = ((dEnd - dStart) / durationBase) * 100;
+                                innerHtml += `<div style="position: absolute; left: ${dLeftPct}%; width: ${dWidthPct}%; height: 100%; background-color: #0055cc;" title="Double Mongoose Active"></div>`;
+                            }
+                        });
+                    }
+                    
+                    html += `<div class="timeline-bar" style="left: ${leftPct}%; width: ${widthPct}%; background-color: ${color}; opacity: 0.85; border: 1px solid rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.5); top: calc(50% - 7px + ${levelOffset}px); height: 14px; z-index: ${ev._level || 0};" title="${spellInfo.name} ${(relStart/1000).toFixed(1)}s - ${(relEnd/1000).toFixed(1)}s">${innerHtml}</div>`;
                 }
             });
             html += `</div></div>`;
