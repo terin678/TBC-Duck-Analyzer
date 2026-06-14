@@ -609,7 +609,7 @@ function generateComparisonTable() {
         html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center;">Diff (A - B)</th>`;
     }
 
-    html += `</tr></thead><tbody>`;
+    html += `</tr></thead>`;
 
     const addRow = (iconUrl, name, id, isAura, isSpell = false) => {
         html += `<tr style="border-bottom: 1px solid #2c3e50;">
@@ -685,7 +685,24 @@ function generateComparisonTable() {
         }
     });
 
-    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Consumables</td></tr>`;
+    window.toggleCompareSection = function(sectionId) {
+        const tbody = document.getElementById(sectionId);
+        if (!tbody) return;
+        const isHidden = tbody.style.display === 'none';
+        tbody.style.display = isHidden ? '' : 'none';
+        const icon = document.getElementById('icon-' + sectionId);
+        if (icon) {
+            icon.innerHTML = isHidden ? '▼' : '▶';
+        }
+    };
+
+    const renderSectionHeader = (title, sectionId) => {
+        return `<tbody><tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6; cursor: pointer; user-select: none;" onclick="window.toggleCompareSection('${sectionId}')">
+            ${title} <span id="icon-${sectionId}" style="float: right;">▼</span>
+        </td></tr></tbody><tbody id="${sectionId}">`;
+    };
+
+    html += renderSectionHeader('Consumables', 'compare-consumables');
     const sortedCons = [...allConsumables].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedCons.forEach(id => {
         if (!window.BUFF_DB[id]) return;
@@ -697,16 +714,18 @@ function generateComparisonTable() {
         const info = getSpellInfo(id);
         addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false, true);
     });
+    html += `</tbody>`;
 
-    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Buffs</td></tr>`;
+    html += renderSectionHeader('Buffs', 'compare-buffs');
     const sortedAuras = [...allAuras].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedAuras.forEach(id => {
         // Exclude category 5 (consumables) from being displayed in buffs
         if (typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[id] && window.SPELL_DB[id].category === 5) return;
         addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, true, false);
     });
+    html += `</tbody>`;
 
-    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Abilities & Spells</td></tr>`;
+    html += renderSectionHeader('Abilities & Spells', 'compare-spells');
 
     const getSortGroup = (name) => {
         const lower = name.toLowerCase();
@@ -729,8 +748,9 @@ function generateComparisonTable() {
         const info = getSpellInfo(id);
         addRow(`/api/icon/${info.icon}.jpg`, info.name, id, false, true);
     });
+    html += `</tbody>`;
 
-    html += `</tbody></table></div>`;
+    html += `</table></div>`;
     return html;
 }
 
