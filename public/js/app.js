@@ -3,9 +3,10 @@ import { auditarLog } from './api.js?v=2.1.0';
 import { renderMainContent, toggleAllViewFilter } from './ui/mainContent.js?v=2.1.0';
 import { updatePlayersSidebar } from './ui/sidebar.js?v=2.1.0';
 import { 
-    closeModal, 
-    toggleTimelineInline, 
-    toggleCastsDebuffInline 
+    toggleGearInline, closeGearModal, toggleTimelineInline, 
+    toggleCastsDebuffInline,
+    sendToWebhookProfile, editWebhookProfile, deleteWebhookProfile, 
+    enviarADiscord, closeDiscordModal 
 } from './ui/modals.js?v=2.1.0';
 import { 
     openCompareMode,
