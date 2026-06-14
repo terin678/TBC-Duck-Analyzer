@@ -349,23 +349,32 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     });
 
     // Filter chips
-    let filterHtml = `<div class="all-view-filter-group" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">`;
+    let filterHtml = `<div class="all-view-class-filter">`;
+    
+    // "ALL" button
+    const allActive = state.allViewRoleFilters.size === 0 && state.allViewClassFilters.size === 0;
+    filterHtml += `<button class="all-view-class-chip ${allActive ? 'active' : ''}" style="border-color: #f4b400;" onclick="state.allViewRoleFilters.clear(); state.allViewClassFilters.clear(); window.renderAllPlayers();">ALL</button>`;
+    
+    filterHtml += `<div style="width: 1px; background: #333; margin: 0 10px;"></div>`;
     
     // Role filters
     const ROLES = ["Tank", "Healer", "Melee DPS", "Ranged DPS"];
     ROLES.forEach(role => {
         const isActive = state.allViewRoleFilters.has(role);
         const roleClass = role.replace(' ', '-') + '-chip';
-        filterHtml += `<button class="all-view-filter-chip role-chip ${roleClass} ${isActive ? 'active' : ''}" data-role="${role}" onclick="window.toggleAllViewFilter('role', '${role}')">${role}</button>`;
+        filterHtml += `<button class="all-view-class-chip role-chip ${roleClass} ${isActive ? 'active' : ''}" data-role="${role}" onclick="window.toggleAllViewFilter('role', '${role}')">${role.toUpperCase()}</button>`;
     });
 
     filterHtml += `<div style="width: 1px; background: #333; margin: 0 10px;"></div>`;
 
     // Class filters
     window.CLASSES.forEach(cls => {
-        if (playersByClass[cls].length === 0) return;
+        const players = playersByClass[cls];
+        if (players.length === 0) return;
         const isActive = state.allViewClassFilters && state.allViewClassFilters.has(cls);
-        filterHtml += `<button class="all-view-filter-chip class-chip ${cls}-chip ${isActive ? 'active' : ''}" data-class="${cls}" onclick="window.toggleAllViewFilter('class', '${cls}')">${cls}</button>`;
+        filterHtml += `<button class="all-view-class-chip class-chip ${cls}-chip ${isActive ? 'active' : ''}" data-class="${cls}" onclick="window.toggleAllViewFilter('class', '${cls}')">
+            ${cls.toUpperCase()} <span class="chip-count">${players.length}</span>
+        </button>`;
     });
     filterHtml += `</div>`;
 

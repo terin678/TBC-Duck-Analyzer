@@ -129,22 +129,38 @@ function renderCompareTimeline() {
     const playersA = getFilteredActors(state.currentActors, state.compareState.playerA, state.currentEvents);
     const playersB = getFilteredActors(state.compareLogB.actors, state.compareState.playerB, state.compareLogB.events);
 
-    let html = '<div style="display: flex; flex-direction: column; gap: 20px;">';
+    let html = '<div style="display: flex; gap: 20px; width: 100%;">';
     
     // Helper to generate a placeholder for a timeline
-    const addTimelinePlaceholder = (player, logId, side) => {
+    const addTimelinePlaceholder = (player, side) => {
         const id = `timeline-${side}-${player.id}`;
-        html += `<div style="background: #1a252f; padding: 15px; border-radius: 8px;">
-            <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'};">${player.name} (${logId})</h4>
+        let htmlChunk = `<div style="background: #1a252f; padding: 15px; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'};">${player.name}</h4>
             <div id="${id}" class="timeline-inline-container" style="min-height: 100px;"></div>
         </div>`;
-        return { id, player, side };
+        return { html: htmlChunk, data: { id, player, side } };
     };
 
     const timelinesToRender = [];
-    playersA.forEach(p => timelinesToRender.push(addTimelinePlaceholder(p, state.currentLogId, 'A')));
-    playersB.forEach(p => timelinesToRender.push(addTimelinePlaceholder(p, state.compareLogB.logId, 'B')));
     
+    // Left column (Log A)
+    html += '<div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">';
+    playersA.forEach(p => {
+        const res = addTimelinePlaceholder(p, 'A');
+        html += res.html;
+        timelinesToRender.push(res.data);
+    });
+    html += '</div>';
+
+    // Right column (Log B)
+    html += '<div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">';
+    playersB.forEach(p => {
+        const res = addTimelinePlaceholder(p, 'B');
+        html += res.html;
+        timelinesToRender.push(res.data);
+    });
+    html += '</div>';
+
     html += '</div>';
     container.innerHTML += html;
 
@@ -388,8 +404,8 @@ function aggregateData(actors, selection, events, report, fightId) {
             totalConsumables[id] = (totalConsumables[id] || 0) + count;
         }
 
-        // Sum Spell Casts (pData.casts is an object like { id: { count: X, damage: Y } })
-        for (const [id, data] of Object.entries(pData.casts || {})) {
+        // Sum Spell Casts (pData.spells is an object like { id: { count: X, damage: Y } })
+        for (const [id, data] of Object.entries(pData.spells || {})) {
             totalCasts[id] = (totalCasts[id] || 0) + data.count;
         }
 
