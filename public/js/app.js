@@ -9,7 +9,7 @@ import {
 } from './ui/modals.js?v=2.1.0';
 import { 
     openCompareMode,
-    closeCompareMode,
+    exitCompareMode,
     loadCompareLog, 
     useSameLogForCompare, 
     clearCompareLog, 
