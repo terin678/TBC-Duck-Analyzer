@@ -595,23 +595,23 @@ function generateComparisonTable() {
 
     const is1v1 = dataA.players.length === 1 && dataB.players.length === 1;
 
-    let html = `<div style="overflow-x: auto; overflow-y: auto; max-height: 75vh;"><table class="compare-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #1a252f; border-radius: 8px; overflow: hidden; min-width: 600px;">
-        <thead style="position: sticky; top: 0; z-index: 10;">
+    let html = `<div><table class="compare-table" style="width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; background: #1a252f; border-radius: 8px; min-width: 600px;">
+        <thead>
             <tr style="background: #2c3e50; color: #fff;">
-                <th style="padding: 12px; border-bottom: 2px solid #34495e;">Players</th>
+                <th style="padding: 12px; border-bottom: 2px solid #34495e; position: sticky; top: 0; background: #2c3e50; z-index: 10;">Players</th>
     `;
 
     dataA.players.forEach(p => {
-        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #3498db;">${p.name}</th>`;
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #3498db; position: sticky; top: 0; background: #2c3e50; z-index: 10;">${p.name}</th>`;
     });
     
     dataB.players.forEach(p => {
-        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #e67e22;">${p.name}</th>`;
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; color: #e67e22; position: sticky; top: 0; background: #2c3e50; z-index: 10;">${p.name}</th>`;
     });
 
     if (is1v1) {
         const diffText = state.compareState.diffMode === 'B-A' ? 'Diff (B - A)' : 'Diff (A - B)';
-        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; cursor: pointer; user-select: none;" onclick="window.toggleDiffMode()" title="Click to swap diff direction">
+        html += `<th style="padding: 12px; border-bottom: 2px solid #34495e; text-align: center; cursor: pointer; user-select: none; position: sticky; top: 0; background: #2c3e50; z-index: 10;" onclick="window.toggleDiffMode()" title="Click to swap diff direction">
             ${diffText} 🔁
         </th>`;
     }
