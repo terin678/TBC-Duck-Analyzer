@@ -1871,6 +1871,13 @@ div.wowhead-tooltip .iconmedium {
     color: #f4b400;
 }
 
+/* Role chip styles */
+.Tank-chip.active, .Healer-chip.active, .Melee-DPS-chip.active, .Ranged-DPS-chip.active {
+    background: rgba(230, 230, 230, 0.12);
+    border-color: #eee;
+    color: #eee;
+}
+
 /* Class-colored chip styles */
 .Warrior-chip.active { background: rgba(199,156,110,0.12); border-color: #C79C6E; color: #C79C6E; }
 .Warrior-chip.active .chip-count { background: rgba(199,156,110,0.15); color: #C79C6E; }

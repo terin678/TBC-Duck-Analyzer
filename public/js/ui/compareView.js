@@ -31,9 +31,10 @@ function renderCompareUI() {
     const playersA = buildPlayersOptions(state.currentActors, state.compareState.playerA);
 
     // Build options for Log B (Compare Log)
-    let logBSection = '';
+    let logBTop = '';
+    let logBBottom = '';
     if (!state.compareLogB) {
-        logBSection = `
+        logBTop = `
             <div style="margin-top: 15px;">
                 <input type="text" id="compareLogInput" placeholder="Paste Log B URL or ID here..." style="padding: 8px; width: 60%; background: #2c3e50; border: 1px solid #34495e; color: #fff;">
                 <button onclick="window.loadCompareLog()" style="padding: 8px 15px; background: #27ae60; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 4px;">Load Log B</button>
@@ -44,12 +45,14 @@ function renderCompareUI() {
     } else {
         const fightsB = buildFightsOptions(state.compareLogB.report, state.compareState.fightB);
         const playersB = buildPlayersOptions(state.compareLogB.actors, state.compareState.playerB);
-        logBSection = `
+        logBTop = `
             <div style="display: flex; gap: 15px; margin-top: 15px; align-items: center;">
                 <div style="color: #2ecc71; font-weight: bold;">Log B Loaded: ${state.compareLogB.logId}</div>
                 <button onclick="window.clearCompareLog()" style="padding: 5px 10px; background: #e74c3c; color: #fff; border: none; cursor: pointer; border-radius: 4px;">Change Log B</button>
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
+        `;
+        logBBottom = `
+            <div style="display: flex; gap: 10px; margin-top: auto;">
                 <select id="compareFightB" onchange="window.updateCompareSelection()" style="padding: 8px; background: #2c3e50; color: #fff; border: 1px solid #34495e; flex: 1;">
                     <option value="">-- Select Fight B --</option>
                     ${fightsB}
@@ -76,9 +79,9 @@ function renderCompareUI() {
             
             <div style="display: flex; gap: 40px;">
                 <!-- Column A -->
-                <div style="flex: 1; background: #1a252f; padding: 15px; border-radius: 8px;">
+                <div style="flex: 1; background: #1a252f; padding: 15px; border-radius: 8px; display: flex; flex-direction: column;">
                     <h3 style="margin-top: 0; color: #3498db;">Log A: ${state.currentLogId}</h3>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; margin-top: auto;">
                         <select id="compareFightA" onchange="window.updateCompareSelection()" style="padding: 8px; background: #2c3e50; color: #fff; border: 1px solid #34495e; flex: 1;">
                             <option value="">-- Select Fight A --</option>
                             ${fightsA}
@@ -91,9 +94,10 @@ function renderCompareUI() {
                 </div>
 
                 <!-- Column B -->
-                <div style="flex: 1; background: #1a252f; padding: 15px; border-radius: 8px;">
+                <div style="flex: 1; background: #1a252f; padding: 15px; border-radius: 8px; display: flex; flex-direction: column;">
                     <h3 style="margin-top: 0; color: #e67e22;">Log B</h3>
-                    ${logBSection}
+                    ${logBTop}
+                    ${logBBottom}
                 </div>
             </div>
 
@@ -133,12 +137,21 @@ function renderCompareTimeline() {
     
     // Helper to generate a placeholder for a timeline
     const addTimelinePlaceholder = (player, side) => {
-        const id = `timeline-${side}-${player.id}`;
-        let htmlChunk = `<div style="background: #1a252f; padding: 15px; border-radius: 8px;">
-            <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'};">${player.name}</h4>
-            <div id="${id}" class="timeline-inline-container" style="min-height: 100px;"></div>
+        const id = `timeline-container-${side}-${player.id}`;
+        const innerId = `timeline-${side}-${player.id}`;
+        let htmlChunk = `<div id="${id}" class="timeline-draggable" draggable="true" 
+            ondragstart="window.handleTimelineDragStart(event)" 
+            ondragend="window.handleTimelineDragEnd(event)"
+            ondragover="window.handleTimelineDragOver(event)"
+            ondragleave="window.handleTimelineDragLeave(event)"
+            ondrop="window.handleTimelineDrop(event)"
+            style="margin-bottom: 20px; transition: border 0.2s;">
+            <h4 style="margin: 0 0 10px 0; color: ${side === 'A' ? '#f1c40f' : '#3498db'}; cursor: grab;">
+                <span style="color: #7f8c8d; margin-right: 5px; font-size: 0.9em;">☰</span> ${player.name}
+            </h4>
+            <div id="${innerId}" class="timeline-inline-container" style="min-height: 100px;"></div>
         </div>`;
-        return { html: htmlChunk, data: { id, player, side } };
+        return { html: htmlChunk, data: { id: innerId, player, side } };
     };
 
     const timelinesToRender = [];
@@ -507,26 +520,25 @@ function generateComparisonTable() {
 
     const colSpanTotal = 1 + dataA.players.length + dataB.players.length + (is1v1 ? 1 : 0);
 
-    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Consumables (Casts)</td></tr>`;
+    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Consumables</td></tr>`;
     const sortedCons = [...allConsumables].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedCons.forEach(id => {
         if (!window.BUFF_DB[id]) return;
         addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, false);
     });
 
-    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Buffs (from combatantinfo)</td></tr>`;
+    html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Buffs</td></tr>`;
     const sortedAuras = [...allAuras].sort((a,b) => (window.BUFF_DB[a]?.name || '').localeCompare(window.BUFF_DB[b]?.name || ''));
     sortedAuras.forEach(id => {
+        // Exclude category 5 (consumables) from being displayed in buffs
+        if (typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[id] && window.SPELL_DB[id].category === 5) return;
         addRow(`/api/icon/${window.BUFF_DB[id].icon}.jpg`, window.BUFF_DB[id].name, id, true);
     });
 
     html += `<tr><td colspan="${colSpanTotal}" style="background: #22313f; padding: 8px; font-weight: bold; color: #95a5a6;">Abilities & Spells</td></tr>`;
     const getSpellInfo = (id) => {
-        for (let cls in window.SPELL_DB) {
-            for (let cat of ['casts', 'debuffs']) {
-                const sp = window.SPELL_DB[cls][cat] && window.SPELL_DB[cls][cat].find(s => s.ids && s.ids.includes(parseInt(id)));
-                if (sp) return sp;
-            }
+        if (typeof window.SPELL_DB !== 'undefined' && window.SPELL_DB[id]) {
+            return window.SPELL_DB[id];
         }
         return { name: `Spell ${id}`, icon: 'inv_misc_questionmark' };
     };
@@ -540,3 +552,71 @@ function generateComparisonTable() {
     html += `</tbody></table></div>`;
     return html;
 }
+
+// === DRAG & DROP TIMELINES ===
+window.handleTimelineDragStart = function(e) {
+    const target = e.target.closest('.timeline-draggable');
+    if (target) {
+        e.dataTransfer.setData('text/plain', target.id);
+        target.style.opacity = '0.4';
+    }
+};
+
+window.handleTimelineDragEnd = function(e) {
+    const target = e.target.closest('.timeline-draggable');
+    if (target) target.style.opacity = '1';
+    document.querySelectorAll('.timeline-draggable').forEach(el => {
+        el.style.borderTop = '';
+        el.style.borderBottom = '';
+    });
+};
+
+window.handleTimelineDragOver = function(e) {
+    e.preventDefault();
+    const target = e.target.closest('.timeline-draggable');
+    if (target) {
+        const rect = target.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) {
+            target.style.borderTop = '2px solid #f1c40f';
+            target.style.borderBottom = '';
+        } else {
+            target.style.borderBottom = '2px solid #f1c40f';
+            target.style.borderTop = '';
+        }
+    }
+};
+
+window.handleTimelineDragLeave = function(e) {
+    const target = e.target.closest('.timeline-draggable');
+    if (target) {
+        target.style.borderTop = '';
+        target.style.borderBottom = '';
+    }
+};
+
+window.handleTimelineDrop = function(e) {
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData('text/plain');
+    const draggedEl = document.getElementById(draggedId);
+    const dropZone = e.target.closest('.timeline-draggable');
+
+    document.querySelectorAll('.timeline-draggable').forEach(el => {
+        el.style.borderTop = '';
+        el.style.borderBottom = '';
+    });
+
+    if (dropZone && draggedEl && draggedEl !== dropZone) {
+        // Ensure they belong to the same column (A or B)
+        const isColumnA = draggedId.includes('-container-A-') && dropZone.id.includes('-container-A-');
+        const isColumnB = draggedId.includes('-container-B-') && dropZone.id.includes('-container-B-');
+        
+        if (isColumnA || isColumnB) {
+            const rect = dropZone.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+                dropZone.parentNode.insertBefore(draggedEl, dropZone);
+            } else {
+                dropZone.parentNode.insertBefore(draggedEl, dropZone.nextSibling);
+            }
+        }
+    }
+};

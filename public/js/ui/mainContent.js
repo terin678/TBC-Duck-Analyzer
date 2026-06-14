@@ -352,8 +352,13 @@ export function renderAllPlayersView(fightId, fightEvents, allActors, fightInfo)
     let filterHtml = `<div class="all-view-class-filter">`;
     
     // "ALL" button
+    window.clearAllViewFilters = function() {
+        state.allViewRoleFilters.clear();
+        state.allViewClassFilters.clear();
+        window.renderAllPlayers();
+    };
     const allActive = state.allViewRoleFilters.size === 0 && state.allViewClassFilters.size === 0;
-    filterHtml += `<button class="all-view-class-chip ${allActive ? 'active' : ''}" style="border-color: #f4b400;" onclick="state.allViewRoleFilters.clear(); state.allViewClassFilters.clear(); window.renderAllPlayers();">ALL</button>`;
+    filterHtml += `<button class="all-view-class-chip ${allActive ? 'active' : ''}" style="border-color: #f4b400;" onclick="window.clearAllViewFilters()">ALL</button>`;
     
     filterHtml += `<div style="width: 1px; background: #333; margin: 0 10px;"></div>`;
     
